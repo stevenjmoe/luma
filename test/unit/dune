@@ -1,0 +1,7 @@
+(executable
+ (name unit)
+ (libraries alcotest containers luma.ecs luma.math luma.image))
+
+(rule
+  (alias runtest)
+  (action (run %{exe:unit.exe})))

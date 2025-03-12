@@ -1,0 +1,4 @@
+(library
+  (public_name luma.sprite)
+  (libraries luma.ecs luma.image luma.texture)
+  (name luma__sprite))

@@ -1,0 +1,23 @@
+(library 
+  (public_name luma.ecs)
+  (name luma__ecs)
+  (libraries 
+    raylib 
+    luma.storage 
+    luma.image 
+    luma.texture 
+    ppx_component)
+  (modules 
+    App 
+    Archetype
+    Component 
+    Components 
+    Id 
+    Query 
+    Resource 
+    Resources 
+    Scheduler 
+    System 
+    World)
+  (preprocess 
+   (pps ppx_inline_test ppx_assert ppx_component)))

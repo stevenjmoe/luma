@@ -1,0 +1,14 @@
+(library
+ (name luma)
+ (libraries 
+   raylib
+   containers
+   luma.ecs
+   luma.sprite
+   luma.transform
+   luma.image
+   luma.render
+   luma.texture
+   ppx_component)
+ (preprocess 
+   (pps ppx_inline_test ppx_assert)))

@@ -1,0 +1,4 @@
+(library
+  (public_name luma.render)
+  (libraries luma.image luma.math luma.texture raylib)
+  (name luma__render))

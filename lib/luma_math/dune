@@ -1,0 +1,5 @@
+(library 
+  (public_name luma.math)
+  (name luma__math)
+  (preprocess 
+   (pps ppx_inline_test ppx_assert)))
