@@ -23,7 +23,7 @@ Luma.Query.(
 
 `Query.term` is either `Required` or `Optional`. When the query is evaluated, the entities tuple will contain all the required components, or an option.
 
-The avove query will produce a list of tuples that looks like this:
+The above query will produce a list of tuples that looks like this:
 
 ```ocaml
  ((_ : Luma.Id.Entity.t), ((rect : Raylib.Rectangle.t), ((velocity : Vector2.t), ((camera : Camera2D.t), (_ : unit)))))
