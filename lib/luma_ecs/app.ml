@@ -27,7 +27,7 @@ let update_time =
       | None -> world)
 
 let run a =
-  Raylib.init_window 800 450 "";
+  Raylib.init_window 1800 800 "";
   Raylib.set_target_fps 60;
 
   let textures = Texture.create () in
@@ -70,7 +70,6 @@ let run a =
       let open Raylib in
       begin_drawing ();
       begin_mode_2d camera;
-      Raylib.draw_rectangle 10 10 250 113 Raylib.Color.black;
       let world = Scheduler.run_update_systems a.scheduler a.world in
       clear_background Color.beige;
       end_mode_2d ();

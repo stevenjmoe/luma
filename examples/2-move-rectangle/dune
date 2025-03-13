@@ -1,0 +1,5 @@
+(executable
+  (name move_rectangle)
+  (libraries luma)
+  (preprocess
+    (pps ppx_component)))
