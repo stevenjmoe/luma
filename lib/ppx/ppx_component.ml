@@ -42,10 +42,11 @@ let module_struct_rule () =
        pstr_desc =
          Pstr_module
            {
-             pmb_name = { txt = Some module_name };
+             pmb_name = { txt = Some module_name; _ };
              pmb_expr = { pmod_desc = Pmod_structure structure_items; _ };
              _;
            };
+       _;
      };
     ] -> (
         let type_t =
@@ -54,7 +55,9 @@ let module_struct_rule () =
               | {
                   pstr_desc =
                     Pstr_type
-                      (_, [ { ptype_name = { txt = "t" }; ptype_manifest = _; ptype_kind = _; _ } ]);
+                      ( _,
+                        [ { ptype_name = { txt = "t"; _ }; ptype_manifest = _; ptype_kind = _; _ } ]
+                      );
                   _;
                 } ->
                   Some [%type: t]
@@ -69,7 +72,7 @@ let module_struct_rule () =
         | Some type_t ->
             let module_c =
               [%stri
-                module C = Component.Make (struct
+                module C = Luma.Ecs.Component.Make (struct
                   type inner = [%t type_t]
                 end)]
             in
