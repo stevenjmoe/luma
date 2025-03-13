@@ -1,4 +1,13 @@
-module Ecs = Luma__ecs
+include Luma__ecs.App
+module Archetype = Luma__ecs.Archetype
+module Component = Luma__ecs.Component
+module Id = Luma__ecs.Id
+module Query = Luma__ecs.Query
+module Reource = Luma__ecs.Resource
+module Resources = Luma__ecs.Resources
+module Scheduler = Luma__ecs.Scheduler
+module System = Luma__ecs.System
+module World = Luma__ecs.World
 module Transform = Luma__transform.Transform
 module Math = Luma__math
 module Sprite = Luma__sprite.Sprite
