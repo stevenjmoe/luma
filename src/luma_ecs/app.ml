@@ -18,13 +18,13 @@ let update_time =
       match World.get_resource world Time.R.id with
       | Some r -> (
           match Resource.unpack (module Time.R) r with
-          | Some time ->
+          | Ok time ->
               let dt = Raylib.get_frame_time () in
               time.dt <- dt;
               time.elapsed <- time.elapsed +. dt;
               world
-          | None -> world)
-      | None -> world)
+          | Error _ -> failwith "could not get time from resources")
+      | None -> failwith "could not get time from resources")
 
 let run a =
   Raylib.init_window 1800 800 "";
