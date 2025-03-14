@@ -1,3 +1,4 @@
+module Id = Luma__id.Id
 (** Apart from the query, this module is almost exactly like [Component]. *)
 
 (* TODO: move repeated code from here and component.ml into single module *)

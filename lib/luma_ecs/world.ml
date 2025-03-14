@@ -1,3 +1,5 @@
+module Id = Luma__id.Id
+module Resource = Luma__resource.Resource
 module ArchetypeHashSet = Set.Make (Int)
 
 type t = {

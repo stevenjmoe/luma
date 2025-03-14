@@ -1,3 +1,6 @@
+module Id = Luma__id.Id
+module Resource = Luma__resource.Resource
+
 type ('w, 'a) without_resources = {
   filter : Query.Filter.t;
   query : 'a Query.t;

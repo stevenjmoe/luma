@@ -1,3 +1,5 @@
+module Id = Luma__id.Id
+
 type base
 
 module type S = sig

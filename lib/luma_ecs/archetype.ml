@@ -1,3 +1,4 @@
+module Id = Luma__id.Id
 open Luma__storage
 
 type t = {

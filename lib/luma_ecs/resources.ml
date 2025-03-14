@@ -1,3 +1,5 @@
+module Resource = Luma__resource.Resource
+
 module Time = struct
   type t = { mutable dt : float; mutable elapsed : float }
 

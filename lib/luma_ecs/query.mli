@@ -1,3 +1,5 @@
+module Id = Luma__id.Id
+
 (** Queries can be used to retrieve entities based on the components defined in [Query.t], or
     [Filter].
 

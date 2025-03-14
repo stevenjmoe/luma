@@ -6,15 +6,15 @@
     luma.storage 
     luma.image 
     luma.texture 
+    luma.resource
+    luma.id
     ppx_component)
   (modules 
     App 
     Archetype
     Component 
     Components 
-    Id 
     Query 
-    Resource 
     Resources 
     Scheduler 
     System 

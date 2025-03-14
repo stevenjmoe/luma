@@ -1,3 +1,6 @@
+module Id = Luma__id.Id
+module Resource = Luma__resource.Resource
+
 type t
 
 val create : unit -> t

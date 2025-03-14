@@ -1,0 +1,4 @@
+(library
+  (public_name luma.resource)
+  (libraries luma.id raylib)
+  (name luma__resource))

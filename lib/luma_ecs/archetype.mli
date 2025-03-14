@@ -1,3 +1,5 @@
+module Id = Luma__id.Id
+
 type t
 type operation = Add of Id.Component.t | Remove of Id.Component.t
 

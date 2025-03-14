@@ -1,9 +1,9 @@
 include Luma__ecs.App
 module Archetype = Luma__ecs.Archetype
 module Component = Luma__ecs.Component
-module Id = Luma__ecs.Id
+module Id = Luma__id.Id
 module Query = Luma__ecs.Query
-module Reource = Luma__ecs.Resource
+module Reource = Luma__resource.Resource
 module Resources = Luma__ecs.Resources
 module Scheduler = Luma__ecs.Scheduler
 module System = Luma__ecs.System

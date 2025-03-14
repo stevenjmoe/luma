@@ -1,3 +1,5 @@
+module Id = Luma__id.Id
+
 module Filter = struct
   type t =
     | With of Id.Component.t
