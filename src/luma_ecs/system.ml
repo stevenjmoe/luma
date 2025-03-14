@@ -10,7 +10,7 @@ type ('w, 'a) without_resources = {
 type ('w, 'a, 'b) with_resources = {
   filter : Query.Filter.t;
   query : 'a Query.t;
-  resource_query : 'b Resource.Resource_query.t;
+  resource_query : 'b Resource.Query.t;
   run : 'w -> (Id.Entity.t * 'a) list -> 'b -> 'w;
 }
 
@@ -27,6 +27,6 @@ let make
 let make_with_resources
     ?(filter = Query.Filter.Any)
     (query : 'a Query.t)
-    (resource_query : 'b Resource.Resource_query.t)
+    (resource_query : 'b Resource.Query.t)
     (run_fn : 'w -> (Id.Entity.t * 'a) list -> 'b -> 'w) : ('w, 'a, 'b) with_resources =
   { filter; query; resource_query; run = run_fn }

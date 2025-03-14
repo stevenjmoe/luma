@@ -41,7 +41,7 @@ let unpack : type a. (module S with type t = a) -> packed -> a option =
 let id : packed -> Id.Resource.t = function Packed ((module R), _) -> R.id
 
 (* TODO: Error handling *)
-module Resource_query = struct
+module Query = struct
   type _ term = Resource : (module S with type t = 'a) -> 'a term
   type _ t = Res : ('a term * 'b t) -> ('a * 'b) t | End : unit t
 

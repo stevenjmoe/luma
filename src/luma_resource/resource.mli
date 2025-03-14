@@ -26,9 +26,9 @@ val id : packed -> int
 
 (** Module to retrieve resources.
 
-    Unlike the [Query] module, this module does not need to return an entity along with the
-    resource, as resources are global. *)
-module Resource_query : sig
+    Unlike the [Luma__ecs.Query] module, this module does not need to return an entity along with
+    the resource, as resources are global. *)
+module Query : sig
   (** The type ['a term] represents a resource where ['a] is the type of the resource.
 
       The constructor expects a first-class module where the module must satisfy the signature [S].

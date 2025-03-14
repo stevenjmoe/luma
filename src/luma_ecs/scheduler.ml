@@ -21,9 +21,7 @@ let run_system (world : World.t) (system : (World.t, 'a) System.t) : World.t =
       s.run world matching_entities
   | System.WithResources s ->
       let matching_entities = Query.evaluate ~filter:s.filter s.query archetypes in
-      let resource_value =
-        Resource.Resource_query.evaluate s.resource_query (World.resources world)
-      in
+      let resource_value = Resource.Query.evaluate s.resource_query (World.resources world) in
       s.run world matching_entities resource_value
 
 let run_startup_systems (sched : t) (world : World.t) : World.t =

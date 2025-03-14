@@ -11,7 +11,7 @@ type ('w, 'a) without_resources = {
 type ('w, 'a, 'b) with_resources = {
   filter : Query.Filter.t;
   query : 'a Query.t;
-  resource_query : 'b Resource.Resource_query.t;
+  resource_query : 'b Resource.Query.t;
   run : 'w -> (Id.Entity.t * 'a) list -> 'b -> 'w;
 }
 (** [with_resources] represents a system that runs with the resources returned by the
@@ -36,7 +36,7 @@ val make :
 val make_with_resources :
   ?filter:Query.Filter.t ->
   'a Query.t ->
-  'b Resource.Resource_query.t ->
+  'b Resource.Query.t ->
   ('w -> (Id.Entity.t * 'a) list -> 'b -> 'w) ->
   ('w, 'a, 'b) with_resources
 (** Makes a system with resource represented by type ['b]. *)
