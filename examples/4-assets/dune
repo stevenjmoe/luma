@@ -1,0 +1,5 @@
+(executable
+  (name assets)
+  (libraries luma)
+  (preprocess
+    (pps ppx_component)))

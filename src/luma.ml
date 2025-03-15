@@ -1,5 +1,6 @@
 include Luma__ecs.App
 module Archetype = Luma__ecs.Archetype
+module Asset = Luma__asset.Asset
 module Component = Luma__ecs.Component
 module Id = Luma__id.Id
 module Query = Luma__ecs.Query

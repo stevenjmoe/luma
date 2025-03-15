@@ -4,6 +4,7 @@
  (libraries 
    raylib
    containers
+   luma.asset
    luma.ecs
    luma.sprite
    luma.transform
