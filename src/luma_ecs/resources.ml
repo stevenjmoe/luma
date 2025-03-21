@@ -17,8 +17,8 @@ module Texture_atlas = struct
   let create () = Hashtbl.create 10
   let get_texture_atlas t key = Hashtbl.find_opt t key
 
-  module A = Asset.Make (struct
-    type inner = t
+  module A = Asset.Make_asset (struct
+    type asset = t
   end)
 end
 
@@ -28,7 +28,7 @@ module Texture = struct
   let create () = Hashtbl.create 10
   let get_texture t key = Hashtbl.find_opt t key
 
-  module A = Asset.Make (struct
-    type inner = t
+  module A = Asset.Make_asset (struct
+    type asset = t
   end)
 end

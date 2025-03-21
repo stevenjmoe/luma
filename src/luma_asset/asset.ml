@@ -12,12 +12,12 @@ module type S = sig
   val to_base : t -> base
 end
 
-module Make (B : sig
-  type inner
-end) : S with type t = B.inner = struct
+module Make_asset (B : sig
+  type asset
+end) : S with type t = B.asset = struct
   include B
 
-  type t = inner
+  type t = asset
   type base += T of t
 
   let id = Id.Asset.next ()
