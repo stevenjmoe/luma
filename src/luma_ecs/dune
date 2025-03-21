@@ -3,11 +3,13 @@
   (name luma__ecs)
   (libraries 
     raylib 
+    luma.asset
     luma.storage 
     luma.image 
     luma.texture 
     luma.resource
     luma.id
+    lwt
     ppx_component)
   (modules 
     App 

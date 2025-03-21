@@ -8,11 +8,14 @@ tags: ["game engine" "ecs"]
 homepage: "https://github.com/stevenjmoe/luma"
 bug-reports: "https://github.com/stevenjmoe/luma/issues"
 depends: [
-  "ocaml"
-  "dune" {>= "3.17"}
   "alcotest" {with-test}
-  "raylib"
   "containers"
+  "dune" {>= "3.17"}
+  "lwt"
+  "ocaml"
+  "ppxlib"
+  "ppx_inline_test"
+  "raylib"
   "odoc" {with-doc}
 ]
 build: [

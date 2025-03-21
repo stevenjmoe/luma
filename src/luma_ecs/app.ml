@@ -1,5 +1,7 @@
 include Resources
 include Components
+module Assets = Luma__asset.Assets
+module Asset_server = Luma__asset.Server
 
 type t = { world : World.t; scheduler : Scheduler.t; plugins : (World.t -> unit) list }
 
@@ -31,19 +33,27 @@ let run a =
   Raylib.set_target_fps 60;
 
   let textures = Texture.create () in
-  let packed_texture = Resource.pack (module Texture.R) textures in
+  (*let packed_texture = Resource.pack (module Texture.R) textures in*)
 
   let texture_atlases = Texture_atlas.create () in
-  let packed_atlases = Resource.pack (module Texture_atlas.R) texture_atlases in
+  (*let packed_atlases = Resource.pack (module Texture_atlas.A) texture_atlases in*)
 
   let time = Time.{ dt = 0.0016; elapsed = 0. } in
   let packed_time = Resource.pack (module Time.R) time in
 
+  let asset_server = Asset_server.create () in
+  let packed_asset_server = Resource.pack (module Asset_server.R) asset_server in
+  let assets = Assets.create () in
+  let packed_assets = Resource.pack (module Assets.R) assets in
+  (*let _ = Asset.Asset_server.register_asset (module Spp) "" in*)
+
   let world =
     a.world
     |> World.add_resource Time.R.id packed_time
-    |> World.add_resource Texture.R.id packed_texture
-    |> World.add_resource Texture_atlas.R.id packed_atlases
+    (*|> World.add_resource Texture.R.id packed_texture*)
+    (*|> World.add_resource Texture_atlas.R.id packed_atlases*)
+    |> World.add_resource Asset_server.R.id packed_asset_server
+    |> World.add_resource Assets.R.id packed_assets
   in
 
   let world =
@@ -62,12 +72,12 @@ let run a =
     |> List.map (fun (_, (camera, _)) -> camera)
     |> List.hd
   in
-
   let rec loop (world, scheduler) =
     if Raylib.window_should_close () then
       Raylib.close_window ()
     else
       let open Raylib in
+      Lwt_main.run (Lwt.pause ());
       begin_drawing ();
       begin_mode_2d camera;
       let world = Scheduler.run_update_systems a.scheduler a.world in

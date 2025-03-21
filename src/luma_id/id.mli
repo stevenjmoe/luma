@@ -20,6 +20,9 @@ module Component : S
 module Resource : S
 (** A module for genrating and managing unique identifiers for resources within the game. *)
 
+module Asset : S
+(** TODO: *)
+
 module EntitySet : Set.S with type elt = Entity.t
 module ComponentSet : Set.S with type elt = Component.t
 module ResourceSet : Set.S with type elt = Resource.t

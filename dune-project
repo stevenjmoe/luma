@@ -14,10 +14,13 @@
  (synopsis "Does this need to exist?")
  (description "Does this need to exist?")
  (depends 
-   ocaml 
-   dune
    (alcotest :with-test) 
-   raylib
-   containers)
+   containers
+   dune
+   lwt
+   ocaml 
+   ppxlib
+   ppx_inline_test
+   raylib)
  (tags
   ("game engine" "ecs")))
