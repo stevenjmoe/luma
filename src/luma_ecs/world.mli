@@ -1,4 +1,3 @@
-module Id = Luma__id.Id
 module Resource = Luma__resource.Resource
 
 type t
@@ -6,15 +5,16 @@ type t
 val create : unit -> t
 (** Creates an empty [World.t]. *)
 
-val add_entity : t -> Id.Entity.t
+val add_entity : t -> Luma__id.Id.Entity.t
 (** [add_entity world] returns the next entity id from [Id.Entity]. *)
 
-val add_component : t -> Component.packed -> Id.Entity.t -> unit
+val add_component : t -> Component.packed -> Luma__id.Id.Entity.t -> unit
 (** [add_component world packed_component entity] adds a component to the world and ensures that the
     world's Archetypes are kept up to date. *)
 
 val with_component :
-  'a. t -> (module Component.S with type t = 'a) -> 'a -> Id.Entity.t -> Id.Entity.t
+  'a.
+  t -> (module Component.S with type t = 'a) -> 'a -> Luma__id.Id.Entity.t -> Luma__id.Id.Entity.t
 (** [with_component world component_module component entity] provides a convenient way to add
     components to an entity without manually packing them. It automatically packs the component and
     calls [add_component] internally.
@@ -39,18 +39,18 @@ val with_component :
 val archetypes : t -> (int, Archetype.t) Hashtbl.t
 (** Returns world's archetypes. *)
 
-val resources : t -> (Id.Resource.t, Resource.packed) Hashtbl.t
+val resources : t -> (Luma__id.Id.Resource.t, Resource.packed) Hashtbl.t
 (** Returns the world's resources. *)
 
 (* TODO: This should probably accept the module and the unpacked resource and handle the complexity internally *)
-val add_resource : Id.Resource.t -> Resource.packed -> t -> t
+val add_resource : Luma__id.Id.Resource.t -> Resource.packed -> t -> t
 (** [add_resource id packed world] adds a packed resource to the table of resources using the id as
     key. *)
 
-val get_resource : t -> Id.Resource.t -> Resource.packed option
+val get_resource : t -> Luma__id.Id.Resource.t -> Resource.packed option
 (** Returns [Some packed] if found, otherwise [None] *)
 
-val query : 'a. t -> ?filter:Query.Filter.t -> 'a Query.t -> (Id.Entity.t * 'a) list
+val query : 'a. t -> ?filter:Query.Filter.t -> 'a Query.t -> (Luma__id.Id.Entity.t * 'a) list
 (** [query world filter query] evaluates the optional filter and required query on the world's
     archetypes and returns a [(Id.Entity.t * 'a) list] where ['a] is a tuple of components returned
     by the query. *)
