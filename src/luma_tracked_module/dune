@@ -1,0 +1,4 @@
+(library
+  (public_name luma.tracked_module)
+  (libraries luma.id)
+  (name luma__tracked_module))

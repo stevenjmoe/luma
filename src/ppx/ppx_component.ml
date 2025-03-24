@@ -11,7 +11,7 @@ let component_rule () =
     let module_c =
       [%stri
         module C = Component.Make (struct
-          type inner = t
+          type inner = [%t type_expr]
         end)]
     in
     {

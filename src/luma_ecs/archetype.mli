@@ -1,15 +1,13 @@
-module Id = Luma__id.Id
-
 type t
-type operation = Add of Id.Component.t | Remove of Id.Component.t
+type operation = Add of Luma__id.Id.Component.t | Remove of Luma__id.Id.Component.t
 
-val components : t -> Id.ComponentSet.t
-val entities : t -> Id.EntitySet.t
-val create : Id.ComponentSet.t -> t
+val components : t -> Luma__id.Id.ComponentSet.t
+val entities : t -> Luma__id.Id.EntitySet.t
+val create : Luma__id.Id.ComponentSet.t -> t
 val hash : t -> int
 val empty : unit -> t
-val add : t -> Id.Entity.t -> Component.packed list -> unit
+val add : t -> Luma__id.Id.Entity.t -> Component.packed list -> unit
 val next_hash : t -> operation -> int
-val replace : t -> Id.Entity.t -> Component.packed -> unit
-val query_table : t -> Id.Entity.t -> Id.Component.t -> Component.packed option
-val remove_entity : t -> Id.Entity.t -> unit
+val replace : t -> Luma__id.Id.Entity.t -> Component.packed -> unit
+val query_table : t -> Luma__id.Id.Entity.t -> Luma__id.Id.Component.t -> Component.packed option
+val remove_entity : t -> Luma__id.Id.Entity.t -> unit

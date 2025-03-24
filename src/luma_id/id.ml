@@ -1,5 +1,7 @@
+type id = int
+
 module type S = sig
-  type t = int
+  type t = id
 
   val next : unit -> t
   val compare : t -> t -> int
@@ -29,3 +31,6 @@ module Resource = Make ()
 module ResourceSet = Set.Make (Resource)
 module Asset = Make ()
 module AssetSet = Set.Make (Asset)
+module Asset_type = Make ()
+module Handle = Make ()
+module HandleSet = Set.Make (Handle)

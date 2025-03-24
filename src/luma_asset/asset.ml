@@ -1,4 +1,3 @@
-module Resource = Luma__resource.Resource
 module Id = Luma__id.Id
 
 type base = ..
