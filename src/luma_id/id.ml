@@ -1,7 +1,8 @@
 type id = int
 
 module type S = sig
-  type t = id
+  (* TODO: make abstract *)
+  type t = int
 
   val next : unit -> t
   val compare : t -> t -> int

@@ -1,4 +1,5 @@
 type base = ..
+type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
 
 module type S = sig
   type t
@@ -15,10 +16,12 @@ module Make
       type inner
     end) : S with type t = B.inner
 
-module Packed : sig
+module type Packed = sig
   type packed = Packed : (module S with type t = 'a) * 'a -> packed
 
-  val pack : 'a. (module S with type t = 'a) -> 'a -> packed
-  val unpack : 'a. (module S with type t = 'a) -> packed -> 'a option
+  val pack : (module S with type t = 'a) -> 'a -> packed
+  val unpack : (module S with type t = 'a) -> packed -> ('a, error) result
   val id : packed -> int
 end
+
+module Packed : Packed

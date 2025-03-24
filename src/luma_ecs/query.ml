@@ -46,14 +46,16 @@ let evaluate : type a. ?filter:Filter.t -> a t -> Archetype.t list -> (Id.Entity
         | Some c -> (
             let unpacked = Component.unpack (module C) c in
             match unpacked with
-            | Some u -> (u, fetch rest arch entity)
-            | None -> failwith "TODO: unpacked not found.")
+            | Ok u -> (u, fetch rest arch entity)
+            | Error e -> failwith "TODO: unpacked not found.")
         | None -> failwith "TODO: arch not found")
     | Query (Optional (module C), rest) -> (
         match Archetype.query_table arch entity C.id with
-        | Some c ->
+        | Some c -> (
             let unpacked = Component.unpack (module C) c in
-            (unpacked, fetch rest arch entity)
+            match unpacked with
+            | Ok u -> (Some u, fetch rest arch entity)
+            | Error _ -> (None, fetch rest arch entity))
         | None -> (None, fetch rest arch entity))
   in
   archetypes

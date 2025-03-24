@@ -1,5 +1,12 @@
 type base = ..
 
+(* TODO: better *)
+type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
+
+let error_to_string = function
+  | `Not_found id -> Printf.sprintf "Tracked module with ID %d not found" id
+  | `Type_mismatch id -> Printf.sprintf "Tracked module with ID %d does not match" id
+
 module type S = sig
   type t
 
@@ -25,18 +32,28 @@ module Make
   let to_base t = T t
 end
 
-module Packed = struct
+module type Packed = sig
+  type packed = Packed : (module S with type t = 'a) * 'a -> packed
+
+  val pack : (module S with type t = 'a) -> 'a -> packed
+  val unpack : (module S with type t = 'a) -> packed -> ('a, error) result
+  val id : packed -> int
+end
+
+module Packed : Packed = struct
   type packed = Packed : (module S with type t = 'a) * 'a -> packed
 
   let pack : type a. (module S with type t = a) -> a -> packed =
    fun component value -> Packed (component, value)
 
-  let unpack : type a. (module S with type t = a) -> packed -> a option =
+  let unpack : type a. (module S with type t = a) -> packed -> (a, error) result =
    fun (module M) (Packed ((module M'), value)) ->
     if M.id = M'.id then
-      M.of_base_opt (M'.to_base value)
+      match M.of_base_opt (M'.to_base value) with
+      | Some v -> Ok v
+      | None -> Error (`Type_mismatch M.id)
     else
-      None
+      Error (`Type_mismatch M.id)
 
-  let id : packed -> Luma__id.Id.Resource.t = function Packed ((module R), _) -> R.id
+  let id : packed -> Luma__id.Id.id = function Packed ((module R), _) -> R.id
 end

@@ -2,7 +2,7 @@ module Id = Luma__id.Id
 
 type error = [ `Not_found of Id.Resource.t | `Type_mismatch of Id.Resource.t ]
 
-val error_to_string : [< `Not_found of int | `Type_mismatch of int ] -> string
+val error_to_string : [< `Not_found of Id.Resource.t | `Type_mismatch of Id.Resource.t ] -> string
 
 (** Apart from the query, this module is almost exactly like [Component]. *)
 
@@ -27,7 +27,7 @@ type packed = Packed : (module S with type t = 'a) * 'a -> packed
 
 val pack : 'a. (module S with type t = 'a) -> 'a -> packed
 val unpack : 'a. (module S with type t = 'a) -> packed -> ('a, error) result
-val id : packed -> int
+val id : packed -> Id.Resource.t
 
 (** Module to retrieve resources.
 
@@ -60,7 +60,7 @@ module Query : sig
         Resource.Resource_query.(Resource (module App.Time.R) & End)
       ]} *)
 
-  val evaluate : 'a t -> (int, packed) Hashtbl.t -> ('a, error) result
+  val evaluate : 'a t -> (Id.Resource.t, packed) Hashtbl.t -> ('a, error) result
   (** [evaluate query tbl] accepts a [Resource_query.t] and an [(int, packed) Hashtbl.t], evaluates
       the query on the table, and returns a tuple of the Resources that satisfy the query. *)
 end
