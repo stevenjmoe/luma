@@ -18,9 +18,12 @@
    containers
    dune
    lwt
+   lwt_ppx
    ocaml 
    ppxlib
    ppx_inline_test
    raylib)
  (tags
   ("game engine" "ecs")))
+
+(map_workspace_root false)

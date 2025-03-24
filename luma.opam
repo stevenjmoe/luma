@@ -12,6 +12,7 @@ depends: [
   "containers"
   "dune" {>= "3.17"}
   "lwt"
+  "lwt_ppx"
   "ocaml"
   "ppxlib"
   "ppx_inline_test"
