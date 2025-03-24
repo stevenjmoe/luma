@@ -24,7 +24,9 @@ let run_system (world : World.t) (system : (World.t, 'a) System.t) : World.t =
       match Resource.Query.evaluate s.resource_query (World.resources world) with
       | Ok resource_value -> s.run world matching_entities resource_value
       | Error e ->
-          failwith (Printf.sprintf "Failed to run system.\n%s" (Resource.error_to_string e)))
+          failwith
+            (Printf.sprintf "Failed to run system.\n%s"
+               (Luma__tracked_module.Tracked_module.error_to_string e)))
 
 let run_startup_systems (sched : t) (world : World.t) : World.t =
   let world' =

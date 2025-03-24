@@ -1,38 +1,13 @@
-module Id = Luma__id.Id
+module type S = Luma__tracked_module.Tracked_module.S
 
-type error = [ `Not_found of Id.Resource.t | `Type_mismatch of Id.Resource.t ]
-
-val error_to_string : [< `Not_found of Id.Resource.t | `Type_mismatch of Id.Resource.t ] -> string
-
-(** Apart from the query, this module is almost exactly like [Component]. *)
-
-(* TODO: move repeated code from here and component.ml into single module *)
-
-type base
-
-module type S = sig
-  type t
-
-  val id : Id.Resource.t
-  val of_base : base -> t
-  val of_base_opt : base -> t option
-  val to_base : t -> base
-end
+type error = Luma__tracked_module.Tracked_module.error
 
 module Make (B : sig
   type inner
 end) : S with type t = B.inner
 
-type packed = Packed : (module S with type t = 'a) * 'a -> packed
+include Luma__tracked_module.Tracked_module.Packed
 
-val pack : 'a. (module S with type t = 'a) -> 'a -> packed
-val unpack : 'a. (module S with type t = 'a) -> packed -> ('a, error) result
-val id : packed -> Id.Resource.t
-
-(** Module to retrieve resources.
-
-    Unlike the [Luma__ecs.Query] module, this module does not need to return an entity along with
-    the resource, as resources are global. *)
 module Query : sig
   (** The type ['a term] represents a resource where ['a] is the type of the resource.
 
@@ -60,7 +35,7 @@ module Query : sig
         Resource.Resource_query.(Resource (module App.Time.R) & End)
       ]} *)
 
-  val evaluate : 'a t -> (Id.Resource.t, packed) Hashtbl.t -> ('a, error) result
+  val evaluate : 'a t -> (Luma__id.Id.Resource.t, packed) Hashtbl.t -> ('a, error) result
   (** [evaluate query tbl] accepts a [Resource_query.t] and an [(int, packed) Hashtbl.t], evaluates
       the query on the table, and returns a tuple of the Resources that satisfy the query. *)
 end

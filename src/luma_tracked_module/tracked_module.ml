@@ -1,6 +1,6 @@
 type base = ..
 
-(* TODO: better *)
+(* TODO: do this better *)
 type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
 
 let error_to_string = function

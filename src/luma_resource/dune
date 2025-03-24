@@ -1,4 +1,4 @@
 (library
   (public_name luma.resource)
-  (libraries luma.id raylib)
+  (libraries luma.id luma.tracked_module raylib)
   (name luma__resource))

@@ -1,6 +1,8 @@
 type base = ..
 type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
 
+val error_to_string : [< `Not_found of int | `Type_mismatch of int ] -> string
+
 module type S = sig
   type t
 
