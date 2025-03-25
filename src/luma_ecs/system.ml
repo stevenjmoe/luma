@@ -2,14 +2,14 @@
 
 type ('w, 'a) without_resources = {
   filter : Query.Filter.t;
-  query : 'a Query.t;
+  components_query : 'a Query.t;
   run : 'w -> (Luma__id.Id.Entity.t * 'a) list -> 'w;
 }
 
 type ('w, 'a, 'b) with_resources = {
   filter : Query.Filter.t;
-  query : 'a Query.t;
-  resource_query : 'b Luma__resource.Resource.Query.t;
+  components_query : 'a Query.t;
+  resources_query : 'b Luma__resource.Resource.Query.t;
   run : 'w -> (Luma__id.Id.Entity.t * 'a) list -> 'b -> 'w;
 }
 
@@ -19,13 +19,13 @@ type ('w, 'a) t =
 
 let make
     ?(filter = Query.Filter.Any)
-    (query : 'a Query.t)
+    ~(components : 'a Query.t)
     (run_fn : 'w -> (Luma__id.Id.Entity.t * 'a) list -> 'w) : ('w, 'a) without_resources =
-  { filter; query; run = run_fn }
+  { filter; components_query = components; run = run_fn }
 
 let make_with_resources
     ?(filter = Query.Filter.Any)
-    (query : 'a Query.t)
-    (resource_query : 'b Luma__resource.Resource.Query.t)
+    ~(components : 'a Query.t)
+    ~(resources : 'b Luma__resource.Resource.Query.t)
     (run_fn : 'w -> (Luma__id.Id.Entity.t * 'a) list -> 'b -> 'w) : ('w, 'a, 'b) with_resources =
-  { filter; query; resource_query; run = run_fn }
+  { filter; components_query = components; resources_query = resources; run = run_fn }

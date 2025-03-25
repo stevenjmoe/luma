@@ -7,8 +7,8 @@ module Asset = Luma.Asset
 let input_system () =
   Luma.System.make_with_resources
     ?filter:(Some Luma.Query.Filter.(With Player_tag.C.id))
-    Luma.Query.(Required (module Velocity.C) & End)
-    Luma.Reource.Query.(Resource (module Luma.Time.R) & End)
+    ~components:Luma.Query.(Required (module Velocity.C) & End)
+    ~resources:Luma.Reource.Query.(Resource (module Luma.Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
       entities
@@ -38,12 +38,13 @@ let input_system () =
 
 let movement_system () =
   Luma.System.make_with_resources
-    Luma.Query.(
-      Required (module Rectangle.C)
-      & Required (module Velocity.C)
-      & Required (module Luma.Camera.C)
-      & End)
-    Luma.Reource.Query.(Resource (module Luma.Time.R) & End)
+    ~components:
+      Luma.Query.(
+        Required (module Rectangle.C)
+        & Required (module Velocity.C)
+        & Required (module Luma.Camera.C)
+        & End)
+    ~resources:Luma.Reource.Query.(Resource (module Luma.Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
       entities
@@ -88,7 +89,6 @@ let setup_rectangle () =
       in
       let target = Raylib.Vector2.create (Raylib.Rectangle.x rect) (Raylib.Rectangle.y rect) in
       let camera = Raylib.Camera2D.create offset target 0. 1. in
-      let _ = Asset.Assets.get in
 
       world
       |> add_entity
