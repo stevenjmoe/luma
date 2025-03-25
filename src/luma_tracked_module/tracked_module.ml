@@ -4,8 +4,12 @@ type base = ..
 type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
 
 let error_to_string = function
-  | `Not_found id -> Printf.sprintf "Tracked module with ID %d not found" id
-  | `Type_mismatch id -> Printf.sprintf "Tracked module with ID %d does not match" id
+  | `Not_found id -> Printf.sprintf "Error: No tracked module found with ID %d." id
+  | `Type_mismatch id ->
+      Printf.sprintf
+        "Error: Type mismatch for module with ID %d. The provided value is incompatible with the \
+         expected type."
+        id
 
 module type S = sig
   type t

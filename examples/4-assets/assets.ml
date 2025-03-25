@@ -60,7 +60,7 @@ let movement_system () =
 
 let render_system () =
   Luma.System.make
-    Luma.Query.(Required (module Rectangle.C) & End)
+    ~components:Luma.Query.(Required (module Rectangle.C) & End)
     (fun world entities ->
       let open Raylib in
       entities
@@ -76,7 +76,7 @@ let render_system () =
 
 let setup_rectangle () =
   Luma.System.make
-    Luma.Query.(End)
+    ~components:Luma.Query.(End)
     (fun world entities ->
       let open Luma.World in
       let player_tag = 1 in
@@ -101,7 +101,7 @@ let setup_rectangle () =
 
 let setup_other_rectangle () =
   Luma.System.make
-    Luma.Query.(End)
+    ~components:Luma.Query.(End)
     (fun world entities ->
       let open Luma.World in
       let rect = Raylib.Rectangle.create 100. 50. 20. 50. in

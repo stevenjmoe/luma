@@ -1,4 +1,4 @@
-module C = Luma__tracked_module.Tracked_module.Make (Luma__id.Id.Component)
+module C = Luma__tracked_module.Tracked_module.Make (Luma__id.Id.Resource)
 
 type error = Luma__tracked_module.Tracked_module.error
 
