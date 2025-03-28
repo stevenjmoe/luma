@@ -4,6 +4,7 @@
   (libraries 
     lwt
     lwt.unix
+    luma.image
     luma.resource 
     raylib)
   (preprocess

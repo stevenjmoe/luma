@@ -1,11 +1,9 @@
-module Id = Luma__id.Id
-
 type base = ..
 
 module type S = sig
   type t
 
-  val id : Id.Asset.t
+  val id : Luma__id.Id.Asset.t
   val of_base : base -> t
   val of_base_opt : base -> t option
   val to_base : t -> base
@@ -19,7 +17,7 @@ end) : S with type t = B.asset = struct
   type t = asset
   type base += T of t
 
-  let id = Id.Asset.next ()
+  let id = Luma__id.Id.Asset.next ()
   let of_base = function T t -> t | _ -> failwith ""
   let of_base_opt = function T t -> Some t | _ -> None
   let to_base t = T t
