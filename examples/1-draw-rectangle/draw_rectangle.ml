@@ -4,7 +4,7 @@ module Rectangle = [%component: Raylib.Rectangle.t]
 
 let setup_rectangle () =
   Luma.System.make
-    Luma.Query.(End)
+    ~components:Luma.Query.(End)
     (fun world entities ->
       let open Luma.World in
       let rect = Raylib.Rectangle.create 100. 100. 20. 50. in
