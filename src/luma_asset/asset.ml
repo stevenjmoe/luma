@@ -9,7 +9,7 @@ module type S = sig
   val to_base : t -> base
 end
 
-module Make_asset (B : sig
+module Make (B : sig
   type asset
 end) : S with type t = B.asset = struct
   include B

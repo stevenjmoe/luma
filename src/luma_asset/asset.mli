@@ -11,6 +11,6 @@ end
 
 type asset = Asset : (module S with type t = 'a) * 'a -> asset
 
-module Make_asset (B : sig
+module Make (B : sig
   type asset
 end) : S with type t = B.asset
