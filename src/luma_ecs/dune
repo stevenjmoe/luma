@@ -9,7 +9,6 @@
     luma.texture 
     luma.resource
     luma.id
-    luma.tracked_module
     lwt
     ppx_component)
   (modules 
