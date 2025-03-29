@@ -10,11 +10,11 @@ module type S = sig
 end
 
 module Make (B : sig
-  type asset
-end) : S with type t = B.asset = struct
+  type inner
+end) : S with type t = B.inner = struct
   include B
 
-  type t = asset
+  type t = inner
   type base += T of t
 
   let id = Luma__id.Id.Asset.next ()
@@ -23,4 +23,20 @@ end) : S with type t = B.asset = struct
   let to_base t = T t
 end
 
-type asset = Asset : (module S with type t = 'a) * 'a -> asset
+(* TODO: stop copy/pasting this stuff man *)
+type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
+type packed = Packed : (module S with type t = 'a) * 'a -> packed
+
+let pack : type a. (module S with type t = a) -> a -> packed =
+ fun component value -> Packed (component, value)
+
+let unpack : type a. (module S with type t = a) -> packed -> (a, error) result =
+ fun (module M) (Packed ((module M'), value)) ->
+  if M.id = M'.id then
+    match M.of_base_opt (M'.to_base value) with
+    | Some v -> Ok v
+    | None -> Error (`Type_mismatch M.id)
+  else
+    Error (`Type_mismatch M.id)
+
+let id : packed -> Luma__id.Id.id = function Packed ((module R), _) -> R.id

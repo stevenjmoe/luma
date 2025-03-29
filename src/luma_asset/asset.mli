@@ -9,8 +9,13 @@ module type S = sig
   val to_base : t -> base
 end
 
-type asset = Asset : (module S with type t = 'a) * 'a -> asset
-
 module Make (B : sig
-  type asset
-end) : S with type t = B.asset
+  type inner
+end) : S with type t = B.inner
+
+type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
+type packed = Packed : (module S with type t = 'a) * 'a -> packed
+
+val pack : 'a. (module S with type t = 'a) -> 'a -> packed
+val unpack : 'a. (module S with type t = 'a) -> packed -> ('a, error) result
+val id : packed -> int

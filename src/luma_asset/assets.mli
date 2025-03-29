@@ -1,16 +1,26 @@
-type load_state = Loading | Loaded of Asset.asset | Failed of string
-type t
+type t = (Luma__id.Id.Asset.t, Asset.packed list) Hashtbl.t
 
-val create : unit -> t
+val create : unit -> ('a, 'b) Hashtbl.t
 
-val insert : t -> string -> load_state -> unit
-(**[insert t id asset] Inserts the asset identified by the given Id. If it already exists, it will
-   be replaced. *)
+val add :
+  (Luma__id.Id.Asset.t, Asset.packed list) Hashtbl.t ->
+  (module Asset.S with type t = 'a) ->
+  'a ->
+  unit
 
-val get : t -> string -> load_state option
-(**  *)
+val get_all :
+  (Luma__id.Id.Asset.t, Asset.packed list) Hashtbl.t -> (module Asset.S with type t = 'a) -> 'a list
 
-val contains : t -> string -> bool
-(** Checks if an asset with the given [id] exists. *)
+module Texture_atlas : sig
+  type t
+
+  module R : Asset.S with type t = t
+end
+
+module Texture : sig
+  type t
+
+  module R : Asset.S with type t = t
+end
 
 module R : Luma__resource.Resource.S with type t = t

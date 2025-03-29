@@ -1,3 +1,4 @@
+(* TODO: better error reporting. *)
 type base = ..
 type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
 

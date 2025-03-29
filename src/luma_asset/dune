@@ -6,6 +6,7 @@
     lwt.unix
     luma.image
     luma.resource 
+    luma.texture
     raylib)
   (preprocess
     (pps lwt_ppx)))

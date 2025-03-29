@@ -1,11 +1,36 @@
-(*TODO: Support more efficient storage options. *)
-(* TODO: this shouldn't have a string key. Fix. *)
-type t = { hash_tbl : (string, string) Hashtbl.t }
+type t = (Luma__id.Id.Asset.t, Asset.packed list) Hashtbl.t
 
-let create () = { hash_tbl = Hashtbl.create 16 }
-let insert t id asset = Hashtbl.replace t.hash_tbl id asset
-let get t id = Hashtbl.find_opt t.hash_tbl id
-let contains t id = match Hashtbl.find_opt t.hash_tbl id with Some _ -> true | None -> false
+let create () = Hashtbl.create 16
+
+let add (type a) t (module A : Asset.S with type t = a) (value : A.t) =
+  let current = Hashtbl.find_opt t A.id |> Option.value ~default:[] in
+  Hashtbl.replace t A.id (Asset.pack (module A) value :: current)
+
+let get_all (type a) t (module A : Asset.S with type t = a) =
+  match Hashtbl.find_opt t A.id with
+  | None -> []
+  | Some packed_list ->
+      List.fold_left
+        (fun acc packed ->
+          match Asset.unpack (module A) packed with Ok a -> a :: acc | Error _ -> acc)
+        [] packed_list
+
+(* Provided assets *)
+module Texture_atlas = struct
+  type t = Luma__image.Image.Texture_atlas.t
+
+  module R = Asset.Make (struct
+    type inner = t
+  end)
+end
+
+module Texture = struct
+  type t = Luma__texture.Texture.t
+
+  module R = Asset.Make (struct
+    type inner = t
+  end)
+end
 
 module R = Luma__resource.Resource.Make (struct
   type inner = t
