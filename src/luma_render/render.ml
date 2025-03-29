@@ -1,7 +1,5 @@
 module type Renderer = sig
-  type texture = Luma__texture.Texture.t
-
-  val load_texture : string -> texture
+  type texture = Raylib.Texture.t
 
   val draw_texture :
     texture ->
@@ -17,11 +15,8 @@ end
 
 module RaylibRenderer : Renderer = struct
   open Luma__math
-  open Luma__texture
 
-  type texture = Texture.t
-
-  let load_texture path = Luma__texture.Texture.load path
+  type texture = Raylib.Texture.t
 
   let draw_texture
       texture

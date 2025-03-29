@@ -1,4 +1,4 @@
 (library
   (public_name luma.render)
-  (libraries luma.image luma.math luma.texture raylib)
+  (libraries luma.asset luma.image luma.math)
   (name luma__render))

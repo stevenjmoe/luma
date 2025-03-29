@@ -1,5 +1,5 @@
 type t = {
-  mutable image : Luma__texture.Texture.t;
+  mutable image : Raylib.Texture.t;
   mutable texture_atlas : Luma__image.Image.Texture_atlas.t option;
   flip_x : bool;
   flip_y : bool;
@@ -12,31 +12,13 @@ let set_image t image = t.image <- image
 let set_texture_atlas t atlas = t.texture_atlas <- Some atlas
 
 let sized image custom_size =
-  {
-    image;
-    texture_atlas = None;
-    flip_x = false;
-    flip_y = false;
-    custom_size = Some custom_size;
-  }
+  { image; texture_atlas = None; flip_x = false; flip_y = false; custom_size = Some custom_size }
 
 let from_image image =
-  {
-    image;
-    texture_atlas = None;
-    flip_x = false;
-    flip_y = false;
-    custom_size = None;
-  }
+  { image; texture_atlas = None; flip_x = false; flip_y = false; custom_size = None }
 
 let from_atlas_image image texture_atlas =
-  {
-    image;
-    texture_atlas = Some texture_atlas;
-    flip_x = false;
-    flip_y = false;
-    custom_size = None;
-  }
+  { image; texture_atlas = Some texture_atlas; flip_x = false; flip_y = false; custom_size = None }
 
 let frame_size sprite =
   match sprite.texture_atlas with

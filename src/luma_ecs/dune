@@ -6,7 +6,6 @@
     luma.asset
     luma.storage 
     luma.image 
-    luma.texture 
     luma.resource
     luma.id
     lwt

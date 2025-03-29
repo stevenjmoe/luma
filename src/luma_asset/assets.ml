@@ -31,13 +31,13 @@ let exists t (module A : Asset.S) = Hashtbl.mem t A.id
 end*)
 
 module Texture = struct
-  type t = Luma__texture.Texture.t
+  type t = Raylib.Texture.t
 
   module R = Asset.Make (struct
     type inner = t
 
     let file_extensions = [ ".png"; ".jpg" ]
-    let decode path = Luma__texture.Texture.load path
+    let decode path = Raylib.load_texture path
   end)
 end
 

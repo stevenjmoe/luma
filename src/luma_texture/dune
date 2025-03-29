@@ -1,4 +1,0 @@
-(library
-  (public_name luma.texture)
-  (libraries raylib)
-  (name luma__texture))

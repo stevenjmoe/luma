@@ -20,7 +20,7 @@ val exists : (int, 'a) Hashtbl.t -> (module Asset.S) -> bool
 end*)
 
 module Texture : sig
-  type t
+  type t = Raylib.Texture.t
 
   module R : Asset.S with type t = t
 end
