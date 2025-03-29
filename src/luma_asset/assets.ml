@@ -15,20 +15,29 @@ let get_all (type a) t (module A : Asset.S with type t = a) =
           match Asset.unpack (module A) packed with Ok a -> a :: acc | Error _ -> acc)
         [] packed_list
 
+let exists t (module A : Asset.S) = Hashtbl.mem t A.id
+
 (* Provided assets *)
-module Texture_atlas = struct
+(* TODO:*)
+(*module Texture_atlas = struct
   type t = Luma__image.Image.Texture_atlas.t
 
   module R = Asset.Make (struct
     type inner = t
+
+    let file_extensions = [ ".png"; ".jpg" ]
+    let decode path = Raylib.load_image
   end)
-end
+end*)
 
 module Texture = struct
   type t = Luma__texture.Texture.t
 
   module R = Asset.Make (struct
     type inner = t
+
+    let file_extensions = [ ".png"; ".jpg" ]
+    let decode path = Luma__texture.Texture.load path
   end)
 end
 

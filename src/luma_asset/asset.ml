@@ -7,10 +7,15 @@ module type S = sig
   val of_base : base -> t
   val of_base_opt : base -> t option
   val to_base : t -> base
+  val file_extensions : string list
+  val decode : string -> t
 end
 
 module Make (B : sig
   type inner
+
+  val file_extensions : string list
+  val decode : string -> inner
 end) : S with type t = B.inner = struct
   include B
 
@@ -21,6 +26,8 @@ end) : S with type t = B.inner = struct
   let of_base = function T t -> t | _ -> failwith ""
   let of_base_opt = function T t -> Some t | _ -> None
   let to_base t = T t
+  let file_extensions = B.file_extensions
+  let decode = B.decode
 end
 
 (* TODO: stop copy/pasting this stuff man *)

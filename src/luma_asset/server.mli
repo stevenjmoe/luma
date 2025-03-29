@@ -1,5 +1,3 @@
-type t
+val load : 'b -> (module Asset.S with type t = 'a) -> string -> 'a
 
-val create : unit -> t
-
-module R : Luma__resource.Resource.S with type t = t
+module R : Luma__resource.Resource.S with type t = int

@@ -11,11 +11,13 @@ val add :
 val get_all :
   (Luma__id.Id.Asset.t, Asset.packed list) Hashtbl.t -> (module Asset.S with type t = 'a) -> 'a list
 
-module Texture_atlas : sig
+val exists : (int, 'a) Hashtbl.t -> (module Asset.S) -> bool
+
+(*module Texture_atlas : sig
   type t
 
   module R : Asset.S with type t = t
-end
+end*)
 
 module Texture : sig
   type t
