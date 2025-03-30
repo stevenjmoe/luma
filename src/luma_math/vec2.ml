@@ -1,7 +1,7 @@
 type t = { mutable x : float; mutable y : float }
 
 let create x y = { x; y }
-let zero = { x = 0.; y = 0. }
+let zero () = { x = 0.; y = 0. }
 let splat v = { x = v; y = v }
 let x t = t.x
 let y t = t.y

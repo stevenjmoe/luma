@@ -16,21 +16,19 @@ end
 let test_image_min () =
   let open Luma__ecs.Query in
   let image = I.Texture_atlas_layout.empty () in
+  let e = epsilon_float in
 
-  check int "entity" 0 (I.Texture_atlas_layout.size image).x;
-  check int "entity" 0 (I.Texture_atlas_layout.size image).y
+  check (float e) "entity" 0. (I.Texture_atlas_layout.size image).x;
+  check (float e) "entity" 0. (I.Texture_atlas_layout.size image).y
 
 let test_texture_atlas_layout () =
   let open Luma__ecs.Query in
-  let tile_size = Math.UVec2.create 48 48 in
+  let tile_size = Math.Vec2.create 48. 48. in
   let layout = I.Texture_atlas_layout.from_grid tile_size 8 3 in
 
-  check bool "Check the layout has textures" false
-    (I.Texture_atlas_layout.is_empty layout);
+  check bool "Check the layout has textures" false (I.Texture_atlas_layout.is_empty layout);
   check int "Check that the correct number of textures are present." 24
     (I.Texture_atlas_layout.length layout);
   ()
 
-let tests =
-  ( "image",
-    [ "min" -: test_image_min; "from grid" -: test_texture_atlas_layout ] )
+let tests = ("image", [ "min" -: test_image_min; "from grid" -: test_texture_atlas_layout ])

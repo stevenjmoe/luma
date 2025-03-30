@@ -39,9 +39,8 @@ module RaylibRenderer : Renderer = struct
           match Luma__image.Image.Texture_atlas.get_frame atlas frame_index with
           | None -> create_rect texture
           | Some frame ->
-              Raylib.Rectangle.create (Float.of_int frame.min.x) (Float.of_int frame.min.y)
-                (Float.of_int (frame.max.x - frame.min.x))
-                (Float.of_int (frame.max.y - frame.min.y)))
+              Raylib.Rectangle.create frame.min.x frame.min.y (frame.max.x -. frame.min.x)
+                (frame.max.y -. frame.min.y))
     in
     let x = Raylib.Rectangle.x src_rect in
     let y = Raylib.Rectangle.y src_rect in
