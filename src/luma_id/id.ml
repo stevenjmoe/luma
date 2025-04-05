@@ -1,7 +1,5 @@
-type id = int
-
 module type S = sig
-  type t = int
+  type t
 
   val next : unit -> t
   val compare : t -> t -> int

@@ -1,7 +1,5 @@
-type id = int
-
 module type S = sig
-  type t = id
+  type t
   (** The unique identifier for the module. IDs are just simple integers which are generated
       sequentially. *)
 
