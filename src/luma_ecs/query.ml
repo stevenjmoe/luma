@@ -1,9 +1,7 @@
-module Id = Luma__id.Id
-
 module Filter = struct
   type t =
-    | With of Id.Component.t
-    | Without of Id.Component.t
+    | With of Luma__id.Id.Component.t
+    | Without of Luma__id.Id.Component.t
     | Not of t
     | And of t * t
     | Or of t * t
@@ -13,8 +11,8 @@ module Filter = struct
 
   let rec matches f components =
     match f with
-    | With c -> Id.ComponentSet.mem c components
-    | Without c -> not (Id.ComponentSet.mem c components)
+    | With c -> Luma__id.Id.ComponentSet.mem c components
+    | Without c -> not (Luma__id.Id.ComponentSet.mem c components)
     | Not f -> not (matches f components)
     | And (f1, f2) -> matches f2 components && matches f2 components
     | Or (f1, f2) -> matches f1 components || matches f2 components
@@ -30,14 +28,15 @@ type _ t = Query : ('a term * 'b t) -> ('a * 'b) t | End : unit t
 let ( & ) query rest = Query (query, rest)
 
 let rec required_ids : type a. a t -> _ = function
-  | Query (Required (module C), rest) -> Id.ComponentSet.add C.id (required_ids rest)
+  | Query (Required (module C), rest) -> Luma__id.Id.ComponentSet.add C.id (required_ids rest)
   | Query (Optional (module C), rest) -> required_ids rest
-  | End -> Id.ComponentSet.empty
+  | End -> Luma__id.Id.ComponentSet.empty
 
-let evaluate : type a. ?filter:Filter.t -> a t -> Archetype.t list -> (Id.Entity.t * a) list =
+let evaluate : type a.
+    ?filter:Filter.t -> a t -> Archetype.t list -> (Luma__id.Id.Entity.t * a) list =
  fun ?(filter = Filter.Any) query archetypes ->
   let matches = Filter.matches filter in
-  let rec fetch : type a. a t -> Archetype.t -> Id.Entity.t -> a =
+  let rec fetch : type a. a t -> Archetype.t -> Luma__id.Id.Entity.t -> a =
    fun query arch entity ->
     match query with
     | End -> ()
@@ -62,6 +61,8 @@ let evaluate : type a. ?filter:Filter.t -> a t -> Archetype.t list -> (Id.Entity
   |> List.filter (fun a ->
          let components = Archetype.components a in
          let required_ids = required_ids query in
-         matches components && Id.ComponentSet.subset required_ids components)
+         matches components && Luma__id.Id.ComponentSet.subset required_ids components)
   |> List.concat_map (fun a ->
-         Archetype.entities a |> Id.EntitySet.to_list |> List.map (fun e -> (e, fetch query a e)))
+         Archetype.entities a
+         |> Luma__id.Id.EntitySet.to_list
+         |> List.map (fun e -> (e, fetch query a e)))

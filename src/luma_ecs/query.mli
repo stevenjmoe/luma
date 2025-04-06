@@ -1,5 +1,3 @@
-module Id = Luma__id.Id
-
 (** Queries can be used to retrieve entities based on the components defined in [Query.t], or
     [Filter].
 
@@ -19,8 +17,8 @@ module Filter : sig
       include the module in the Query instead. *)
 
   type t =
-    | With of Id.Component.t
-    | Without of Id.Component.t
+    | With of Luma__id.Id.Component.t
+    | Without of Luma__id.Id.Component.t
     | Not of t
     | And of t * t
     | Or of t * t
@@ -35,7 +33,7 @@ module Filter : sig
         ?filter:(Some Query.Filter.(With Player_tag.C.id & With Velocity.C.id))
       ]}*)
 
-  val matches : t -> Id.ComponentSet.t -> bool
+  val matches : t -> Luma__id.Id.ComponentSet.t -> bool
   (** Recursively evaluates the filter against a set of components. *)
 end
 
@@ -54,6 +52,6 @@ val ( & ) : 'a term -> 'b t -> ('a * 'b) t
       System.make Query.(Required (module Player_state.C) & Required (module Velocity.C) & End)
     ]}*)
 
-val evaluate : 'a. ?filter:Filter.t -> 'a t -> Archetype.t list -> (Id.Entity.t * 'a) list
+val evaluate : 'a. ?filter:Filter.t -> 'a t -> Archetype.t list -> (Luma__id.Id.Entity.t * 'a) list
 (** Evaluates a query over a list of archetypes, returning a list of entities and their matching
     components in a tuple. *)
