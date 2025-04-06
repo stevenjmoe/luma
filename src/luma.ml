@@ -1,13 +1,14 @@
-include Luma__ecs.App
+module App = Luma__ecs.App
 module Archetype = Luma__ecs.Archetype
 module Asset = Luma__asset.Asset
 module Assets = Luma__asset.Assets
 module Asset_server = Luma__asset.Server
 module Asset_loader = Luma__asset.Loader
 module Component = Luma__ecs.Component
+module Components = Luma__ecs.Components
 module Id = Luma__id.Id
 module Query = Luma__ecs.Query
-module Reource = Luma__resource.Resource
+module Resource = Luma__resource.Resource
 module Resources = Luma__ecs.Resources
 module Scheduler = Luma__ecs.Scheduler
 module System = Luma__ecs.System

@@ -1,8 +1,5 @@
 type t
 
-include module type of Resources
-include module type of Components
-
 val create : unit -> t
 (** Initializes the engine with an empty world, scheduler, and plugins *)
 

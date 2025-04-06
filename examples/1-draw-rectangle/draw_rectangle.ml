@@ -1,12 +1,13 @@
-module Component = Luma.Component
+open Luma
+module Component = Component
 module Position = [%component: Raylib.Vector2.t]
 module Rectangle = [%component: Raylib.Rectangle.t]
 
 let setup_rectangle () =
-  Luma.System.make
-    ~components:Luma.Query.(End)
+  System.make
+    ~components:Query.(End)
     (fun world entities ->
-      let open Luma.World in
+      let open World in
       let rect = Raylib.Rectangle.create 100. 100. 20. 50. in
       let position = Raylib.Vector2.create 140. 0. in
       let offset =
@@ -21,12 +22,12 @@ let setup_rectangle () =
       |> add_entity
       |> with_component world (module Rectangle.C) rect
       |> with_component world (module Position.C) position
-      |> with_component world (module Luma.Camera.C) camera
+      |> with_component world (module Components.Camera.C) camera
       |> ignore;
 
       world)
 
 let () =
-  Luma.create ()
-  |> Luma.add_system (Luma.Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
-  |> Luma.run
+  App.create ()
+  |> App.add_system (Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
+  |> App.run

@@ -1,13 +1,14 @@
-module Component = Luma.Component
+open Luma
+module Component = Component
 module Rectangle = [%component: Raylib.Rectangle.t]
 module Velocity = [%component: Raylib.Vector2.t]
 module Player_tag = [%component: int]
 
 let input_system () =
-  Luma.System.make_with_resources
-    ?filter:(Some Luma.Query.Filter.(With Player_tag.C.id))
-    ~components:Luma.Query.(Required (module Velocity.C) & End)
-    ~resources:Luma.Reource.Query.(Resource (module Luma.Time.R) & End)
+  System.make_with_resources
+    ?filter:(Some Query.Filter.(With Player_tag.C.id))
+    ~components:Query.(Required (module Velocity.C) & End)
+    ~resources:Resource.Query.(Resource (module Luma.Resources.Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
       entities
@@ -36,14 +37,14 @@ let input_system () =
       world)
 
 let movement_system () =
-  Luma.System.make_with_resources
+  System.make_with_resources
     ~components:
-      Luma.Query.(
+      Query.(
         Required (module Rectangle.C)
         & Required (module Velocity.C)
-        & Required (module Luma.Camera.C)
+        & Required (module Components.Camera.C)
         & End)
-    ~resources:Luma.Reource.Query.(Resource (module Luma.Time.R) & End)
+    ~resources:Resource.Query.(Resource (module Resources.Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
       entities
@@ -58,8 +59,8 @@ let movement_system () =
       world)
 
 let render_system () =
-  Luma.System.make
-    ~components:Luma.Query.(Required (module Rectangle.C) & End)
+  System.make
+    ~components:Query.(Required (module Rectangle.C) & End)
     (fun world entities ->
       let open Raylib in
       entities
@@ -74,10 +75,10 @@ let render_system () =
       world)
 
 let setup_rectangle () =
-  Luma.System.make
-    ~components:Luma.Query.(End)
+  System.make
+    ~components:Query.(End)
     (fun world entities ->
-      let open Luma.World in
+      let open World in
       let player_tag = 1 in
       let rect = Raylib.Rectangle.create 100. (-10.) 100. 50. in
       let velocity = Raylib.Vector2.zero () in
@@ -94,26 +95,25 @@ let setup_rectangle () =
       |> with_component world (module Player_tag.C) player_tag
       |> with_component world (module Rectangle.C) rect
       |> with_component world (module Velocity.C) velocity
-      |> with_component world (module Luma.Camera.C) camera
+      |> with_component world (module Components.Camera.C) camera
       |> ignore;
       world)
 
 let setup_other_rectangle () =
-  Luma.System.make
-    ~components:Luma.Query.(End)
+  System.make
+    ~components:Query.(End)
     (fun world entities ->
-      let open Luma.World in
+      let open World in
       let rect = Raylib.Rectangle.create 100. 50. 20. 50. in
 
       world |> add_entity |> with_component world (module Rectangle.C) rect |> ignore;
       world)
 
 let () =
-  Luma.create ()
-  |> Luma.add_system (Luma.Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
-  |> Luma.add_system
-       (Luma.Scheduler.Startup (Luma.System.WithoutResources (setup_other_rectangle ())))
-  |> Luma.add_system (Luma.Scheduler.Update (Luma.System.WithResources (input_system ())))
-  |> Luma.add_system (Luma.Scheduler.Update (Luma.System.WithResources (movement_system ())))
-  |> Luma.add_system (Luma.Scheduler.Update (Luma.System.WithoutResources (render_system ())))
-  |> Luma.run
+  App.create ()
+  |> App.add_system (Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
+  |> App.add_system (Scheduler.Startup (System.WithoutResources (setup_other_rectangle ())))
+  |> App.add_system (Scheduler.Update (Luma.System.WithResources (input_system ())))
+  |> App.add_system (Scheduler.Update (Luma.System.WithResources (movement_system ())))
+  |> App.add_system (Scheduler.Update (Luma.System.WithoutResources (render_system ())))
+  |> App.run
