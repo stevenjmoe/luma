@@ -20,6 +20,9 @@ module Component : S
 module Resource : S
 (** A module for genrating and managing unique identifiers for resources within the game. *)
 
+module Asset_type : S
+(** TODO: *)
+
 module Asset : S
 (** TODO: *)
 

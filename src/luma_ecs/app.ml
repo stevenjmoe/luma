@@ -13,6 +13,19 @@ let add_system sys a =
 
 let add_plugin p a = { a with plugins = p :: a.plugins }
 
+let register_loaders (server : Asset_server.t) =
+  let image_loader =
+    {
+      Luma__asset.Loader.exts = [ ".png" ];
+      load =
+        (fun path ->
+          let image = Raylib.load_image path in
+          let texture = Raylib.load_texture_from_image image in
+          Ok (Asset.pack (module Luma__asset.Assets.Texture.A) texture));
+    }
+  in
+  Asset_server.register_loader server image_loader
+
 let update_time =
   System.make
     ~components:Query.(End)
@@ -38,10 +51,15 @@ let run a =
   let assets = Assets.create () in
   let packed_assets = Resource.pack (module Assets.R) assets in
 
+  let asset_server = Asset_server.create assets in
+  register_loaders asset_server;
+  let packed_asset_server = Resource.pack (module Asset_server.R) asset_server in
+
   let world =
     a.world
     |> World.add_resource Time.R.id packed_time
     |> World.add_resource Assets.R.id packed_assets
+    |> World.add_resource Asset_server.R.id packed_asset_server
   in
 
   let world =

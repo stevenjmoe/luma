@@ -1,14 +1,15 @@
 (* TODO: better error reporting. *)
 type base = ..
-type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
+type error = [ `Not_found of Luma__id.Id.Resource.t | `Type_mismatch of Luma__id.Id.Resource.t ]
 
 let error_to_string = function
-  | `Not_found id -> Printf.sprintf "Error: No resource found with ID %d." id
+  | `Not_found id ->
+      Printf.sprintf "Error: No resource found with ID %d." (Luma__id.Id.Resource.to_int id)
   | `Type_mismatch id ->
       Printf.sprintf
         "Error: Type mismatch for resource with ID %d. The provided value is incompatible with the \
          expected type."
-        id
+        (Luma__id.Id.Resource.to_int id)
 
 module type S = sig
   type t
@@ -47,7 +48,7 @@ let unpack : type a. (module S with type t = a) -> packed -> (a, error) result =
   else
     Error (`Type_mismatch M.id)
 
-let id : packed -> Luma__id.Id.id = function Packed ((module R), _) -> R.id
+let id : packed -> Luma__id.Id.Resource.t = function Packed ((module R), _) -> R.id
 
 module Query = struct
   type _ term = Resource : (module S with type t = 'a) -> 'a term

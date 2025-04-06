@@ -1,7 +1,8 @@
 type base = ..
-type error = [ `Not_found of Luma__id.Id.id | `Type_mismatch of Luma__id.Id.id ]
+type error = [ `Not_found of Luma__id.Id.Resource.t | `Type_mismatch of Luma__id.Id.Resource.t ]
 
-val error_to_string : [< `Not_found of int | `Type_mismatch of int ] -> string
+val error_to_string :
+  [< `Not_found of Luma__id.Id.Resource.t | `Type_mismatch of Luma__id.Id.Resource.t ] -> string
 
 module type S = sig
   type t
@@ -20,7 +21,7 @@ type packed = Packed : (module S with type t = 'a) * 'a -> packed
 
 val pack : 'a. (module S with type t = 'a) -> 'a -> packed
 val unpack : 'a. (module S with type t = 'a) -> packed -> ('a, error) result
-val id : packed -> int
+val id : packed -> Luma__id.Id.Resource.t
 
 module Query : sig
   (** The type ['a term] represents a resource where ['a] is the type of the resource.

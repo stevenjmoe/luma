@@ -1,28 +1,29 @@
-type t = (Luma__id.Id.Asset.t, Asset.packed list) Hashtbl.t
+type asset_record = { packed : Asset.packed; generation : int }
+type t = (Luma__id.Id.Asset.t, asset_record) Hashtbl.t
+type handle = { id : Luma__id.Id.Asset.t; generation : int }
 
-val create : unit -> ('a, 'b) Hashtbl.t
+val create : unit -> (Luma__id.Id.Asset.t, asset_record) Hashtbl.t
 
 val add :
-  (Luma__id.Id.Asset.t, Asset.packed list) Hashtbl.t ->
-  (module Asset.S with type t = 'a) ->
-  'a ->
+  (Luma__id.Id.Asset.t, asset_record) Hashtbl.t ->
+  id:Luma__id.Id.Asset.t ->
+  packed:Asset.packed ->
+  generation:int ->
   unit
 
-val get_all :
-  (Luma__id.Id.Asset.t, Asset.packed list) Hashtbl.t -> (module Asset.S with type t = 'a) -> 'a list
+val get : (module Asset.S with type t = 'a) -> t -> handle -> 'a option
+val unload : t -> handle -> unit
 
-val exists : (int, 'a) Hashtbl.t -> (module Asset.S) -> bool
-
-(*module Texture_atlas : sig
+module Texture_atlas : sig
   type t
 
   module R : Asset.S with type t = t
-end*)
+end
 
 module Texture : sig
   type t = Raylib.Texture.t
 
-  module R : Asset.S with type t = t
+  module A : Asset.S with type t = t
 end
 
 module R : Luma__resource.Resource.S with type t = t

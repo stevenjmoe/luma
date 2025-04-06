@@ -21,7 +21,10 @@ val add_plugin : (World.t -> unit) -> t -> t
     {[
       let my_plugin world =
         let velocity = { x = 0.; y = 0. } in
-        world |> World.add_entity |> World.with_component (module Velocity.C) velocity |> ignore
+        world
+        |> World.add_entity
+        |> World.with_component world (module Velocity.C) velocity
+        |> ignore
 
       let () = App.create () |> App.add_plugin my_plugin |> App.run
     ]}*)

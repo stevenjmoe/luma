@@ -1,43 +1,48 @@
-type t = (Luma__id.Id.Asset.t, Asset.packed list) Hashtbl.t
+type asset_record = { packed : Asset.packed; generation : int }
+type t = (Luma__id.Id.Asset.t, asset_record) Hashtbl.t
 
 let create () = Hashtbl.create 16
 
-let add (type a) t (module A : Asset.S with type t = a) (value : A.t) =
-  let current = Hashtbl.find_opt t A.id |> Option.value ~default:[] in
-  Hashtbl.replace t A.id (Asset.pack (module A) value :: current)
+type handle = { id : Luma__id.Id.Asset.t; generation : int }
 
-let get_all (type a) t (module A : Asset.S with type t = a) =
-  match Hashtbl.find_opt t A.id with
-  | None -> []
-  | Some packed_list ->
-      List.fold_left
-        (fun acc packed ->
-          match Asset.unpack (module A) packed with Ok a -> a :: acc | Error _ -> acc)
-        [] packed_list
+let add assets ~id ~packed ~generation =
+  let record = { packed; generation } in
+  Hashtbl.replace assets id record
 
-let exists t (module A : Asset.S) = Hashtbl.mem t A.id
+let get (type a) (module A : Asset.S with type t = a) (assets : t) handle =
+  match Hashtbl.find_opt assets handle.id with
+  | None -> None
+  | Some record ->
+      if record.generation = handle.generation then
+        match Asset.unpack (module A) record.packed with
+        | Ok asset -> Some asset
+        | Error _ -> failwith ""
+      else
+        None
+
+let unload (assets : t) handle =
+  match Hashtbl.find_opt assets handle.id with
+  | None -> ()
+  | Some record ->
+      if record.generation = handle.generation then
+        Hashtbl.remove assets handle.id
+      else
+        ()
 
 (* Provided assets *)
-(* TODO:*)
-(*module Texture_atlas = struct
+module Texture_atlas = struct
   type t = Luma__image.Image.Texture_atlas.t
 
   module R = Asset.Make (struct
     type inner = t
-
-    let file_extensions = [ ".png"; ".jpg" ]
-    let decode path = Raylib.load_image
   end)
-end*)
+end
 
 module Texture = struct
   type t = Raylib.Texture.t
 
-  module R = Asset.Make (struct
+  module A = Asset.Make (struct
     type inner = t
-
-    let file_extensions = [ ".png"; ".jpg" ]
-    let decode path = Raylib.load_texture path
   end)
 end
 
