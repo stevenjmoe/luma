@@ -1,22 +1,33 @@
-type asset_record = { packed : Asset.packed; generation : int }
+type asset_record = {
+  packed : Asset.packed;
+  generation : int;
+  type_id : Luma__id.Id.Asset_type.t;
+}
+
 type t = (Luma__id.Id.Asset.t, asset_record) Hashtbl.t
+
+type 'a handle = {
+  id : Luma__id.Id.Asset.t;
+  type_id : Luma__id.Id.Asset_type.t;
+  generation : int;
+}
 
 let create () = Hashtbl.create 16
 
-type handle = { id : Luma__id.Id.Asset.t; generation : int }
+let add (type a) (module A : Asset.S with type t = a) assets ~id ~generation ~asset =
+  let packed = Asset.pack (module A) asset in
+  let record = { packed; generation; type_id = A.type_id } in
+  Hashtbl.replace assets id record;
+  { id; type_id = A.type_id; generation }
 
-let add assets ~id ~packed ~generation =
-  let record = { packed; generation } in
-  Hashtbl.replace assets id record
-
-let get (type a) (module A : Asset.S with type t = a) (assets : t) handle =
+let get (type a) (module A : Asset.S with type t = a) assets (handle : a handle) =
   match Hashtbl.find_opt assets handle.id with
   | None -> None
-  | Some record ->
+  | Some (record : asset_record) ->
       if record.generation = handle.generation then
         match Asset.unpack (module A) record.packed with
         | Ok asset -> Some asset
-        | Error _ -> failwith ""
+        | Error _ -> None
       else
         None
 
@@ -29,7 +40,6 @@ let unload (assets : t) handle =
       else
         ()
 
-(* Provided assets *)
 module Texture_atlas = struct
   type t = Luma__image.Image.Texture_atlas.t
 

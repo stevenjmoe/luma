@@ -16,7 +16,7 @@ let register_loaders (server : Luma__asset.Server.t) =
         (fun path ->
           let image = Raylib.load_image path in
           let texture = Raylib.load_texture_from_image image in
-          Ok (Luma__asset.Asset.pack (module Luma__asset.Assets.Texture.A) texture));
+          Ok (Loaded ((module Luma__asset.Assets.Texture.A), texture)));
     }
   in
   Luma__asset.Server.register_loader server image_loader

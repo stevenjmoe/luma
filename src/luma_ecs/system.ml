@@ -1,5 +1,3 @@
-(* TODO: It would be nice to not have to separate resources from no resources *)
-
 type ('w, 'a) without_resources = {
   filter : Query.Filter.t;
   components_query : 'a Query.t;

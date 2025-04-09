@@ -1,5 +1,11 @@
-type load_error = Unsupported_extension of string | Loader_error of string
-type t = { assets : Assets.t; mutable loaders : Loader.t list }
+type load_error =
+  | Unsupported_extension of string
+  | Loader_error of string
+
+type t = {
+  assets : Assets.t;
+  mutable loaders : Loader.t list;
+}
 
 let create assets_store = { assets = assets_store; loaders = [] }
 let register_loader server loader = server.loaders <- loader :: server.loaders
@@ -11,11 +17,11 @@ let load server path =
   | Some loader -> (
       match loader.load path with
       | Error msg -> Error (Loader_error msg)
-      | Ok packed ->
+      | Ok (Loaded (asset_mod, asset)) ->
           let id = Luma__id.Id.Asset.next () in
           let generation = 1 in
-          Assets.add server.assets ~id ~packed ~generation;
-          Ok { Assets.id; generation })
+          let handle = Assets.add asset_mod server.assets ~id ~asset ~generation in
+          Ok handle)
 
 module R = Luma__resource.Resource.Make (struct
   type inner = t

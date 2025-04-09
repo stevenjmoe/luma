@@ -21,10 +21,10 @@ module Resource : S
 (** A module for genrating and managing unique identifiers for resources within the game. *)
 
 module Asset_type : S
-(** TODO: *)
+(** A module for genrating and managing unique identifiers for different asset types. *)
 
 module Asset : S
-(** TODO: *)
+(** A module for genrating and managing unique identifiers for different assets. *)
 
 module EntitySet : Set.S with type elt = Entity.t
 module ComponentSet : Set.S with type elt = Component.t
