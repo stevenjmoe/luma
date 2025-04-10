@@ -23,7 +23,9 @@ type _ term =
   | Required : (module Component.S with type t = 'a) -> 'a term
   | Optional : (module Component.S with type t = 'a) -> 'a option term
 
-type _ t = Query : ('a term * 'b t) -> ('a * 'b) t | End : unit t
+type _ t =
+  | Query : ('a term * 'b t) -> ('a * 'b) t
+  | End : unit t
 
 let ( & ) query rest = Query (query, rest)
 

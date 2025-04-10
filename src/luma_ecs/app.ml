@@ -1,4 +1,8 @@
-type t = { world : World.t; scheduler : Scheduler.t; plugins : (World.t -> unit) list }
+type t = {
+  world : World.t;
+  scheduler : Scheduler.t;
+  plugins : (World.t -> unit) list;
+}
 
 let create () = { world = World.create (); scheduler = Scheduler.create (); plugins = [] }
 
@@ -16,7 +20,7 @@ let register_loaders (server : Luma__asset.Server.t) =
         (fun path ->
           let image = Raylib.load_image path in
           let texture = Raylib.load_texture_from_image image in
-          Ok (Loaded ((module Luma__asset.Assets.Texture.A), texture)));
+          Ok (Loaded ((module Luma__image.Image.Texture.A), texture)));
     }
   in
   Luma__asset.Server.register_loader server image_loader
@@ -71,9 +75,14 @@ let run a =
   add_system (Scheduler.Update (System.WithoutResources update_time)) a |> ignore;
 
   let camera =
-    World.query world Query.(Required (module Components.Camera.C) & End)
-    |> List.map (fun (_, (camera, _)) -> camera)
-    |> List.hd
+    try
+      World.query world Query.(Required (module Components.Camera.C) & End)
+      |> List.map (fun (_, (camera, _)) -> camera)
+      |> List.hd
+    with _ ->
+      failwith
+        "Luma expects at least 1 camera added to the world as a component. Only the first one will \
+         be used."
   in
   let rec loop (world, scheduler) =
     if Raylib.window_should_close () then

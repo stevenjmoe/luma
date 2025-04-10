@@ -1,5 +1,5 @@
 type t = {
-  mutable image : Raylib.Texture.t;
+  mutable image : Luma__image.Image.Texture.t Luma__asset.Assets.handle;
   mutable texture_atlas : Luma__image.Image.Texture_atlas.t option;
   flip_x : bool;
   flip_y : bool;

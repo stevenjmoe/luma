@@ -51,7 +51,11 @@ module Texture_atlas_layout : sig
   val add_texture : t -> Rect.t -> int
   (** [add_texture t texture] Adds a texture to the layout and returns its index. *)
 end = struct
-  type t = { size : Vec2.t; textures : (Rect.t, Vector.rw) Vector.t; frame_size : Vec2.t option }
+  type t = {
+    size : Vec2.t;
+    textures : (Rect.t, Vector.rw) Vector.t;
+    frame_size : Vec2.t option;
+  }
 
   let empty () = { size = Vec2.zero (); textures = Vector.create (); frame_size = None }
   let size t = t.size
@@ -65,21 +69,29 @@ end = struct
     let foi = Float.of_int in
 
     let rec loop_rows y =
-      if y > 1 then current_padding.y <- padding.y;
+      if y > 1 then
+        current_padding.y <- padding.y;
 
       let rec loop_cols x =
-        if x > 1 then current_padding.x <- padding.x;
+        if x > 1 then
+          current_padding.x <- padding.x;
 
         let cell = Vec2.create (foi x) (foi y) in
 
         let rect_min = (tile_size *.. cell) +.. offset in
         Vector.push sprites Rect.{ min = rect_min; max = rect_min +.. tile_size };
 
-        if x < columns then loop_cols (x + 1) else ()
+        if x < columns then
+          loop_cols (x + 1)
+        else
+          ()
       in
       loop_cols 1;
 
-      if y < rows then loop_rows (y + 1) else ()
+      if y < rows then
+        loop_rows (y + 1)
+      else
+        ()
     in
 
     loop_rows 1;
@@ -111,9 +123,24 @@ module Texture_atlas : sig
   val get_frame : t -> int -> Rect.t option
   val frame_size : t -> Vec2.t option
 end = struct
-  type t = { layout : Texture_atlas_layout.t; index : int }
+  type t = {
+    layout : Texture_atlas_layout.t;
+    index : int;
+  }
 
   let from_layout layout = { layout; index = 0 }
   let get_frame t index = Texture_atlas_layout.get_frame t.layout index
   let frame_size t = Texture_atlas_layout.frame_size t.layout
+
+  module A = Luma__asset.Asset.Make (struct
+    type inner = t
+  end)
+end
+
+module Texture = struct
+  type t = Raylib.Texture.t
+
+  module A = Luma__asset.Asset.Make (struct
+    type inner = t
+  end)
 end

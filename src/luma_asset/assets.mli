@@ -33,16 +33,4 @@ val get : (module Asset.S with type t = 'a) -> t -> 'a handle -> 'a option
 val unload : t -> 'a handle -> unit
 (** Unload an asset from the store by handle. *)
 
-module Texture_atlas : sig
-  type t
-
-  module R : Asset.S with type t = t
-end
-
-module Texture : sig
-  type t = Raylib.Texture.t
-
-  module A : Asset.S with type t = t
-end
-
 module R : Luma__resource.Resource.S with type t = t

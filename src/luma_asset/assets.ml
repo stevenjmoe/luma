@@ -40,22 +40,6 @@ let unload (assets : t) handle =
       else
         ()
 
-module Texture_atlas = struct
-  type t = Luma__image.Image.Texture_atlas.t
-
-  module R = Asset.Make (struct
-    type inner = t
-  end)
-end
-
-module Texture = struct
-  type t = Raylib.Texture.t
-
-  module A = Asset.Make (struct
-    type inner = t
-  end)
-end
-
 module R = Luma__resource.Resource.Make (struct
   type inner = t
 end)
