@@ -72,7 +72,7 @@ let module_struct_rule () =
         | Some type_t ->
             let module_c =
               [%stri
-                module C = Luma.Ecs.Component.Make (struct
+                module C = Component.Make (struct
                   type inner = [%t type_t]
                 end)]
             in
