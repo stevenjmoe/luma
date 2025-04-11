@@ -14,7 +14,9 @@ type 'a handle = {
 
 let create () = Hashtbl.create 16
 
-let add (type a) (module A : Asset.S with type t = a) assets ~id ~generation ~asset =
+let add (type a) (module A : Asset.S with type t = a) assets asset =
+  let id = Luma__id.Id.Asset.next () in
+  let generation = 1 in
   let packed = Asset.pack (module A) asset in
   let record = { packed; generation; type_id = A.type_id } in
   Hashtbl.replace assets id record;

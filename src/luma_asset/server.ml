@@ -18,9 +18,7 @@ let load server path =
       match loader.load path with
       | Error msg -> Error (Loader_error msg)
       | Ok (Loaded (asset_mod, asset)) ->
-          let id = Luma__id.Id.Asset.next () in
-          let generation = 1 in
-          let handle = Assets.add asset_mod server.assets ~id ~asset ~generation in
+          let handle = Assets.add asset_mod server.assets asset in
           Ok handle)
 
 module R = Luma__resource.Resource.Make (struct

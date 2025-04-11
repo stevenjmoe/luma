@@ -20,10 +20,8 @@ val create : unit -> t
 
 val add :
   (module Asset.S with type t = 'a) ->
-  t ->
-  id:Luma__id.Id.Asset.t ->
-  generation:int ->
-  asset:'a ->
+  (Luma__id__Id.Asset.t, asset_record) Hashtbl.t ->
+  'a ->
   'b handle
 (** Add a typed asset to the store, returning a typed handle. *)
 
