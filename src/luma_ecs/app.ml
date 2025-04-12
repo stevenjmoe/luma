@@ -15,7 +15,7 @@ let add_plugin p a = { a with plugins = p :: a.plugins }
 let register_loaders (server : Luma__asset.Server.t) =
   let image_loader =
     {
-      Luma__asset.Loader.exts = [ ".png" ];
+      Luma__asset.Loader.exts = [ ".png"; ".jpg" ];
       load =
         (fun path ->
           let image = Raylib.load_image path in
