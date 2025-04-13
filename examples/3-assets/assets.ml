@@ -34,8 +34,7 @@ let render () =
 let execute_animations () =
   System.make_with_resources
     ~components:Query.(Required (module Animation_config.C) & End)
-    ~resources:
-      Resource.Query.(Resource (module Assets.R) & Resource (module Luma.Resources.Time.R) & End)
+    ~resources:Resource.Query.(Resource (module Assets.R) & Resource (module Time.R) & End)
     (fun world entities (assets, (time, _)) ->
       let dt = time.dt in
       entities

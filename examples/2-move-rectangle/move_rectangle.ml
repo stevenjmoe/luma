@@ -8,7 +8,7 @@ let input_system () =
   System.make_with_resources
     ?filter:(Some Query.Filter.(With Player_tag.C.id))
     ~components:Query.(Required (module Velocity.C) & End)
-    ~resources:Resource.Query.(Resource (module Luma.Resources.Time.R) & End)
+    ~resources:Resource.Query.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
       entities
@@ -44,7 +44,7 @@ let movement_system () =
         & Required (module Velocity.C)
         & Required (module Luma.Camera.C)
         & End)
-    ~resources:Resource.Query.(Resource (module Resources.Time.R) & End)
+    ~resources:Resource.Query.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
       entities
