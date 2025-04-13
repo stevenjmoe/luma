@@ -40,9 +40,35 @@ let update_time =
           | Error _ -> failwith "could not get time from resources")
       | None -> failwith "could not get time from resources")
 
-let run a =
-  Raylib.init_window 1800 800 "";
-  Raylib.set_target_fps 60;
+module type Driver = sig
+  val init : unit -> unit
+  val shutdown : unit -> unit
+  val should_close : unit -> bool
+  val get_frame_time : unit -> float
+  val begin_frame : unit -> unit
+  val end_frame : unit -> unit
+  val begin_2d : Raylib.Camera2D.t -> unit
+  val end_2d : unit -> unit
+  val clear : Raylib.Color.t -> unit
+end
+
+module Raylib_driver : Driver = struct
+  let init () =
+    Raylib.init_window 1800 800 "";
+    Raylib.set_target_fps 60
+
+  let shutdown () = Raylib.close_window ()
+  let should_close () = Raylib.window_should_close ()
+  let get_frame_time () = Raylib.get_frame_time ()
+  let begin_frame () = Raylib.begin_drawing ()
+  let end_frame () = Raylib.end_drawing ()
+  let begin_2d = Raylib.begin_mode_2d
+  let end_2d () = Raylib.end_mode_2d ()
+  let clear = Raylib.clear_background
+end
+
+let run_with_driver (type d) (module D : Driver) (app : t) =
+  D.init ();
 
   let time = Resources.Time.{ dt = 0.0016; elapsed = 0. } in
   let packed_time = Luma__resource.Resource.pack (module Resources.Time.R) time in
@@ -57,37 +83,29 @@ let run a =
   in
 
   let world =
-    a.world
+    app.world
     |> World.add_resource Resources.Time.R.id packed_time
     |> World.add_resource Luma__asset.Assets.R.id packed_assets
     |> World.add_resource Luma__asset.Server.R.id packed_asset_server
   in
 
-  world |> Scheduler.run_startup_systems a.scheduler |> ignore;
-  add_system (Scheduler.Update (System.WithoutResources update_time)) a |> ignore;
+  let world = Scheduler.run_startup_systems app.scheduler world in
+  let app = { app with world } in
+  let app = add_system (Scheduler.Update (System.WithoutResources update_time)) app in
 
-  let camera =
-    try
-      World.query world Query.(Required (module Components.Camera.C) & End)
-      |> List.map (fun (_, (camera, _)) -> camera)
-      |> List.hd
-    with _ ->
-      failwith
-        "Luma expects at least 1 camera added to the world as a component. Only the first one will \
-         be used."
-  in
   let rec loop (world, scheduler) =
-    if Raylib.window_should_close () then
-      Raylib.close_window ()
-    else
-      let open Raylib in
+    if D.should_close () then
+      D.shutdown ()
+    else (
       Lwt_main.run (Lwt.pause ());
-      begin_drawing ();
-      begin_mode_2d camera;
-      let world = Scheduler.run_update_systems a.scheduler a.world in
-      clear_background Color.beige;
-      end_mode_2d ();
-      end_drawing ();
-      loop (world, a.scheduler)
+      D.begin_frame ();
+
+      let world = Scheduler.run_update_systems scheduler world in
+
+      D.clear Raylib.Color.beige;
+      D.end_frame ();
+      loop (world, scheduler))
   in
-  loop (world, a.scheduler)
+  loop (app.world, app.scheduler)
+
+let run app = run_with_driver (module Raylib_driver) app

@@ -1,0 +1,6 @@
+(library
+  (public_name luma.plugins)
+  (libraries luma.ecs luma.render)
+  (name luma__plugins)
+  (preprocess 
+   (pps ppx_assert)))

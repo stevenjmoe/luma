@@ -6,6 +6,7 @@
    containers
    luma.asset
    luma.ecs
+   luma.plugins
    luma.sprite
    luma.transform
    luma.image
