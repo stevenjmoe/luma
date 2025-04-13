@@ -1,16 +1,16 @@
 type t = {
   world : World.t;
   scheduler : Scheduler.t;
-  plugins : (World.t -> unit) list;
 }
 
-let create () = { world = World.create (); scheduler = Scheduler.create (); plugins = [] }
+let create () = { world = World.create (); scheduler = Scheduler.create () }
+let world app = app.world
 
 let add_system sys a =
   Scheduler.add_system a.scheduler sys;
   a
 
-let add_plugin p a = { a with plugins = p :: a.plugins }
+let add_plugin (f : t -> t) app = f app
 
 let register_loaders (server : Luma__asset.Server.t) =
   let image_loader =
@@ -61,14 +61,6 @@ let run a =
     |> World.add_resource Resources.Time.R.id packed_time
     |> World.add_resource Luma__asset.Assets.R.id packed_assets
     |> World.add_resource Luma__asset.Server.R.id packed_asset_server
-  in
-
-  let world =
-    List.fold_right
-      (fun plugin world ->
-        plugin world;
-        world)
-      a.plugins world
   in
 
   world |> Scheduler.run_startup_systems a.scheduler |> ignore;
