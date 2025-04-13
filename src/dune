@@ -8,6 +8,7 @@
    luma.ecs
    luma.plugins
    luma.sprite
+   luma.time
    luma.transform
    luma.image
    luma.render

@@ -3,9 +3,7 @@
   (name luma__ecs)
   (libraries 
     raylib 
-    luma.asset
     luma.storage 
-    luma.image 
     luma.resource
     luma.id
     lwt
@@ -15,7 +13,6 @@
     Archetype
     Component 
     Query 
-    Resources 
     Scheduler 
     System 
     World)

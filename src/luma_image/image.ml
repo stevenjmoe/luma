@@ -151,3 +151,28 @@ module Texture = struct
     type inner = t
   end)
 end
+
+let register_loader (server : Luma__asset.Server.t) =
+  let image_loader =
+    {
+      Luma__asset.Loader.exts = [ ".png"; ".jpg" ];
+      load =
+        (fun path ->
+          let image = Raylib.load_image path in
+          let texture = Raylib.load_texture_from_image image in
+          Ok (Loaded ((module Texture.A), texture)));
+    }
+  in
+  Luma__asset.Server.register_loader server image_loader
+
+let () =
+  Luma__asset.Server.register_loader_hook (fun server ->
+      Luma__asset.Server.register_loader server
+        {
+          Luma__asset.Loader.exts = [ ".png"; ".jpg" ];
+          load =
+            (fun path ->
+              let image = Raylib.load_image path in
+              let texture = Raylib.load_texture_from_image image in
+              Ok (Loaded ((module Texture.A), texture)));
+        })

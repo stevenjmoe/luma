@@ -35,5 +35,3 @@ let plugin app =
   app
   |> App.add_system (Update (WithoutResources (begin_camera_pass ())))
   |> App.add_system (Update (WithoutResources (end_camera_pass ())))
-  |> ignore;
-  app
