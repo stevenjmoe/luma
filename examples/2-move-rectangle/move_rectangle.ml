@@ -42,7 +42,7 @@ let movement_system () =
       Query.(
         Required (module Rectangle.C)
         & Required (module Velocity.C)
-        & Required (module Components.Camera.C)
+        & Required (module Luma.Camera.C)
         & End)
     ~resources:Resource.Query.(Resource (module Resources.Time.R) & End)
     (fun world entities (time, _) ->
@@ -95,7 +95,7 @@ let setup_rectangle () =
       |> with_component world (module Player_tag.C) player_tag
       |> with_component world (module Rectangle.C) rect
       |> with_component world (module Velocity.C) velocity
-      |> with_component world (module Components.Camera.C) camera
+      |> with_component world (module Camera.C) camera
       |> ignore;
       world)
 

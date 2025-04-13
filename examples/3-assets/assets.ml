@@ -88,18 +88,9 @@ let setup_player () =
           world
       | Error _ -> failwith "Failed to load texture.")
 
-let setup_camera world =
-  let camera =
-    Raylib.Camera2D.create (Raylib.Vector2.create 0. 0.) (Raylib.Vector2.create 0. 0.) 0. 1.
-  in
-  world
-  |> World.add_entity
-  |> World.with_component world (module Components.Camera.C) camera
-  |> ignore
-
 let () =
   App.create ()
-  |> App.add_plugin setup_camera
+  |> App.add_plugin add_default_plugins
   |> App.add_system (Startup (WithResources (setup_player ())))
   |> App.add_system (Update (WithResources (render ())))
   |> App.add_system (Update (WithResources (execute_animations ())))
