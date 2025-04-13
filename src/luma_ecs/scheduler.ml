@@ -4,7 +4,10 @@ type schedule =
   | Startup : (World.t, 'a) System.t -> schedule
   | Update : (World.t, 'a) System.t -> schedule
 
-type t = { mutable startup_systems : schedule list; mutable update_systems : schedule list }
+type t = {
+  mutable startup_systems : schedule list;
+  mutable update_systems : schedule list;
+}
 
 let create () = { startup_systems = []; update_systems = [] }
 
