@@ -47,6 +47,7 @@ let movement_system () =
     ~resources:Resource.Query.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
+      let open Luma.Camera in
       entities
       |> List.iter (fun (_, (rect, (velocity, (camera, _)))) ->
              Rectangle.set_x rect (Rectangle.x rect +. Vector2.x velocity);
@@ -54,7 +55,7 @@ let movement_system () =
              let target =
                Raylib.Vector2.create (Raylib.Rectangle.x rect) (Raylib.Rectangle.y rect)
              in
-             Camera2D.set_target camera target;
+             Camera2D.set_target camera.camera target;
              ());
       world)
 
@@ -79,6 +80,7 @@ let setup_rectangle () =
     ~components:Query.(End)
     (fun world entities ->
       let open World in
+      let open Luma.Camera in
       let player_tag = 1 in
       let rect = Raylib.Rectangle.create 100. (-10.) 100. 50. in
       let velocity = Raylib.Vector2.zero () in
@@ -88,7 +90,9 @@ let setup_rectangle () =
           (Float.of_int (Raylib.get_screen_height ()) /. 2.)
       in
       let target = Raylib.Vector2.create (Raylib.Rectangle.x rect) (Raylib.Rectangle.y rect) in
-      let camera = Raylib.Camera2D.create offset target 0. 1. in
+      let camera =
+        Luma.Camera.{ camera = Raylib.Camera2D.create offset target 0. 1.; active = true }
+      in
 
       world
       |> add_entity
@@ -111,9 +115,10 @@ let setup_other_rectangle () =
 
 let () =
   App.create ()
+  |> Luma.add_default_plugins
   |> App.add_system (Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
   |> App.add_system (Scheduler.Startup (System.WithoutResources (setup_other_rectangle ())))
   |> App.add_system (Scheduler.Update (Luma.System.WithResources (input_system ())))
   |> App.add_system (Scheduler.Update (Luma.System.WithResources (movement_system ())))
-  |> App.add_system (Scheduler.Update (Luma.System.WithoutResources (render_system ())))
+  |> App.add_system (Scheduler.Render (Luma.System.WithoutResources (render_system ())))
   |> App.run

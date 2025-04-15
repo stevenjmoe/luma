@@ -88,9 +88,10 @@ let setup_player () =
       | Error _ -> failwith "Failed to load texture.")
 
 let () =
+  let open App in
   App.create ()
-  |> App.add_plugin add_default_plugins
-  |> App.add_system (Startup (WithResources (setup_player ())))
-  |> App.add_system (Update (WithResources (render ())))
-  |> App.add_system (Update (WithResources (execute_animations ())))
-  |> App.run
+  |> add_plugin Luma.add_default_plugins
+  |> add_system (Startup (WithResources (setup_player ())))
+  |> add_system (Render (WithResources (render ())))
+  |> add_system (Update (WithResources (execute_animations ())))
+  |> run
