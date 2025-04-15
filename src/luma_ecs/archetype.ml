@@ -1,5 +1,5 @@
-module Id = Luma__id.Id
 open Luma__storage
+open Luma__id
 
 type t = {
   mutable entities : Id.EntitySet.t;
@@ -10,7 +10,9 @@ type t = {
   remove_hashes_cache : (Id.Component.t, int) Hashtbl.t;
 }
 
-type operation = Add of Id.Component.t | Remove of Id.Component.t
+type operation =
+  | Add of Id.Component.t
+  | Remove of Id.Component.t
 
 (* Convert to a string before hashing to get around the depth limit of 10 on Hashtbl.hash. *)
 let generate_hash (components : Id.Component.t list) =

@@ -1,17 +1,19 @@
 type t = {
   world : World.t;
   scheduler : Scheduler.t;
+  plugins : (t -> t) list;
 }
 
-let create () = { world = World.create (); scheduler = Scheduler.create () }
-let world app = app.world
+let create () = { world = World.create (); scheduler = Scheduler.create (); plugins = [] }
+let world (app : t) = app.world
+let scheduler (app : t) = app.scheduler
+let add_plugin plugin app = { app with plugins = plugin :: app.plugins }
 
-let add_system sys a =
-  Scheduler.add_system a.scheduler sys;
-  a
+let add_system sys app =
+  Scheduler.add_scheduled app.scheduler sys;
+  app
 
-let add_plugin (f : t -> t) app = f app
-
+(* TODO: this shouldn't reference raylib *)
 module type Driver = sig
   val init : unit -> unit
   val shutdown : unit -> unit
@@ -42,7 +44,8 @@ end
 let run_with_driver (type d) (module D : Driver) (app : t) =
   D.init ();
 
-  let world = Scheduler.run_startup_systems app.scheduler app.world in
+  let world = Scheduler.run_stage Scheduler.Startup app.scheduler app.world in
+  let app = List.fold_left (fun app plugin -> plugin app) app app.plugins in
   let app = { app with world } in
 
   let rec loop (world, scheduler) =
@@ -50,10 +53,15 @@ let run_with_driver (type d) (module D : Driver) (app : t) =
       D.shutdown ()
     else (
       D.begin_frame ();
-
-      let world = Scheduler.run_update_systems scheduler world in
-
       D.clear Raylib.Color.beige;
+      Scheduler.run_stage PreUpdate scheduler world |> ignore;
+      Scheduler.run_stage Update scheduler world |> ignore;
+      Scheduler.run_stage PostUpdate scheduler world |> ignore;
+
+      Scheduler.run_stage PreRender scheduler world |> ignore;
+      Scheduler.run_stage Render scheduler world |> ignore;
+      Scheduler.run_stage PostRender scheduler world |> ignore;
+
       D.end_frame ();
       loop (world, scheduler))
   in

@@ -2,36 +2,48 @@ open Luma__ecs
 
 [%%component
 module Camera = struct
-  type t = Raylib.Camera2D.t
+  type t = {
+    camera : Raylib.Camera2D.t;
+    active : bool;
+  }
 
   let default () =
-    Raylib.Camera2D.create (Raylib.Vector2.create 0. 0.) (Raylib.Vector2.create 0. 0.) 0. 1.
+    {
+      camera =
+        Raylib.Camera2D.create (Raylib.Vector2.create 0. 0.) (Raylib.Vector2.create 5. 5.) 0. 1.;
+      active = false;
+    }
 end]
 
-let begin_camera_pass () =
+(* TODO: render phases per camera. *)
+let begin_camera_pass (module D : App.Driver) =
   System.make
     ~components:Query.(Required (module Camera.C) & End)
     (fun world entities ->
       match entities with
       | [] -> world
-      | (_, (camera, _)) :: _ ->
-          Raylib.begin_mode_2d camera;
+      (* For now get the first camera in the list. Later I would like to handle the above todo *)
+      | [ (_, (camera, _)) ] | (_, (camera, _)) :: _ ->
+          let open Camera in
+          D.begin_2d camera.camera;
           world)
 
-let end_camera_pass () =
+let end_camera_pass (module D : App.Driver) =
   System.make
     ~components:Query.(End)
     (fun world _ ->
-      Raylib.end_mode_2d ();
+      D.end_2d ();
       world)
 
-let plugin app =
+(* TODO: Possibly make some or all of this plugin core behaviour. Right now the camera systems don't run if this plugin isn't added. *)
+let plugin (module D : App.Driver) app =
   let world = App.world app in
   if World.query world Query.(Required (module Camera.C) & End) = [] then
     world
     |> World.add_entity
     |> World.with_component world (module Camera.C) (Camera.default ())
     |> ignore;
+
   app
-  |> App.add_system (Update (WithoutResources (begin_camera_pass ())))
-  |> App.add_system (Update (WithoutResources (end_camera_pass ())))
+  |> App.add_system (PreRender (WithoutResources (begin_camera_pass (module D))))
+  |> App.add_system (PostRender (WithoutResources (end_camera_pass (module D))))
