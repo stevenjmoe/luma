@@ -1,3 +1,5 @@
+open Luma__driver
+open Luma__app
 open Luma__ecs
 
 [%%component
@@ -8,15 +10,16 @@ module Camera = struct
   }
 
   let default () =
-    {
-      camera =
-        Raylib.Camera2D.create (Raylib.Vector2.create 0. 0.) (Raylib.Vector2.create 5. 5.) 0. 1.;
-      active = false;
-    }
+    let offset =
+      Raylib.Vector2.create
+        (Float.of_int (Raylib.get_screen_width ()) /. 2.)
+        (Float.of_int (Raylib.get_screen_height ()) /. 2.)
+    in
+    { camera = Raylib.Camera2D.create offset (Raylib.Vector2.create 5. 5.) 0. 1.; active = false }
 end]
 
 (* TODO: render phases per camera. *)
-let begin_camera_pass (module D : App.Driver) =
+let begin_camera_pass (module D : Luma__driver.Driver.Driver) =
   System.make
     ~components:Query.(Required (module Camera.C) & End)
     (fun world entities ->
@@ -28,7 +31,7 @@ let begin_camera_pass (module D : App.Driver) =
           D.begin_2d camera.camera;
           world)
 
-let end_camera_pass (module D : App.Driver) =
+let end_camera_pass (module D : Luma__driver.Driver.Driver) =
   System.make
     ~components:Query.(End)
     (fun world _ ->
@@ -36,7 +39,7 @@ let end_camera_pass (module D : App.Driver) =
       world)
 
 (* TODO: Possibly make some or all of this plugin core behaviour. Right now the camera systems don't run if this plugin isn't added. *)
-let plugin (module D : App.Driver) app =
+let plugin (module D : Driver.Driver) app =
   let world = App.world app in
   if World.query world Query.(Required (module Camera.C) & End) = [] then
     world

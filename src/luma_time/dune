@@ -1,6 +1,6 @@
 (library
   (public_name luma.time)
-  (libraries luma.ecs)
+  (libraries luma.app)
   (name luma__time)
   (preprocess 
    (pps ppx_assert)))

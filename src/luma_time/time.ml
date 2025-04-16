@@ -27,6 +27,7 @@ let update_time () =
       | None -> failwith "could not get time from resources")
 
 let plugin app =
+  let open Luma__app in
   let world = App.world app in
   let time = { dt = 0.0016; elapsed = 0. } in
   let packed_time = Luma__resource.Resource.pack (module R) time in

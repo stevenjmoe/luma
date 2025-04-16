@@ -1,6 +1,6 @@
 (library
   (public_name luma.plugins)
-  (libraries luma.ecs luma.render luma.time luma.asset)
+  (libraries luma.app luma.driver luma.render luma.time luma.asset)
   (name luma__plugins)
   (preprocess 
    (pps ppx_assert)))

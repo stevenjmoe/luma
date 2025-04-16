@@ -9,7 +9,6 @@
     lwt
     ppx_component)
   (modules 
-    App 
     Archetype
     Component 
     Query 

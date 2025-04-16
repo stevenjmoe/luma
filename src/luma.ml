@@ -1,5 +1,5 @@
 include Luma__plugins.Plugins
-module App = Luma__ecs.App
+module App = Luma__app.App
 module Archetype = Luma__ecs.Archetype
 module Asset = Luma__asset.Asset
 module Assets = Luma__asset.Assets

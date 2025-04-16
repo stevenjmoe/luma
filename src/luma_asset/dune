@@ -4,8 +4,8 @@
   (libraries 
     lwt
     lwt.unix
+    luma.app
     luma.resource 
-    luma.ecs
     raylib)
   (preprocess
     (pps lwt_ppx)))

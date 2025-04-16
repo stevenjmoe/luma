@@ -1,3 +1,5 @@
+open Luma__ecs
+
 type t
 
 val create : unit -> t
@@ -12,20 +14,6 @@ val add_system : Scheduler.scheduled -> t -> t
 (** Adds either a [Startup] or [Update] system to the scheduler.
 
     [Startup] systems will before the main game loop and [Update] systems are run on every tick. *)
-
-module type Driver = sig
-  val init : unit -> unit
-  val shutdown : unit -> unit
-  val should_close : unit -> bool
-  val get_frame_time : unit -> float
-  val begin_frame : unit -> unit
-  val end_frame : unit -> unit
-  val begin_2d : Raylib.Camera2D.t -> unit
-  val end_2d : unit -> unit
-  val clear : Raylib.Color.t -> unit
-end
-
-module Raylib_driver : Driver
 
 val add_plugin : (t -> t) -> t -> t
 (** [add_plugin plugin app] applies a plugin function to the application.

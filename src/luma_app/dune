@@ -1,0 +1,9 @@
+(library 
+  (public_name luma.app)
+  (name luma__app)
+  (libraries 
+    luma.ecs
+    luma.driver
+    ppx_component)
+  (preprocess 
+   (pps ppx_inline_test ppx_assert ppx_component)))

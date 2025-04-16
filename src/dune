@@ -4,7 +4,9 @@
  (libraries 
    raylib
    containers
+   luma.app
    luma.asset
+   luma.driver
    luma.ecs
    luma.plugins
    luma.sprite
