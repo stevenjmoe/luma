@@ -1,3 +1,5 @@
+module Driver = Luma__driver_raylib.Driver
+module Luma = Luma.Make (Driver)
 open Luma
 module Velocity = [%component: Raylib.Vector2.t]
 module Player_tag = [%component: int]
@@ -88,9 +90,9 @@ let setup_player () =
       | Error _ -> failwith "Failed to load texture.")
 
 let () =
-  let open App in
-  App.create ()
-  |> add_plugin Luma.add_default_plugins
+  let open Luma.App in
+  create ()
+  |> add_default_plugins
   |> add_system (Startup (WithResources (setup_player ())))
   |> add_system (Render (WithResources (render ())))
   |> add_system (Update (WithResources (execute_animations ())))

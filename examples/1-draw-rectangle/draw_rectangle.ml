@@ -1,3 +1,5 @@
+module Driver = Luma__driver_raylib.Driver.Raylib_driver
+module Luma = Luma.Make (Driver)
 open Luma
 module Component = Component
 module Position = [%component: Raylib.Vector2.t]

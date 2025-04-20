@@ -1,3 +1,5 @@
+module Driver = Luma__driver_raylib.Driver
+module Luma = Luma.Make (Driver)
 open Luma
 module Component = Component
 module Rectangle = [%component: Raylib.Rectangle.t]
@@ -42,20 +44,17 @@ let movement_system () =
       Query.(
         Required (module Rectangle.C)
         & Required (module Velocity.C)
-        & Required (module Luma.Camera.C)
+        & Required (module Camera.Component.C)
         & End)
     ~resources:Resource.Query.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
-      let open Luma.Camera in
+      let open Luma.Camera.Component in
       entities
       |> List.iter (fun (_, (rect, (velocity, (camera, _)))) ->
              Rectangle.set_x rect (Rectangle.x rect +. Vector2.x velocity);
              Rectangle.set_y rect (Rectangle.y rect +. Vector2.y velocity);
-             let target =
-               Raylib.Vector2.create (Raylib.Rectangle.x rect) (Raylib.Rectangle.y rect)
-             in
-             Camera2D.set_target camera.camera target;
+             Luma.Camera.set_target camera.camera (Raylib.Rectangle.x rect, Raylib.Rectangle.y rect);
              ());
       world)
 
@@ -84,22 +83,19 @@ let setup_rectangle () =
       let player_tag = 1 in
       let rect = Raylib.Rectangle.create 100. (-10.) 100. 50. in
       let velocity = Raylib.Vector2.zero () in
-      let offset =
-        Raylib.Vector2.create
-          (Float.of_int (Raylib.get_screen_width ()) /. 2.)
-          (Float.of_int (Raylib.get_screen_height ()) /. 2.)
+      let position =
+        ( Float.of_int (Raylib.get_screen_width ()) /. 2.,
+          Float.of_int (Raylib.get_screen_height ()) /. 2. )
       in
-      let target = Raylib.Vector2.create (Raylib.Rectangle.x rect) (Raylib.Rectangle.y rect) in
-      let camera =
-        Luma.Camera.{ camera = Raylib.Camera2D.create offset target 0. 1.; active = true }
-      in
+      let target = (Raylib.Rectangle.x rect, Raylib.Rectangle.y rect) in
+      let camera = Camera.make ~position ~target ~rotation:0. ~zoom:1. in
 
       world
       |> add_entity
       |> with_component world (module Player_tag.C) player_tag
       |> with_component world (module Rectangle.C) rect
       |> with_component world (module Velocity.C) velocity
-      |> with_component world (module Camera.C) camera
+      |> with_component world (module Camera.Component.C) { camera; active = true }
       |> ignore;
       world)
 
