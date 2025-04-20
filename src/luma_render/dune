@@ -7,7 +7,7 @@
     luma.image 
     luma.math 
     ppx_component)
-  (modules Render Camera)
+  (modules Render Camera_component Camera_plugin)
   (name luma__render)
   (preprocess 
    (pps ppx_assert ppx_component)))

@@ -1,0 +1,49 @@
+module Raylib_driver : Luma__driver.Driver.S = struct
+  type camera = Raylib.Camera2D.t
+  type color = Raylib.Color.t
+
+  module Window = struct
+    let init ~width ~height ~title =
+      Raylib.init_window width height title;
+      Raylib.set_target_fps 60
+
+    let shutdown () = Raylib.close_window ()
+    let should_close () = Raylib.window_should_close ()
+    let get_frame_time () = Raylib.get_frame_time ()
+    let begin_frame () = Raylib.begin_drawing ()
+    let end_frame () = Raylib.end_drawing ()
+    let begin_2d = Raylib.begin_mode_2d
+    let end_2d () = Raylib.end_mode_2d ()
+    let clear = Raylib.clear_background
+  end
+
+  module Camera = struct
+    let make ~(position : float * float) ~(target : float * float) ~rotation ~zoom =
+      let px, py = position and tx, ty = target in
+      Raylib.Camera2D.create (Raylib.Vector2.create px py) (Raylib.Vector2.create tx ty) rotation
+        zoom
+
+    let default () =
+      let position = Raylib.Vector2.create 140. 0. in
+      let offset =
+        Raylib.Vector2.create
+          (Float.of_int (Raylib.get_screen_width ()) /. 2.)
+          (Float.of_int (Raylib.get_screen_height ()) /. 2.)
+      in
+      let target = Raylib.Vector2.create (Raylib.Vector2.x position) (Raylib.Vector2.y position) in
+      Raylib.Camera2D.create offset target 0. 1.
+
+    let set_target camera target =
+      let x, y = target in
+      Raylib.Camera2D.set_target camera (Raylib.Vector2.create x y);
+      ()
+  end
+
+  module Color = struct
+    let rgb ~r ~g ~b = Raylib.Color.create r g b 255
+    let rgba ~r ~g ~b ~a = Raylib.Color.create r g b a
+    let white = Raylib.Color.white
+  end
+end
+
+include Raylib_driver

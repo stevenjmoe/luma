@@ -7,6 +7,7 @@
    luma.app
    luma.asset
    luma.driver
+   luma.driver.raylib
    luma.ecs
    luma.plugins
    luma.sprite

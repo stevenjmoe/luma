@@ -1,8 +1,4 @@
 (library 
   (public_name luma.driver)
   (name luma__driver)
-  (libraries 
-    raylib 
-    ppx_component)
-  (preprocess 
-   (pps ppx_inline_test ppx_assert ppx_component)))
+  (modules_without_implementation driver))

@@ -13,7 +13,7 @@ module type Renderer = sig
     unit
 end
 
-module RaylibRenderer : Renderer = struct
+module Raylib_renderer : Renderer = struct
   open Luma__math
 
   type texture = Raylib.Texture.t
@@ -60,4 +60,4 @@ module RaylibRenderer : Renderer = struct
       Raylib.Color.white
 end
 
-module Renderer = RaylibRenderer
+module Renderer = Raylib_renderer
