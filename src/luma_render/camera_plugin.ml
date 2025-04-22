@@ -21,17 +21,21 @@ struct
         D.Window.end_2d ();
         world)
 
-  let plugin app =
-    let world = App.world app in
-    (if World.query world Query.(Required (module Camera.Component.C) & End) = [] then
-       let camera = Camera.default () in
-       let c = Camera.Component.{ camera; active = true } in
-       world
-       |> World.add_entity
-       |> World.with_component world (module Camera.Component.C) c
-       |> ignore);
+  let add_camera () =
+    System.make ~components:End (fun world entities ->
+        (if World.query world Query.(Required (module Camera.Component.C) & End) = [] then
+           let camera = Camera.default () in
+           let c = Camera.Component.{ camera; active = true } in
+           world
+           |> World.add_entity
+           |> World.with_component world (module Camera.Component.C) c
+           |> ignore);
 
+        world)
+
+  let plugin app =
     app
+    |> App.add_system (PostStartup (WithoutResources (add_camera ())))
     |> App.add_system (PreRender (WithoutResources (begin_camera_pass ())))
     |> App.add_system (PostRender (WithoutResources (end_camera_pass ())))
 end

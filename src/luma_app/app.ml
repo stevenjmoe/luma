@@ -15,11 +15,14 @@ let add_system sys app =
   Scheduler.add_scheduled app.scheduler sys;
   app
 
-let run (type d) (module D : Luma__driver.Driver.S) (app : t) =
-  D.Window.init ~width:1000 ~height:1000 ~title:"hello";
+let run (module D : Luma__driver.Driver.S) (app : t) =
+  let app = List.fold_right (fun plugin app -> plugin app) app.plugins app in
 
-  let app = List.fold_left (fun app plugin -> plugin app) app app.plugins in
-  let world = Scheduler.run_stage Scheduler.Startup app.scheduler app.world in
+  let world =
+    Scheduler.run_stage Scheduler.PreStartup app.scheduler app.world
+    |> Scheduler.run_stage Scheduler.Startup app.scheduler
+    |> Scheduler.run_stage Scheduler.PostStartup app.scheduler
+  in
   let app = { app with world } in
 
   let rec loop (world, scheduler) =
@@ -27,14 +30,14 @@ let run (type d) (module D : Luma__driver.Driver.S) (app : t) =
       D.Window.shutdown ()
     else (
       D.Window.begin_frame ();
-      D.Window.clear D.Color.white;
-      Scheduler.run_stage PreUpdate scheduler world |> ignore;
-      Scheduler.run_stage Update scheduler world |> ignore;
-      Scheduler.run_stage PostUpdate scheduler world |> ignore;
-
-      Scheduler.run_stage PreRender scheduler world |> ignore;
-      Scheduler.run_stage Render scheduler world |> ignore;
-      Scheduler.run_stage PostRender scheduler world |> ignore;
+      world
+      |> Scheduler.run_stage PreUpdate scheduler
+      |> Scheduler.run_stage Update scheduler
+      |> Scheduler.run_stage PostUpdate scheduler
+      |> Scheduler.run_stage PreRender scheduler
+      |> Scheduler.run_stage Render scheduler
+      |> Scheduler.run_stage PostRender scheduler
+      |> ignore;
 
       D.Window.end_frame ();
       loop (world, scheduler))

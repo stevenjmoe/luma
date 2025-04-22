@@ -1,6 +1,6 @@
 module type S = sig
   type camera
-  type color
+  type colour
 
   module Window : sig
     val init : width:int -> height:int -> title:string -> unit
@@ -11,7 +11,7 @@ module type S = sig
     val end_frame : unit -> unit
     val begin_2d : camera -> unit
     val end_2d : unit -> unit
-    val clear : color -> unit
+    val clear : colour -> unit
   end
 
   module Camera : sig
@@ -22,10 +22,10 @@ module type S = sig
     val set_target : camera -> float * float -> unit
   end
 
-  module Color : sig
-    val rgb : r:int -> g:int -> b:int -> color
-    val rgba : r:int -> g:int -> b:int -> a:int -> color
-    val white : color
+  module Colour : sig
+    val rgb : r:int -> g:int -> b:int -> colour
+    val rgba : r:int -> g:int -> b:int -> a:int -> colour
+    val white : colour
   end
 end
 

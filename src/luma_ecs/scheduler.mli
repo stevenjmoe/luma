@@ -1,5 +1,7 @@
 type scheduled =
+  | PreStartup : (World.t, 'a) System.t -> scheduled
   | Startup : (World.t, 'a) System.t -> scheduled
+  | PostStartup : (World.t, 'a) System.t -> scheduled
   | PreUpdate : (World.t, 'a) System.t -> scheduled
   | Update : (World.t, 'a) System.t -> scheduled
   | PostUpdate : (World.t, 'a) System.t -> scheduled
@@ -9,7 +11,9 @@ type scheduled =
 
 (** Type to determine when a system will be run. *)
 type stage =
+  | PreStartup
   | Startup
+  | PostStartup
   | PreUpdate
   | Update
   | PostUpdate

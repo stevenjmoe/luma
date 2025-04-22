@@ -5,9 +5,15 @@ module Make : functor (D : Luma__driver.Driver.S) -> sig
     val run : t -> unit
   end
 
-  val add_default_plugins : Luma__app__App.t -> Luma__app__App.t
+  module Window_config : Luma__window.Window.Window_config
 
-  module Camera : Luma__render.Camera_component.S (*with type camera = Driver.camera*)
+  val add_default_plugins : Luma__app__App.t -> Luma__app__App.t
+  val camera_plugin : Luma__app__App.t -> Luma__app__App.t
+  val window_plugin : ?config:Window_config.t -> App.t -> App.t
+  val asset_plugin : Luma__app__App.t -> Luma__app__App.t
+  val time_plugin : Luma__app__App.t -> Luma__app__App.t
+
+  module Camera : Luma__render.Camera_component.S
   module Archetype : module type of Luma__ecs.Archetype
   module Asset : module type of Luma__asset.Asset
   module Assets : module type of Luma__asset.Assets

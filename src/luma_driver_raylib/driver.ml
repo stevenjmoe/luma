@@ -1,6 +1,6 @@
 module Raylib_driver : Luma__driver.Driver.S = struct
   type camera = Raylib.Camera2D.t
-  type color = Raylib.Color.t
+  type colour = Raylib.Color.t
 
   module Window = struct
     let init ~width ~height ~title =
@@ -39,7 +39,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       ()
   end
 
-  module Color = struct
+  module Colour = struct
     let rgb ~r ~g ~b = Raylib.Color.create r g b 255
     let rgba ~r ~g ~b ~a = Raylib.Color.create r g b a
     let white = Raylib.Color.white

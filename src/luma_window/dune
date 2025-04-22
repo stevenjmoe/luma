@@ -1,0 +1,7 @@
+(library
+  (public_name luma.window)
+  (name luma__window)
+  (libraries luma.app luma.driver luma.ecs)
+  (modules Window)
+  (preprocess 
+   (pps ppx_assert)))

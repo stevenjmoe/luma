@@ -1,5 +1,7 @@
 type scheduled =
+  | PreStartup : (World.t, 'a) System.t -> scheduled
   | Startup : (World.t, 'a) System.t -> scheduled
+  | PostStartup : (World.t, 'a) System.t -> scheduled
   | PreUpdate : (World.t, 'a) System.t -> scheduled
   | Update : (World.t, 'a) System.t -> scheduled
   | PostUpdate : (World.t, 'a) System.t -> scheduled
@@ -8,7 +10,9 @@ type scheduled =
   | PostRender : (World.t, 'a) System.t -> scheduled
 
 type stage =
+  | PreStartup
   | Startup
+  | PostStartup
   | PreUpdate
   | Update
   | PostUpdate
@@ -23,7 +27,9 @@ let create () =
   let systems = Hashtbl.create 16 in
   List.iter
     (fun stage -> Hashtbl.add systems stage [])
-    [ Startup; PreUpdate; Update; PostUpdate; PreRender; Render; PostRender ];
+    [
+      PreStartup; Startup; PostStartup; PreUpdate; Update; PostUpdate; PreRender; Render; PostRender;
+    ];
   { systems }
 
 let add_system sched stage sys =
@@ -32,7 +38,9 @@ let add_system sched stage sys =
 
 let add_scheduled (sched : t) (s : scheduled) =
   match s with
+  | PreStartup s -> add_system sched PreStartup s
   | Startup s -> add_system sched Startup s
+  | PostStartup s -> add_system sched PostStartup s
   | PreUpdate s -> add_system sched PreUpdate s
   | Update s -> add_system sched Update s
   | PostUpdate s -> add_system sched PostUpdate s
