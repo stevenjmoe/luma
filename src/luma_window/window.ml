@@ -46,7 +46,7 @@ module Make (D : Driver.S) = struct
           ~title:(Option.value config.title ~default:"");
         world)
 
-  let plugin ?(config : Window_config.t = Window_config.default ()) app =
+  let plugin ~(config : Window_config.t) app =
     app
     |> App.add_system (PreUpdate (WithoutResources (clear_window config)))
     |> App.add_system (PreStartup (WithoutResources (init config)))
