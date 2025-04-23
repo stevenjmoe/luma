@@ -30,9 +30,20 @@ module Make : functor (D : Luma__driver.Driver.S) -> sig
   end
 
   val camera_plugin : App.t -> App.t
-  val window_plugin : config:Window_config.t -> App.t -> App.t
+  val window_plugin : ?config:Window_config.t -> App.t -> App.t
   val asset_plugin : App.t -> App.t
   val time_plugin : App.t -> App.t
+
+  type colour = Window_config.colour
+
+  (* Rexport Colour with the colour type from Window_config *)
+  module Colour : sig
+    type t = colour
+
+    val rgb : r:int -> g:int -> b:int -> t
+    val rgba : r:int -> g:int -> b:int -> a:int -> t
+    val white : t
+  end
 
   module Camera : Camera_component.S
   module Archetype : module type of Archetype

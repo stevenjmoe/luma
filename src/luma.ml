@@ -16,6 +16,14 @@ module Make (D : Luma__driver.Driver.S) = struct
   let asset_plugin = Plugins.asset_plugin
   let time_plugin = Plugins.time_plugin
 
+  type colour = Window_config.colour
+
+  module Colour = struct
+    type t = colour
+
+    include D.Colour
+  end
+
   module Archetype = Luma__ecs.Archetype
   module Asset = Luma__asset.Asset
   module Assets = Luma__asset.Assets
