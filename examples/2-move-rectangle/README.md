@@ -6,7 +6,7 @@ In the previous example, `setup_rectangle` was an expression that accepts a unit
 
 The `System` module provides two helper functions for making a system. 
 
-- `make` accepts an optional `Query.Filter.t`, a `Query.t`, and a `run_fn` which is the function that will be run on the provided schedule (update or startup).
+- `make` accepts an optional `Query.Filter.t`, a `Query.t`, and a `run_fn` which is the function that will be run on the provided schedule (`PreStartup`, `Startup`, `PostStartup`, `PreUpdate`, `Update`, `PostUpdate`, `PreRender`, `Render`, and `PostRender`).
 - `make_with_resources` accepts the same params, with the addition of a `Resource.Resource_query.t` param.
 
 Systems with resources will have an extra tuple of resources available to them in the `run_fn`. 
@@ -69,7 +69,6 @@ let input_system () =
              Vector2.set_y velocity vy;
              ());
       world)
-
 ```
 
 It filters entities on a `Player_tag` component, which isn't returned in the tuple, but the entity is guaranteed to contain it.
@@ -80,12 +79,22 @@ And the entry point with the newly created systems looks like this:
 
 ```ocaml
 let () =
-  Luma.create ()
-  |> Luma.add_system (Luma.Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
-  |> Luma.add_system
-       (Luma.Scheduler.Startup (Luma.System.WithoutResources (setup_other_rectangle ())))
-  |> Luma.add_system (Luma.Scheduler.Update (Luma.System.WithResources (input_system ())))
-  |> Luma.add_system (Luma.Scheduler.Update (Luma.System.WithResources (movement_system ())))
-  |> Luma.add_system (Luma.Scheduler.Update (Luma.System.WithoutResources (render_system ())))
-  |> Luma.run
+  let config = Luma.Plugins.Config.{ window = Luma.Window_config.default () } in
+  App.create ()
+  |> Plugins.add_default_plugins ~config
+  |> App.add_system (Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
+  |> App.add_system (Scheduler.Startup (System.WithoutResources (setup_other_rectangle ())))
+  |> App.add_system (Scheduler.Update (Luma.System.WithResources (input_system ())))
+  |> App.add_system (Scheduler.Update (Luma.System.WithResources (movement_system ())))
+  |> App.add_system (Scheduler.Render (Luma.System.WithoutResources (render_system ())))
+  |> App.run
 ```
+
+`add_default_plugins` will add some things that will ensure your game runs smoothly right away, such as:
+
+- `window_plugin`: Initializes the window. Optionally accepts configuration options to adjust the size and colour of the window.
+- `time_plugin`: Adds the Time resource to the app.
+- `asset_plugin`: Adds the `Asset_server` and `Assets` resources.
+- `camera_plugin`: Adds a camera to the world if one doesn't exist. Also adds a couple of systems for starting and ending camera passes.
+
+Adding the default plugins is generally always a good idea. At the moment, the `begin_camera_pass` system will use the last camera added to the game world. The config is optional and in this example is doing nothing. 

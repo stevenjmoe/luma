@@ -92,7 +92,7 @@ let setup_player () =
 let () =
   let open Luma.App in
   create ()
-  |> add_default_plugins
+  |> Plugins.add_default_plugins
   |> add_system (Startup (WithResources (setup_player ())))
   |> add_system (Render (WithResources (render ())))
   |> add_system (Update (WithResources (execute_animations ())))

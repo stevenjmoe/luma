@@ -110,8 +110,10 @@ let setup_other_rectangle () =
       world)
 
 let () =
+  let window_config = Luma.Window_config.create 10 10 (Some Colour.white) None in
+  let config = Luma.Plugins.Config.{ window = window_config } in
   App.create ()
-  |> Luma.add_default_plugins
+  |> Luma.Plugins.add_default_plugins ~config
   |> App.add_system (Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
   |> App.add_system (Scheduler.Startup (System.WithoutResources (setup_other_rectangle ())))
   |> App.add_system (Scheduler.Update (Luma.System.WithResources (input_system ())))
