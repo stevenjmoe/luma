@@ -110,7 +110,9 @@ let setup_other_rectangle () =
       world)
 
 let () =
-  let window_config = Luma.Window_config.create 10 10 (Some Colour.white) None in
+  let window_config =
+    Luma.Window_config.create 1080 1920 (Some (Colour.rgb ~r:100 ~g:299 ~b:200)) None
+  in
   let config = Luma.Plugins.Config.{ window = window_config } in
   App.create ()
   |> Luma.Plugins.add_default_plugins ~config
