@@ -1,6 +1,7 @@
 module Make (D : Luma__driver.Driver.S) = struct
-  module Plugins = Luma__plugins.Plugins.Make (D)
-  module Window_config = Plugins.Window.Window_config
+  module Window = Luma__window.Window.Make (D)
+  module Plugins = Luma__plugins.Plugins.Make (D) (Window)
+  module Window_config = Window.Window_config
 
   let add_default_plugins ?(config : Plugins.Config.t = Plugins.Config.default ()) app =
     Plugins.add_default_plugins ~config app

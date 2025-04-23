@@ -16,7 +16,17 @@ module type Window_config = sig
   val create : int -> int -> colour option -> string option -> t
 end
 
-module Make (D : Driver.S) = struct
+module type S = sig
+  type colour
+
+  module Window_config : Window_config with type colour = colour
+
+  val plugin : ?config:Window_config.t -> App.t -> App.t
+end
+
+module Make (D : Driver.S) : S with type colour = D.colour = struct
+  type colour = D.colour
+
   module Window_config : Window_config with type colour = D.colour = struct
     type colour = D.colour
 

@@ -1,10 +1,9 @@
 open Luma__app.App
 open Luma__driver
 
-module Make (D : Luma__driver.Driver.S) = struct
+module Make (D : Luma__driver.Driver.S) (Window : Luma__window.Window.S) = struct
   module C = Luma__render.Camera_component.Make (D)
   module P = Luma__render.Camera_plugin.Make (D) (C)
-  module Window = Luma__window.Window.Make (D)
 
   module Config = struct
     type t = { window : Window.Window_config.t }
