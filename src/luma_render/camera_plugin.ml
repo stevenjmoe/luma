@@ -1,14 +1,13 @@
 open Luma__app
 open Luma__ecs
 
-(* TODO: Possibly make some or all of this plugin core behaviour. Right now the camera systems don't run if this plugin isn't added. *)
 module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type camera = D.camera) =
 struct
   let begin_camera_pass () =
     System.make
       ~components:Query.(Required (module Camera.Component.C) & End)
       (fun world entities ->
-        match entities with
+        match List.rev entities with
         | [] -> world
         | [ (_, (camera, _)) ] | (_, (camera, _)) :: _ ->
             D.Window.begin_2d camera.camera;
@@ -30,7 +29,6 @@ struct
            |> World.add_entity
            |> World.with_component world (module Camera.Component.C) c
            |> ignore);
-
         world)
 
   let plugin app =
