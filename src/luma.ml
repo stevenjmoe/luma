@@ -1,6 +1,9 @@
 module Make (D : Luma__driver.Driver.S) = struct
+  (* make required modules *)
   module Window = Luma__window.Window.Make (D)
-  module Plugins = Luma__plugins.Plugins.Make (D) (Window)
+  module Camera_component = Luma__render.Camera_component.Make (D)
+  module Camera_plugin = Luma__render.Camera_plugin.Make (D) (Camera_component)
+  module Plugins = Luma__plugins.Plugins.Make (D) (Window) (Camera_plugin)
   module Window_config = Window.Window_config
 
   let add_default_plugins ?(config : Plugins.Config.t = Plugins.Config.default ()) app =
@@ -12,6 +15,7 @@ module Make (D : Luma__driver.Driver.S) = struct
     let run app = run (module D) app
   end
 
+  (* plugins *)
   let camera_plugin = Plugins.camera_plugin
   let window_plugin = Plugins.window_plugin
   let asset_plugin = Plugins.asset_plugin
@@ -30,7 +34,7 @@ module Make (D : Luma__driver.Driver.S) = struct
   module Assets = Luma__asset.Assets
   module Asset_server = Luma__asset.Server
   module Asset_loader = Luma__asset.Loader
-  module Camera = Plugins.C
+  module Camera = Camera_component
   module Component = Luma__ecs.Component
   module Id = Luma__id.Id
   module Query = Luma__ecs.Query

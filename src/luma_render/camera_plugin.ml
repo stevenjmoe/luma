@@ -1,8 +1,16 @@
 open Luma__app
 open Luma__ecs
 
-module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type camera = D.camera) =
-struct
+module type S = sig
+  type camera
+
+  val plugin : App.t -> App.t
+end
+
+module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type camera = D.camera) :
+  S with type camera = D.camera = struct
+  type camera = D.camera
+
   let begin_camera_pass () =
     System.make
       ~components:Query.(Required (module Camera.Component.C) & End)
