@@ -1,6 +1,7 @@
 module Raylib_driver : Luma__driver.Driver.S = struct
   type camera = Raylib.Camera2D.t
   type colour = Raylib.Color.t
+  type texture = Raylib.Texture2D.t
 
   module Window = struct
     let init ~width ~height ~title =
@@ -43,6 +44,34 @@ module Raylib_driver : Luma__driver.Driver.S = struct
     let rgb ~r ~g ~b = Raylib.Color.create r g b 255
     let rgba ~r ~g ~b ~a = Raylib.Color.create r g b a
     let white = Raylib.Color.white
+  end
+
+  module Image = struct
+    type t = Raylib.Image.t
+
+    let load_image = Raylib.load_image
+  end
+
+  module Texture = struct
+    open Raylib
+    open Luma__math
+
+    type t = texture
+
+    let width = Raylib.Texture2D.width
+    let height = Raylib.Texture2D.height
+
+    let draw_texture texture source dest origin rotation tint =
+      let source =
+        Rectangle.create (Rect.x source) (Rect.y source) (Rect.width source) (Rect.height source)
+      in
+      let dest =
+        Rectangle.create (Rect.x dest) (Rect.y dest) (Rect.width dest) (Rect.height dest)
+      in
+      let origin = Vector2.create (Vec2.x origin) (Vec2.y origin) in
+      Raylib.draw_texture_pro texture source dest origin rotation tint
+
+    let load_texture_from_image = Raylib.load_texture_from_image
   end
 end
 

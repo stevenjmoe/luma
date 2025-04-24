@@ -22,12 +22,12 @@ let render () =
     (fun world entities (assets, _) ->
       entities
       |> List.iter (fun (_, (sprite, (anim_config, _))) ->
-             match Assets.get (module Image.Texture.A) assets Sprite.(sprite.image) with
+             match Assets.get (module Luma.Image.Texture.A) assets (Sprite.image sprite) with
              | Some texture ->
                  let frame_index = Animation_config.(anim_config.current_index) in
-                 Luma.Render.Renderer.draw_texture texture ~position:(Math.Vec2.create 10. 10.)
+                 Luma.Renderer.draw_texture texture ~position:(Math.Vec2.create 10. 10.)
                    ~size:(Math.Vec2.create 500. 500.) ~frame_index
-                   ~texture_atlas:sprite.texture_atlas ()
+                   ~texture_atlas:(Sprite.texture_atlas sprite) ()
                  |> ignore;
                  ()
              | None -> ());

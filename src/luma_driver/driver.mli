@@ -1,6 +1,9 @@
+open Luma__math
+
 module type S = sig
   type camera
   type colour
+  type texture
 
   module Window : sig
     val init : width:int -> height:int -> title:string -> unit
@@ -26,6 +29,21 @@ module type S = sig
     val rgb : r:int -> g:int -> b:int -> colour
     val rgba : r:int -> g:int -> b:int -> a:int -> colour
     val white : colour
+  end
+
+  module Image : sig
+    type t
+
+    val load_image : string -> t
+  end
+
+  module Texture : sig
+    type t = texture
+
+    val width : t -> int
+    val height : t -> int
+    val draw_texture : t -> Rect.t -> Rect.t -> Vec2.t -> float -> colour -> unit
+    val load_texture_from_image : Image.t -> t
   end
 end
 

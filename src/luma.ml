@@ -1,13 +1,10 @@
 module Make (D : Luma__driver.Driver.S) = struct
-  (* make required modules *)
+  (* core driver dependent modules *)
   module Window = Luma__window.Window.Make (D)
   module Camera_component = Luma__render.Camera_component.Make (D)
   module Camera_plugin = Luma__render.Camera_plugin.Make (D) (Camera_component)
   module Plugins = Luma__plugins.Plugins.Make (D) (Window) (Camera_plugin)
   module Window_config = Window.Window_config
-
-  let add_default_plugins ?(config : Plugins.Config.t = Plugins.Config.default ()) app =
-    Plugins.add_default_plugins ~config app
 
   module App = struct
     include Luma__app.App
@@ -15,13 +12,29 @@ module Make (D : Luma__driver.Driver.S) = struct
     let run app = run (module D) app
   end
 
-  (* plugins *)
-  let camera_plugin = Plugins.camera_plugin
-  let window_plugin = Plugins.window_plugin
-  let asset_plugin = Plugins.asset_plugin
-  let time_plugin = Plugins.time_plugin
+  module Image = struct
+    module Texture = Luma__image.Texture.Make (D)
+    module Texture_atlas = Luma__image.Texture_atlas
+    module Texture_atlas_layout = Luma__image.Texture_atlas_layout
+  end
 
-  type colour = Window_config.colour
+  type colour = D.colour
+  type texture = Image.Texture.t
+
+  module S = Luma__sprite.Sprite.Make (Image.Texture)
+  module R = Luma__render.Render.Make (D)
+
+  module Renderer = struct
+    include R
+
+    type nonrec texture = texture
+  end
+
+  module Sprite = struct
+    include S
+
+    type nonrec texture = texture
+  end
 
   module Colour = struct
     type t = colour
@@ -45,7 +58,6 @@ module Make (D : Luma__driver.Driver.S) = struct
   module Transform = Luma__transform.Transform
   module World = Luma__ecs.World
   module Math = Luma__math
-  module Sprite = Luma__sprite.Sprite
-  module Image = Luma__image.Image
-  module Render = Luma__render.Render
+  module Texture_atlas = Luma__image.Texture_atlas
+  module Texture_atlas_layout = Luma__image.Texture_atlas_layout
 end

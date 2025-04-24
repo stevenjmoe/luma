@@ -3,7 +3,6 @@
   (name luma__image)
   (libraries containers luma.math raylib luma.asset luma.ecs)
   (modules 
-    Image 
     Texture
     Texture_atlas 
     Texture_atlas_layout)

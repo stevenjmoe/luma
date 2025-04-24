@@ -27,14 +27,20 @@ module Make : functor (D : Luma__driver.Driver.S) -> sig
     end
 
     val add_default_plugins : ?config:Config.t -> App.t -> App.t
+    val camera_plugin : App.t -> App.t
+    val window_plugin : ?config:Window_config.t -> App.t -> App.t
+    val asset_plugin : App.t -> App.t
+    val time_plugin : App.t -> App.t
   end
 
-  val camera_plugin : App.t -> App.t
-  val window_plugin : ?config:Window_config.t -> App.t -> App.t
-  val asset_plugin : App.t -> App.t
-  val time_plugin : App.t -> App.t
-
   type colour = Window_config.colour
+  type texture
+
+  module Image : sig
+    module Texture : Texture.S with type t = texture
+    module Texture_atlas : module type of Texture_atlas
+    module Texture_atlas_layout : module type of Texture_atlas_layout
+  end
 
   (* Rexport Colour with the colour type from Window_config *)
   module Colour : sig
@@ -61,9 +67,6 @@ module Make : functor (D : Luma__driver.Driver.S) -> sig
   module Transform : module type of Transform
   module World : module type of World
   module Math : module type of Luma__math
-  module Sprite : module type of Sprite
-  module Image : module type of Image
-  module Render : module type of Render
+  module Sprite : Sprite.S with type texture = texture
+  module Renderer : Render.Renderer with type texture = texture
 end
-
-(*module Make : functor (D : Luma__driver.Driver.S) -> Luma*)

@@ -7,15 +7,15 @@ type t = {
   frame_size : Vec2.t option;
 }
 
-let empty () = { size = Vec2.zero (); textures = Vector.create (); frame_size = None }
+let empty () = { size = Vec2.zero; textures = Vector.create (); frame_size = None }
 let size t = t.size
 let textures t = t.textures
 let frame_size t = t.frame_size
 
-let from_grid ?(padding = Vec2.zero ()) ?(offset = Vec2.zero ()) tile_size columns rows =
+let from_grid ?(padding = Vec2.zero) ?(offset = Vec2.zero) tile_size columns rows =
   let open Vec2.Infix in
   let sprites = Vector.create () in
-  let current_padding = Vec2.zero () in
+  let current_padding = Vec2.zero in
   let foi = Float.of_int in
 
   let rec loop_rows y =
