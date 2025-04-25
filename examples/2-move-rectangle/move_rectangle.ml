@@ -2,8 +2,8 @@ module Driver = Luma__driver_raylib.Driver
 module Luma = Luma.Make (Driver)
 open Luma
 module Component = Component
-module Rectangle = [%component: Raylib.Rectangle.t]
-module Velocity = [%component: Raylib.Vector2.t]
+module Rectangle = [%component: Math.Rect.t]
+module Velocity = [%component: Math.Vec2.t]
 module Player_tag = [%component: int]
 
 let input_system () =
@@ -13,28 +13,29 @@ let input_system () =
     ~resources:Resource.Query.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
+      let open Math in
       entities
       |> List.iter (fun (_, (velocity, _)) ->
              let dt = time.dt in
              let vx =
                if is_key_down Key.A then
-                 Vector2.x velocity -. (10. *. dt)
+                 Vec2.x velocity -. (10. *. dt)
                else if is_key_down Key.D then
-                 Vector2.x velocity +. (10. *. dt)
+                 Vec2.x velocity +. (10. *. dt)
                else
                  0.
              in
 
              let vy =
                if is_key_down Key.W then
-                 Vector2.y velocity -. (10. *. dt)
+                 Vec2.y velocity -. (10. *. dt)
                else if is_key_down Key.S then
-                 Vector2.y velocity +. (10. *. dt)
+                 Vec2.y velocity +. (10. *. dt)
                else
                  0.
              in
-             Vector2.set_x velocity vx;
-             Vector2.set_y velocity vy;
+             Vec2.set_x velocity vx;
+             Vec2.set_y velocity vy;
              ());
       world)
 
@@ -48,13 +49,13 @@ let movement_system () =
         & End)
     ~resources:Resource.Query.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
-      let open Raylib in
+      let open Math in
       let open Luma.Camera.Component in
       entities
       |> List.iter (fun (_, (rect, (velocity, (camera, _)))) ->
-             Rectangle.set_x rect (Rectangle.x rect +. Vector2.x velocity);
-             Rectangle.set_y rect (Rectangle.y rect +. Vector2.y velocity);
-             Luma.Camera.set_target camera.camera (Raylib.Rectangle.x rect, Raylib.Rectangle.y rect);
+             Rect.set_x rect (Rect.x rect +. Vec2.x velocity);
+             Rect.set_y rect (Rect.y rect +. Vec2.y velocity);
+             Luma.Camera.set_target camera.camera (Rect.x rect, Rect.y rect);
              ());
       world)
 
@@ -65,12 +66,7 @@ let render_system () =
       let open Raylib in
       entities
       |> List.iter (fun (_, (rectangle, _)) ->
-             Raylib.draw_rectangle
-               (Int.of_float (Rectangle.x rectangle))
-               (Int.of_float (Rectangle.y rectangle))
-               (Int.of_float (Rectangle.width rectangle))
-               (Int.of_float (Rectangle.height rectangle))
-               Color.pink;
+             Renderer.draw_rect rectangle Colour.white;
              ());
       world)
 
@@ -80,14 +76,16 @@ let setup_rectangle () =
     (fun world entities ->
       let open World in
       let open Luma.Camera in
+      let open Math in
       let player_tag = 1 in
-      let rect = Raylib.Rectangle.create 100. (-10.) 100. 50. in
-      let velocity = Raylib.Vector2.zero () in
+      let rect = Rect.create ~pos:(Vec2.create 100. (-10.)) ~size:(Vec2.create 100. 50.) in
+      let velocity = Math.Vec2.zero in
       let position =
-        ( Float.of_int (Raylib.get_screen_width ()) /. 2.,
-          Float.of_int (Raylib.get_screen_height ()) /. 2. )
+        Vec2.create
+          (Float.of_int (Luma.screen_width ()) /. 2.)
+          (Float.of_int (Luma.screen_height ()) /. 2.)
       in
-      let target = (Raylib.Rectangle.x rect, Raylib.Rectangle.y rect) in
+      let target = Vec2.create (Rect.x rect) (Rect.y rect) in
       let camera = Camera.make ~position ~target ~rotation:0. ~zoom:1. in
 
       world
@@ -104,7 +102,8 @@ let setup_other_rectangle () =
     ~components:Query.(End)
     (fun world entities ->
       let open World in
-      let rect = Raylib.Rectangle.create 100. 50. 20. 50. in
+      let open Math in
+      let rect = Rect.create ~pos:(Vec2.create 100. 50.) ~size:(Vec2.create 20. 50.) in
 
       world |> add_entity |> with_component world (module Rectangle.C) rect |> ignore;
       world)
