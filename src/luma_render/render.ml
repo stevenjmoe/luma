@@ -1,5 +1,8 @@
 module type Renderer = sig
   type texture
+  type colour
+
+  val draw_rect : Luma__math.Rect.t -> colour -> unit
 
   val draw_texture :
     texture ->
@@ -13,11 +16,15 @@ module type Renderer = sig
     unit
 end
 
-module Make (D : Luma__driver.Driver.S) : Renderer with type texture = D.texture = struct
+module Make (D : Luma__driver.Driver.S) :
+  Renderer with type texture = D.texture and type colour = D.colour = struct
   open Luma__math
   open Luma__image
 
   type texture = D.Texture.t
+  type colour = D.colour
+
+  let draw_rect rect colour = D.draw_rect rect colour
 
   let draw_texture
       texture
@@ -29,10 +36,11 @@ module Make (D : Luma__driver.Driver.S) : Renderer with type texture = D.texture
       ?(texture_atlas = None)
       () =
     let create_rect texture =
-      Rect.create (Vec2.create 0. 0.)
-        (Vec2.create
-           (D.Texture.width texture |> Float.of_int)
-           (D.Texture.height texture |> Float.of_int))
+      Rect.create ~pos:(Vec2.create 0. 0.)
+        ~size:
+          (Vec2.create
+             (D.Texture.width texture |> Float.of_int)
+             (D.Texture.height texture |> Float.of_int))
     in
     let src_rect =
       match texture_atlas with
@@ -42,8 +50,8 @@ module Make (D : Luma__driver.Driver.S) : Renderer with type texture = D.texture
           | None -> create_rect texture
           | Some frame ->
               Rect.create
-                (Vec2.create frame.min.x frame.min.y)
-                (Vec2.create (frame.max.x -. frame.min.x) (frame.max.y -. frame.min.y)))
+                ~pos:(Vec2.create frame.min.x frame.min.y)
+                ~size:(Vec2.create (frame.max.x -. frame.min.x) (frame.max.y -. frame.min.y)))
     in
     let x = Rect.x src_rect in
     let y = Rect.y src_rect in
@@ -52,16 +60,16 @@ module Make (D : Luma__driver.Driver.S) : Renderer with type texture = D.texture
 
     let src_rect =
       if flip_x then
-        Rect.create (Vec2.create (x +. w) y) (Vec2.create (-.w) h)
+        Rect.create ~pos:(Vec2.create (x +. w) y) ~size:(Vec2.create (-.w) h)
       else if flip_y then
-        Rect.create (Vec2.create x (y +. h)) (Vec2.create w (-.h))
+        Rect.create ~pos:(Vec2.create x (y +. h)) ~size:(Vec2.create w (-.h))
       else
         src_rect
     in
     let dest_rec =
       Rect.create
-        (Vec2.create (Vec2.x position) (Vec2.y position))
-        (Vec2.create (Vec2.x size) (Vec2.y size))
+        ~pos:(Vec2.create (Vec2.x position) (Vec2.y position))
+        ~size:(Vec2.create (Vec2.x size) (Vec2.y size))
     in
     D.Texture.draw_texture texture src_rect dest_rec Vec2.zero 0.0 D.Colour.white
 end

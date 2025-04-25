@@ -68,5 +68,8 @@ module Make : functor (D : Luma__driver.Driver.S) -> sig
   module World : module type of World
   module Math : module type of Luma__math
   module Sprite : Sprite.S with type texture = texture
-  module Renderer : Render.Renderer with type texture = texture
+  module Renderer : Render.Renderer with type texture = texture and type colour = colour
+
+  val screen_width : unit -> int
+  val screen_height : unit -> int
 end

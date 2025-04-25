@@ -5,6 +5,8 @@ module type S = sig
   type colour
   type texture
 
+  val draw_rect : Rect.t -> colour -> unit
+
   module Window : sig
     val init : width:int -> height:int -> title:string -> unit
     val shutdown : unit -> unit
@@ -15,11 +17,17 @@ module type S = sig
     val begin_2d : camera -> unit
     val end_2d : unit -> unit
     val clear : colour -> unit
+    val screen_width : unit -> int
+    val screen_height : unit -> int
   end
 
   module Camera : sig
     val make :
-      position:float * float -> target:float * float -> rotation:float -> zoom:float -> camera
+      position:Luma__math.Vec2.t ->
+      target:Luma__math.Vec2.t ->
+      rotation:float ->
+      zoom:float ->
+      camera
 
     val default : unit -> camera
     val set_target : camera -> float * float -> unit

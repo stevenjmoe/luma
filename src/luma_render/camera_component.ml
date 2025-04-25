@@ -1,4 +1,5 @@
 open Luma__ecs
+open Luma__math
 
 module type S = sig
   type camera
@@ -13,10 +14,7 @@ module type S = sig
   end
 
   val default : unit -> camera
-
-  val make :
-    position:float * float -> target:float * float -> rotation:float -> zoom:float -> camera
-
+  val make : position:Vec2.t -> target:Vec2.t -> rotation:float -> zoom:float -> camera
   val set_target : camera -> float * float -> unit
 end
 

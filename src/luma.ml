@@ -28,6 +28,7 @@ module Make (D : Luma__driver.Driver.S) = struct
     include R
 
     type nonrec texture = texture
+    type nonrec colour = colour
   end
 
   module Sprite = struct
@@ -60,4 +61,7 @@ module Make (D : Luma__driver.Driver.S) = struct
   module Math = Luma__math
   module Texture_atlas = Luma__image.Texture_atlas
   module Texture_atlas_layout = Luma__image.Texture_atlas_layout
+
+  let screen_width = D.Window.screen_width
+  let screen_height = D.Window.screen_height
 end

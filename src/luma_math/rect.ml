@@ -4,15 +4,21 @@ type t = {
   (** The maximum corner point *)
   max : Vec2.t }
 
-let check v = assert (not (Vec2.x v < 0.) && not (Vec2.y v < 0.))
 
-(** [create min max]  *)
-let create min max =  
-  check min;
-  check max; 
-  { min; max }
+let create ~pos ~size =  
+  { min = pos; max = Vec2.Infix.(pos +.. size) }
 
 let x rect = (Vec2.x rect.min)
 let y rect = (Vec2.y rect.min)
 let width rect = (Vec2.x rect.max) -. (Vec2.x rect.min)
 let height rect = (Vec2.y rect.max) -. (Vec2.y rect.min)
+
+let set_x rect x = 
+  let dx = x -. Vec2.x rect.min in
+  (Vec2.set_x rect.min x);
+  (Vec2.set_x rect.max (Vec2.x rect.max +. dx))
+
+let set_y rect y = 
+  let dy = y -. Vec2.y rect.min in
+  (Vec2.set_y rect.min y);
+  (Vec2.set_y rect.max (Vec2.y rect.max +. dy))
