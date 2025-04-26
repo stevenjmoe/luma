@@ -1,4 +1,4 @@
-module Make : functor (D : Luma__driver.Driver.S) -> sig
+module type S = sig
   open Luma__app
   open Luma__ecs
   open Luma__asset
@@ -17,7 +17,10 @@ module Make : functor (D : Luma__driver.Driver.S) -> sig
     val run : t -> unit
   end
 
-  module Window_config : Luma__window.Window.Window_config
+  type colour
+  type texture
+
+  module Window_config : Luma__window.Window.Window_config with type colour = colour
 
   module Plugins : sig
     module Config : sig
@@ -33,22 +36,19 @@ module Make : functor (D : Luma__driver.Driver.S) -> sig
     val time_plugin : App.t -> App.t
   end
 
-  type colour = Window_config.colour
-  type texture
-
   module Image : sig
     module Texture : Texture.S with type t = texture
     module Texture_atlas : module type of Texture_atlas
     module Texture_atlas_layout : module type of Texture_atlas_layout
   end
 
-  (* Rexport Colour with the colour type from Window_config *)
   module Colour : sig
     type t = colour
 
     val rgb : r:int -> g:int -> b:int -> t
     val rgba : r:int -> g:int -> b:int -> a:int -> t
     val white : t
+    (* Plus any other functions your D.Colour module exposes, you must repeat them here manually if you want them visible *)
   end
 
   module Camera : Camera_component.S
@@ -67,9 +67,13 @@ module Make : functor (D : Luma__driver.Driver.S) -> sig
   module Transform : module type of Transform
   module World : module type of World
   module Math : module type of Luma__math
+  module Texture_atlas : module type of Texture_atlas
+  module Texture_atlas_layout : module type of Texture_atlas_layout
   module Sprite : Sprite.S with type texture = texture
   module Renderer : Render.Renderer with type texture = texture and type colour = colour
 
   val screen_width : unit -> int
   val screen_height : unit -> int
 end
+
+module Make : functor (D : Luma__driver.Driver.S) -> S
