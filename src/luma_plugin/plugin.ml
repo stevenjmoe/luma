@@ -5,7 +5,8 @@ open Luma__render
 module Make
     (D : Luma__driver.Driver.S)
     (Window : Luma__window.Window.S)
-    (Camera_plugin : Camera_plugin.S) =
+    (Camera_plugin : Camera_plugin.S)
+    (Input : Luma__input.Input.S) =
 struct
   module Config = struct
     type t = { window : Window.Window_config.t }
@@ -17,10 +18,12 @@ struct
   let time_plugin = Luma__time.Time.plugin
   let asset_plugin = Luma__asset.Plugin.plugin
   let camera_plugin = Camera_plugin.plugin
+  let input_plugin = Input.plugin
   let default_config () : Config.t = { window = Window.Window_config.default () }
 
   let add_default_plugins ?(config : Config.t = default_config ()) app =
     app
+    |> add_plugin input_plugin
     |> add_plugin (window_plugin ~config:config.window)
     |> add_plugin camera_plugin
     |> add_plugin time_plugin

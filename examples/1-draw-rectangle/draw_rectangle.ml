@@ -16,6 +16,6 @@ let setup_rectangle () =
 
 let () =
   App.create ()
-  |> Plugins.add_default_plugins
+  |> Plugin.add_default_plugins
   |> App.add_system (Scheduler.Render (Luma.System.WithoutResources (setup_rectangle ())))
   |> App.run

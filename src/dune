@@ -9,12 +9,14 @@
    luma.driver
    luma.driver.raylib
    luma.ecs
-   luma.plugins
+   luma.plugin
    luma.sprite
    luma.time
    luma.transform
    luma.image
    luma.render
+   luma.input
+   luma.types
    ppx_component)
  (preprocess 
    (pps ppx_inline_test ppx_assert)))

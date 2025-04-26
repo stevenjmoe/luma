@@ -53,6 +53,15 @@ module type S = sig
     val draw_texture : t -> Rect.t -> Rect.t -> Vec2.t -> float -> colour -> unit
     val load_texture_from_image : Image.t -> t
   end
+
+  module Input : sig
+    open Luma__types
+
+    val begin_frame : unit -> unit
+    val is_key_down : Key.t -> bool
+    val is_key_pressed : Key.t -> bool
+    val is_key_released : Key.t -> bool
+  end
 end
 
 include S

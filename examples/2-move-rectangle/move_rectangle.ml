@@ -12,8 +12,8 @@ let input_system () =
     ~components:Query.Component.(Required (module Velocity.C) & End)
     ~resources:Query.Resource.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
-      let open Raylib in
       let open Math in
+      let open Luma.Input in
       entities
       |> List.iter (fun (_, (velocity, _)) ->
              let dt = time.dt in
@@ -112,9 +112,9 @@ let () =
   let window_config =
     Luma.Window_config.create 1080 1920 (Some (Colour.rgb ~r:100 ~g:299 ~b:200)) None
   in
-  let config = Luma.Plugins.Config.{ window = window_config } in
+  let config = Luma.Plugin.Config.{ window = window_config } in
   App.create ()
-  |> Luma.Plugins.add_default_plugins ~config
+  |> Luma.Plugin.add_default_plugins ~config
   |> App.add_system (Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
   |> App.add_system (Scheduler.Startup (System.WithoutResources (setup_other_rectangle ())))
   |> App.add_system (Scheduler.Update (Luma.System.WithResources (input_system ())))

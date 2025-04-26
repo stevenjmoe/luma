@@ -1,0 +1,4 @@
+(library
+  (name luma__input)
+  (public_name luma.input)
+  (libraries luma.app luma.driver luma.ecs luma.types))

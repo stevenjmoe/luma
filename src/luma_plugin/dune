@@ -1,0 +1,13 @@
+(library
+  (public_name luma.plugin)
+  (libraries 
+    luma.app 
+    luma.driver 
+    luma.render 
+    luma.time 
+    luma.asset 
+    luma.window 
+    luma.input)
+  (name luma__plugin)
+  (preprocess 
+   (pps ppx_assert)))

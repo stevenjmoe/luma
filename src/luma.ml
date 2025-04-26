@@ -21,8 +21,9 @@ module type S = sig
   type texture
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
+  module Input : Luma__input.Input.S
 
-  module Plugins : sig
+  module Plugin : sig
     module Config : sig
       type t = { window : Window_config.t }
 
@@ -34,6 +35,7 @@ module type S = sig
     val window_plugin : ?config:Window_config.t -> App.t -> App.t
     val asset_plugin : App.t -> App.t
     val time_plugin : App.t -> App.t
+    val input_plugin : App.t -> App.t
   end
 
   module Image : sig
@@ -71,6 +73,7 @@ module type S = sig
   module Texture_atlas_layout : module type of Texture_atlas_layout
   module Sprite : Sprite.S with type texture = texture
   module Renderer : Render.Renderer with type texture = texture and type colour = colour
+  module Key : module type of Luma__types.Key
 
   val screen_width : unit -> int
   val screen_height : unit -> int
@@ -81,7 +84,8 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Window = Luma__window.Window.Make (D)
   module Camera_component = Luma__render.Camera_component.Make (D)
   module Camera_plugin = Luma__render.Camera_plugin.Make (D) (Camera_component)
-  module Plugins = Luma__plugins.Plugins.Make (D) (Window) (Camera_plugin)
+  module Input = Luma__input.Input.Make (D)
+  module Plugin = Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input)
   module Window_config = Window.Window_config
 
   module App = struct
@@ -139,6 +143,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Math = Luma__math
   module Texture_atlas = Luma__image.Texture_atlas
   module Texture_atlas_layout = Luma__image.Texture_atlas_layout
+  module Key = Luma__types.Key
 
   let screen_width = D.Window.screen_width
   let screen_height = D.Window.screen_height

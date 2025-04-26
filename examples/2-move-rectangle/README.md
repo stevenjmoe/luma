@@ -79,9 +79,9 @@ And the entry point with the newly created systems looks like this:
 
 ```ocaml
 let () =
-  let config = Luma.Plugins.Config.{ window = Luma.Window_config.default () } in
+  let config = Luma.Plugin.Config.{ window = Luma.Window_config.default () } in
   App.create ()
-  |> Plugins.add_default_plugins ~config
+  |> Plugin.add_default_plugins ~config
   |> App.add_system (Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
   |> App.add_system (Scheduler.Startup (System.WithoutResources (setup_other_rectangle ())))
   |> App.add_system (Scheduler.Update (Luma.System.WithResources (input_system ())))

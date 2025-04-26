@@ -21,8 +21,9 @@ module type S = sig
   type texture
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
+  module Input : Luma__input.Input.S
 
-  module Plugins : sig
+  module Plugin : sig
     module Config : sig
       type t = { window : Window_config.t }
 
@@ -34,6 +35,7 @@ module type S = sig
     val window_plugin : ?config:Window_config.t -> App.t -> App.t
     val asset_plugin : App.t -> App.t
     val time_plugin : App.t -> App.t
+    val input_plugin : App.t -> App.t
   end
 
   module Image : sig
@@ -71,6 +73,7 @@ module type S = sig
   module Texture_atlas_layout : module type of Texture_atlas_layout
   module Sprite : Sprite.S with type texture = texture
   module Renderer : Render.Renderer with type texture = texture and type colour = colour
+  module Key : module type of Luma__types.Key
 
   val screen_width : unit -> int
   val screen_height : unit -> int
