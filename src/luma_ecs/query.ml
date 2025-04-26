@@ -15,7 +15,7 @@ module Component = struct
       | With c -> Luma__id.Id.ComponentSet.mem c components
       | Without c -> not (Luma__id.Id.ComponentSet.mem c components)
       | Not f -> not (matches f components)
-      | And (f1, f2) -> matches f2 components && matches f2 components
+      | And (f1, f2) -> matches f1 components && matches f2 components
       | Or (f1, f2) -> matches f1 components || matches f2 components
       | Any -> true
   end
