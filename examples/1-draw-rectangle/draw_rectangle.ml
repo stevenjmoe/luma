@@ -6,7 +6,7 @@ module Rectangle = [%component: Math.Rect.t]
 let setup_rectangle () =
   let open Math in
   System.make
-    ~components:Query.(End)
+    ~components:Query.Component.(End)
     (fun world entities ->
       let open World in
       let rect = Rect.create ~size:(Vec2.create 100. 100.) ~pos:(Vec2.create 20. 50.) in

@@ -52,11 +52,15 @@ let run_system (world : World.t) (system : (World.t, 'a) System.t) : World.t =
   let archetypes = World.archetypes world |> Hashtbl.to_seq_values |> List.of_seq in
   match system with
   | System.WithoutResources s ->
-      let matching_entities = Query.evaluate ~filter:s.filter s.components_query archetypes in
+      let matching_entities =
+        Query.Component.evaluate ~filter:s.filter s.components_query archetypes
+      in
       s.run world matching_entities
   | System.WithResources s -> (
-      let matching_entities = Query.evaluate ~filter:s.filter s.components_query archetypes in
-      match Luma__resource.Resource.Query.evaluate s.resources_query (World.resources world) with
+      let matching_entities =
+        Query.Component.evaluate ~filter:s.filter s.components_query archetypes
+      in
+      match Query.Resource.evaluate s.resources_query (World.resources world) with
       | Ok resource_value -> s.run world matching_entities resource_value
       | Error e ->
           failwith

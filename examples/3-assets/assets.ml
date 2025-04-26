@@ -17,8 +17,9 @@ end]
 
 let render () =
   System.make_with_resources
-    ~components:Query.(Required (module Sprite.C) & Required (module Animation_config.C) & End)
-    ~resources:Resource.Query.(Resource (module Assets.R) & End)
+    ~components:
+      Query.Component.(Required (module Sprite.C) & Required (module Animation_config.C) & End)
+    ~resources:Query.Resource.(Resource (module Assets.R) & End)
     (fun world entities (assets, _) ->
       entities
       |> List.iter (fun (_, (sprite, (anim_config, _))) ->
@@ -35,8 +36,8 @@ let render () =
 
 let execute_animations () =
   System.make_with_resources
-    ~components:Query.(Required (module Animation_config.C) & End)
-    ~resources:Resource.Query.(Resource (module Assets.R) & Resource (module Time.R) & End)
+    ~components:Query.Component.(Required (module Animation_config.C) & End)
+    ~resources:Query.Resource.(Resource (module Assets.R) & Resource (module Time.R) & End)
     (fun world entities (assets, (time, _)) ->
       let dt = time.dt in
       entities
@@ -56,7 +57,7 @@ let execute_animations () =
 
 let setup_player () =
   System.make_with_resources ~components:End
-    ~resources:Resource.Query.(Resource (module Asset_server.R) & Resource (module Assets.R) & End)
+    ~resources:Query.Resource.(Resource (module Asset_server.R) & Resource (module Assets.R) & End)
     (fun world entities (asset_server, (assets, _)) ->
       match Asset_server.load asset_server "examples/3-assets/assets/Player Idle 48x48.png" with
       | Ok handle ->

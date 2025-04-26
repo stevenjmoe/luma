@@ -48,7 +48,9 @@ val add_resource : Luma__id.Id.Resource.t -> Luma__resource.Resource.packed -> t
 val get_resource : t -> Luma__id.Id.Resource.t -> Luma__resource.Resource.packed option
 (** Returns [Some packed] if found, otherwise [None] *)
 
-val query : 'a. t -> ?filter:Query.Filter.t -> 'a Query.t -> (Luma__id.Id.Entity.t * 'a) list
+val query :
+  'a.
+  t -> ?filter:Query.Component.Filter.t -> 'a Query.Component.t -> (Luma__id.Id.Entity.t * 'a) list
 (** [query world filter query] evaluates the optional filter and required query on the world's
     archetypes and returns a [(Id.Entity.t * 'a) list] where ['a] is a tuple of components returned
     by the query. *)

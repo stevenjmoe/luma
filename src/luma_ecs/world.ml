@@ -104,7 +104,11 @@ let with_component : type a.
   add_component w packed entity;
   entity
 
-let query : t -> ?filter:Query.Filter.t -> 'a Query.t -> (Luma__id.Id.Entity.t * 'a) list =
- fun w ?(filter = Query.Filter.Any) query ->
+let query :
+    t ->
+    ?filter:Query.Component.Filter.t ->
+    'a Query.Component.t ->
+    (Luma__id.Id.Entity.t * 'a) list =
+ fun w ?(filter = Query.Component.Filter.Any) query ->
   let archetypes = w.archetypes |> Hashtbl.to_seq_values |> List.of_seq in
-  Query.evaluate ~filter query archetypes
+  Query.Component.evaluate ~filter query archetypes

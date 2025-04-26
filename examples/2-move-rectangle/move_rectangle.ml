@@ -8,9 +8,9 @@ module Player_tag = [%component: int]
 
 let input_system () =
   System.make_with_resources
-    ?filter:(Some Query.Filter.(With Player_tag.C.id))
-    ~components:Query.(Required (module Velocity.C) & End)
-    ~resources:Resource.Query.(Resource (module Time.R) & End)
+    ?filter:(Some Query.Component.Filter.(With Player_tag.C.id))
+    ~components:Query.Component.(Required (module Velocity.C) & End)
+    ~resources:Query.Resource.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
       let open Raylib in
       let open Math in
@@ -42,12 +42,12 @@ let input_system () =
 let movement_system () =
   System.make_with_resources
     ~components:
-      Query.(
+      Query.Component.(
         Required (module Rectangle.C)
         & Required (module Velocity.C)
         & Required (module Camera.Component.C)
         & End)
-    ~resources:Resource.Query.(Resource (module Time.R) & End)
+    ~resources:Query.Resource.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
       let open Math in
       let open Luma.Camera.Component in
@@ -61,7 +61,7 @@ let movement_system () =
 
 let render_system () =
   System.make
-    ~components:Query.(Required (module Rectangle.C) & End)
+    ~components:Query.Component.(Required (module Rectangle.C) & End)
     (fun world entities ->
       let open Raylib in
       entities
