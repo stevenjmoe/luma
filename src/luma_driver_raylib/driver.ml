@@ -202,16 +202,11 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       | Volume_up -> Some Raylib.Key.Volume_up
       | Volume_down -> Some Raylib.Key.Volume_down
 
+    let match_and_check pred key = match map_key key with Some k -> pred k | None -> false
     let begin_frame () = ()
-
-    let is_key_down (key : Key.t) =
-      match map_key key with Some k -> Raylib.is_key_down k | None -> false
-
-    let is_key_pressed (key : Key.t) =
-      match map_key key with Some k -> Raylib.is_key_pressed k | None -> false
-
-    let is_key_released (key : Key.t) =
-      match map_key key with Some k -> Raylib.is_key_released k | None -> false
+    let is_key_down (key : Key.t) = match_and_check Raylib.is_key_down key
+    let is_key_pressed (key : Key.t) = match_and_check Raylib.is_key_pressed key
+    let is_key_released (key : Key.t) = match_and_check Raylib.is_key_released key
   end
 end
 
