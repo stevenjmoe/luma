@@ -6,6 +6,7 @@
     luma.storage 
     luma.resource
     luma.id
+    luma.core
     lwt
     ppx_component)
   (modules 

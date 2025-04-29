@@ -77,6 +77,7 @@ module type S = sig
 
   val screen_width : unit -> int
   val screen_height : unit -> int
+  val log : ('a, Format.formatter, unit, unit) format4 -> 'a
 end
 
 module Make : functor (D : Luma__driver.Driver.S) -> S

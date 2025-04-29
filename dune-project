@@ -17,6 +17,7 @@
    (alcotest :with-test) 
    containers
    dune
+   logs
    lwt
    lwt_ppx
    ocaml 

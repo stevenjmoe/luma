@@ -4,6 +4,7 @@
  (libraries 
    raylib
    containers
+   luma.core
    luma.app
    luma.asset
    luma.driver
@@ -17,6 +18,7 @@
    luma.render
    luma.input
    luma.types
-   ppx_component)
+   ppx_component
+   fmt.tty)
  (preprocess 
    (pps ppx_inline_test ppx_assert)))

@@ -50,7 +50,6 @@ module type S = sig
     val rgb : r:int -> g:int -> b:int -> t
     val rgba : r:int -> g:int -> b:int -> a:int -> t
     val white : t
-    (* Plus any other functions your D.Colour module exposes, you must repeat them here manually if you want them visible *)
   end
 
   module Camera : Camera_component.S
@@ -77,6 +76,7 @@ module type S = sig
 
   val screen_width : unit -> int
   val screen_height : unit -> int
+  val log : ('a, Format.formatter, unit, unit) format4 -> 'a
 end
 
 module Make (D : Luma__driver.Driver.S) : S = struct
@@ -113,6 +113,10 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     type nonrec colour = colour
   end
 
+  let () =
+    Fmt_tty.setup_std_outputs ();
+    Luma__core.Log.init ()
+
   module Sprite = struct
     include S
 
@@ -147,4 +151,5 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   let screen_width = D.Window.screen_width
   let screen_height = D.Window.screen_height
+  let log = Luma__core.Log.app_log
 end
