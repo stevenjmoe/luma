@@ -6,6 +6,8 @@ module type S = sig
   val id : Luma__id.Id.Component.t
   (** Gets the unique identifier for the component type. *)
 
+  val name : string
+  val pp : t Fmt.t
   val of_base : base -> t
   val of_base_opt : base -> t option
   val to_base : t -> base
@@ -45,6 +47,8 @@ end
     Note that the preprocessor requires a type with the name t. *)
 module Make (B : sig
   type inner
+
+  val name : string
 end) : S with type t = B.inner
 
 (** A packed component, which combines a component module and its value. This allows components of

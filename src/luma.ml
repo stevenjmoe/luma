@@ -76,7 +76,14 @@ module type S = sig
 
   val screen_width : unit -> int
   val screen_height : unit -> int
-  val log : ('a, Format.formatter, unit, unit) format4 -> 'a
+
+  module Log : sig
+    val log : ('a, Format.formatter, unit, unit) format4 -> 'a
+    val error : ('a, unit) Luma__core__Log.conditional_log
+    val warn : ('a, unit) Luma__core__Log.conditional_log
+    val debug : ('a, unit) Luma__core__Log.conditional_log
+    val info : ('a, unit) Luma__core__Log.conditional_log
+  end
 end
 
 module Make (D : Luma__driver.Driver.S) : S = struct
@@ -112,6 +119,17 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
     type nonrec texture = texture
     type nonrec colour = colour
+  end
+
+  (* logging *)
+  let default_log = Luma__core.Log.sub_log (Logs.Src.name Logs.default)
+
+  module Log = struct
+    let log = Luma__core.Log.app_log
+    let error = default_log.error
+    let warn = default_log.warn
+    let debug = default_log.debug
+    let info = default_log.info
   end
 
   let () =
@@ -151,5 +169,4 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   let screen_width = D.Window.screen_width
   let screen_height = D.Window.screen_height
-  let log = Luma__core.Log.app_log
 end

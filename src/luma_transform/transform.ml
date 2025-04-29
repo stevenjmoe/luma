@@ -12,4 +12,6 @@ let create ?(position = Vec3.zero ()) ?(rotation = 0.) ?(scale = Vec3.create 1.0
 
 module C = Component.Make (struct
   type inner = t
+
+  let name = "Transform"
 end)

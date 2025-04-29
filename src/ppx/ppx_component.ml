@@ -8,10 +8,14 @@ let component_rule () =
   in
   let expander ~ctxt type_expr =
     let loc = Expansion_context.Extension.extension_point_loc ctxt in
+    let path = Expansion_context.Extension.code_path ctxt in
+    let component_name = Code_path.enclosing_module path in
     let module_c =
       [%stri
         module C = Component.Make (struct
           type inner = [%t type_expr]
+
+          let name = [%e Ast_builder.Default.estring ~loc component_name]
         end)]
     in
     {
@@ -36,6 +40,8 @@ let module_struct_rule () =
   let expander ~ctxt payload =
     let open Parsetree in
     let loc = Expansion_context.Extension.extension_point_loc ctxt in
+    let path = Expansion_context.Extension.code_path ctxt in
+    let component_name = Code_path.enclosing_module path in
     match payload with
     | [
      {
@@ -74,6 +80,8 @@ let module_struct_rule () =
               [%stri
                 module C = Component.Make (struct
                   type inner = [%t type_t]
+
+                  let name = [%e Ast_builder.Default.estring ~loc component_name]
                 end)]
             in
             let new_structure_items = structure_items @ [ module_c ] in

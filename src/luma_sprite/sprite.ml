@@ -52,5 +52,7 @@ module Make (Texture : Texture.S) : S with type texture = Texture.t = struct
 
   module C = Luma__ecs.Component.Make (struct
     type inner = t
+
+    let name = "Sprite"
   end)
 end
