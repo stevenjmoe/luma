@@ -6,7 +6,12 @@ type t = {
   plugins : (t -> t) list;
 }
 
-let create () = { world = World.create (); scheduler = Scheduler.create (); plugins = [] }
+let log = Luma__core.Log.sub_log "luma.app"
+
+let create () =
+  log.info (fun log -> log "Created world");
+  { world = World.create (); scheduler = Scheduler.create (); plugins = [] }
+
 let world (app : t) = app.world
 let scheduler (app : t) = app.scheduler
 let add_plugin plugin app = { app with plugins = plugin :: app.plugins }
@@ -16,6 +21,7 @@ let add_system sys app =
   app
 
 let run (module D : Luma__driver.Driver.S) (app : t) =
+  log.info (fun log -> log "Running applictation.");
   let app = List.fold_right (fun plugin app -> plugin app) app.plugins app in
 
   let world =

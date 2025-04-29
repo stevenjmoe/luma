@@ -16,7 +16,7 @@ let input_system () =
       let open Luma.Input in
       entities
       |> List.iter (fun (_, (velocity, _)) ->
-             let dt = time.dt in
+             let dt = Time.dt time in
              let vx =
                if is_key_down Key.A then
                  Vec2.x velocity -. (10. *. dt)

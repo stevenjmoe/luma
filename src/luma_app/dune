@@ -4,6 +4,7 @@
   (libraries 
     luma.ecs
     luma.driver
-    ppx_component)
+    ppx_component
+    luma.core)
   (preprocess 
    (pps ppx_inline_test ppx_assert ppx_component)))

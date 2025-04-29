@@ -64,7 +64,7 @@ module type S = sig
   module Resource : module type of Resource
   module Scheduler : module type of Scheduler
   module System : module type of System
-  module Time : module type of Time
+  module Time : Time.S
   module Transform : module type of Transform
   module World : module type of World
   module Math : module type of Luma__math
@@ -85,7 +85,8 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Camera_component = Luma__render.Camera_component.Make (D)
   module Camera_plugin = Luma__render.Camera_plugin.Make (D) (Camera_component)
   module Input = Luma__input.Input.Make (D)
-  module Plugin = Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input)
+  module Time = Luma__time.Time.Make (D)
+  module Plugin = Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time)
   module Window_config = Window.Window_config
 
   module App = struct
@@ -141,7 +142,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Resource = Luma__resource.Resource
   module Scheduler = Luma__ecs.Scheduler
   module System = Luma__ecs.System
-  module Time = Luma__time.Time
   module Transform = Luma__transform.Transform
   module World = Luma__ecs.World
   module Math = Luma__math

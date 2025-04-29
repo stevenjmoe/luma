@@ -65,7 +65,7 @@ module type S = sig
   module Resource : module type of Resource
   module Scheduler : module type of Scheduler
   module System : module type of System
-  module Time : module type of Time
+  module Time : Time.S
   module Transform : module type of Transform
   module World : module type of World
   module Math : module type of Luma__math

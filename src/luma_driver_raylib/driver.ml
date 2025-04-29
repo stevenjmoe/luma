@@ -14,6 +14,8 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       colour;
     ()
 
+  let get_frame_time = Raylib.get_frame_time
+
   module Window = struct
     let init ~width ~height ~title =
       Raylib.init_window width height title;

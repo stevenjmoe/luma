@@ -1,3 +1,5 @@
+let log = Luma__core.Log.sub_log "luma.scheduler"
+
 type scheduled =
   | PreStartup : (World.t, 'a) System.t -> scheduled
   | Startup : (World.t, 'a) System.t -> scheduled
@@ -24,6 +26,7 @@ type system = System : (World.t, 'a) System.t -> system
 type t = { systems : (stage, system list) Hashtbl.t }
 
 let create () =
+  log.info (fun log -> log "Creating scheduler.");
   let systems = Hashtbl.create 16 in
   List.iter
     (fun stage -> Hashtbl.add systems stage [])

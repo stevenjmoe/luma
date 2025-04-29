@@ -6,7 +6,8 @@ module Make
     (D : Luma__driver.Driver.S)
     (Window : Luma__window.Window.S)
     (Camera_plugin : Camera_plugin.S)
-    (Input : Luma__input.Input.S) =
+    (Input : Luma__input.Input.S)
+    (Time : Luma__time.Time.S) =
 struct
   module Config = struct
     type t = { window : Window.Window_config.t }
@@ -15,7 +16,7 @@ struct
   end
 
   let window_plugin = Window.plugin
-  let time_plugin = Luma__time.Time.plugin
+  let time_plugin = Time.plugin
   let asset_plugin = Luma__asset.Plugin.plugin
   let camera_plugin = Camera_plugin.plugin
   let input_plugin = Input.plugin

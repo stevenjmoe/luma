@@ -6,6 +6,7 @@ module type S = sig
   type texture
 
   val draw_rect : Rect.t -> colour -> unit
+  val get_frame_time : unit -> float
 
   module Window : sig
     val init : width:int -> height:int -> title:string -> unit

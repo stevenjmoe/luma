@@ -39,7 +39,7 @@ let execute_animations () =
     ~components:Query.Component.(Required (module Animation_config.C) & End)
     ~resources:Query.Resource.(Resource (module Assets.R) & Resource (module Time.R) & End)
     (fun world entities (assets, (time, _)) ->
-      let dt = time.dt in
+      let dt = Time.dt time in
       entities
       |> List.iter (fun (_, (animation_config, _)) ->
              let open Animation_config in
