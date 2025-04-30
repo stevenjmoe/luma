@@ -13,6 +13,8 @@ module Position = struct
 
   module C = E.Component.Make (struct
     type inner = t
+
+    let name = "Position"
   end)
 end
 

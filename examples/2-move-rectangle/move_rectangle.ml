@@ -3,8 +3,15 @@ module Luma = Luma.Make (Driver)
 open Luma
 module Component = Component
 module Rectangle = [%component: Math.Rect.t]
-module Velocity = [%component: Math.Vec2.t]
 module Player_tag = [%component: int]
+
+(* Define a component with a custom pp expression which uses the underlying component pp expression. *)
+[%%component
+module Velocity = struct
+  type t = Math.Vec2.t
+
+  let pp fmt t = Fmt.pf fmt "%a x: %f | y: %f" C.pp t (Math.Vec2.x t) (Math.Vec2.y t)
+end]
 
 let input_system () =
   System.make_with_resources
@@ -16,6 +23,7 @@ let input_system () =
       let open Luma.Input in
       entities
       |> List.iter (fun (_, (velocity, _)) ->
+             Luma.Log.info (fun log -> log "%a" Velocity.pp velocity);
              let dt = Time.dt time in
              let vx =
                if is_key_down Key.A then
