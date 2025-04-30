@@ -40,8 +40,17 @@ let module_struct_rule () =
   let expander ~ctxt payload =
     let open Parsetree in
     let loc = Expansion_context.Extension.extension_point_loc ctxt in
-    let path = Expansion_context.Extension.code_path ctxt in
-    let component_name = Code_path.enclosing_module path in
+
+    (* Split the module's structure items into 3 parts: evertying before t (prefix), type_t , and everything after t (suffix). 
+       The expander can then rebuild the structure so that module C comes immediately after type t, but before any user-written items in suffix. 
+       This way the rest of the user-defined component can refer to module C.*)
+    let rec split_at_type_t acc = function
+      | [] -> Location.raise_errorf ~loc "The module must define a type t"
+      | ({ pstr_desc = Pstr_type (_, [ { ptype_name = { txt = "t"; _ }; _ } ]) } as type_t) :: rest
+        ->
+          (List.rev acc, type_t, rest)
+      | item :: rest -> split_at_type_t (item :: acc) rest
+    in
     match payload with
     | [
      {
@@ -81,10 +90,11 @@ let module_struct_rule () =
                 module C = Component.Make (struct
                   type inner = [%t type_t]
 
-                  let name = [%e Ast_builder.Default.estring ~loc component_name]
+                  let name = [%e Ast_builder.Default.estring ~loc module_name]
                 end)]
             in
-            let new_structure_items = structure_items @ [ module_c ] in
+            let prefix, t_item, suffix = split_at_type_t [] structure_items in
+            let new_structure_items = prefix @ (t_item :: module_c :: suffix) in
             let new_module_expr =
               {
                 pmod_desc = Pmod_structure new_structure_items;

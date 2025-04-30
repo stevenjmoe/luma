@@ -20,8 +20,18 @@ let add_system sys app =
   Scheduler.add_scheduled app.scheduler sys;
   app
 
+let check_plugins plugins () =
+  if List.length plugins = 0 then
+    log.warn (fun log ->
+        log
+          "No plugins have been added to the application. Did you forget to call \
+           `Luma.Plugin.add_default_plugins`?")
+
 let run (module D : Luma__driver.Driver.S) (app : t) =
   log.info (fun log -> log "Running applictation.");
+
+  check_plugins app.plugins ();
+
   let app = List.fold_right (fun plugin app -> plugin app) app.plugins app in
 
   let world =
