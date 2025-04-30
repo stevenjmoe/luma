@@ -85,6 +85,13 @@ let module_struct_rule () =
               (Location.error_extensionf ~loc "The module must define a type t")
               []
         | Some type_t ->
+            let forwarders =
+              [
+                [%stri
+                  let name = C.name
+                  and pp = C.pp];
+              ]
+            in
             let module_c =
               [%stri
                 module C = Component.Make (struct
@@ -94,7 +101,7 @@ let module_struct_rule () =
                 end)]
             in
             let prefix, t_item, suffix = split_at_type_t [] structure_items in
-            let new_structure_items = prefix @ (t_item :: module_c :: suffix) in
+            let new_structure_items = prefix @ [ t_item; module_c ] @ forwarders @ suffix in
             let new_module_expr =
               {
                 pmod_desc = Pmod_structure new_structure_items;

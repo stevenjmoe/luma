@@ -17,6 +17,7 @@
    (alcotest :with-test) 
    containers
    dune
+   fmt
    logs
    lwt
    lwt_ppx

@@ -44,4 +44,6 @@ let unload (assets : t) handle =
 
 module R = Luma__resource.Resource.Make (struct
   type inner = t
+
+  let name = "Assets"
 end)

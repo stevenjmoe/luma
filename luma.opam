@@ -11,6 +11,7 @@ depends: [
   "alcotest" {with-test}
   "containers"
   "dune" {>= "3.17"}
+  "fmt"
   "logs"
   "lwt"
   "lwt_ppx"

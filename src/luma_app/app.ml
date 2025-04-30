@@ -6,7 +6,7 @@ type t = {
   plugins : (t -> t) list;
 }
 
-let log = Luma__core.Log.sub_log "luma.app"
+let log = Luma__core.Log.sub_log "app"
 
 let create () =
   log.info (fun log -> log "Created world");

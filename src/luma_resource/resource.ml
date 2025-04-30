@@ -19,6 +19,8 @@ module type S = sig
   type t
 
   val id : Luma__id.Id.Resource.t
+  val name : string
+  val pp : t Fmt.t
   val of_base : base -> t
   val of_base_opt : base -> t option
   val to_base : t -> base
@@ -26,6 +28,8 @@ end
 
 module Make (B : sig
   type inner
+
+  val name : string
 end) : S with type t = B.inner = struct
   include B
 
@@ -33,6 +37,8 @@ end) : S with type t = B.inner = struct
   type base += T of t
 
   let id = Luma__id.Id.Resource.next ()
+  let name = B.name
+  let pp fmt _ = Fmt.pf fmt "<%s #%d>" name (Luma__id.Id.Resource.to_int id)
   let of_base = function T t -> t | _ -> failwith ""
   let of_base_opt = function T t -> Some t | _ -> None
   let to_base t = T t
@@ -53,5 +59,6 @@ let unpack : type a. (module S with type t = a) -> packed -> (a, error) result =
     Error (`Type_mismatch M.id)
 
 let id : packed -> Luma__id.Id.Resource.t = function Packed ((module R), _) -> R.id
+let pp_packed fmt (Packed ((module C), value)) = Format.fprintf fmt "%s:%a" C.name C.pp value
 
 module Query = struct end

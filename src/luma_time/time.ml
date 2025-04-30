@@ -23,6 +23,8 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   module R = Luma__resource.Resource.Make (struct
     type inner = t
+
+    let name = "Time"
   end)
 
   let log = Luma__core.Log.sub_log "luma.time"

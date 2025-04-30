@@ -81,6 +81,7 @@ module Resource = struct
     | End : unit t
 
   let ( & ) term rest = Res (term, rest)
+  let log = Luma__core.Log.sub_log "query.resource"
 
   let evaluate : type a. a t -> (Luma__id.Id.Resource.t, packed) Hashtbl.t -> (a, error) result =
    fun query store ->
@@ -95,7 +96,9 @@ module Resource = struct
               | Ok result -> (
                   match fetch rest store with Ok rest -> Ok (result, rest) | Error e -> Error e)
               | Error e -> Error e)
-          | None -> Error (`Not_found R.id))
+          | None ->
+              log.error (fun log -> log "Could not find resource %s" R.name);
+              Error (`Not_found R.id))
     in
     fetch query store
 end

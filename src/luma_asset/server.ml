@@ -26,4 +26,6 @@ let load server path =
 
 module R = Luma__resource.Resource.Make (struct
   type inner = t
+
+  let name = "Asset_server"
 end)
