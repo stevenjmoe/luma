@@ -19,6 +19,8 @@ depends: [
   "ppxlib"
   "ppx_inline_test"
   "raylib"
+  "ptime"
+  "fmt"
   "odoc" {with-doc}
 ]
 build: [

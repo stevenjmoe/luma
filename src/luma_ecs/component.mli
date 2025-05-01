@@ -77,3 +77,6 @@ val unpack : 'a. (module S with type t = 'a) -> packed -> 'a option
 
 val id : packed -> Luma__id.Id.Component.t
 (** Gets the [Component] id from the packed component. *)
+
+val pp : Format.formatter -> packed -> unit
+(** Print a packed component using its own pretty-printer. *)

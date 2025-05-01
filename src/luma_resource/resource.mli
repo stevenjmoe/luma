@@ -30,4 +30,6 @@ type packed = Packed : (module S with type t = 'a) * 'a -> packed
 val pack : 'a. (module S with type t = 'a) -> 'a -> packed
 val unpack : 'a. (module S with type t = 'a) -> packed -> ('a, error) result
 val id : packed -> Luma__id.Id.Resource.t
+
 val pp_packed : Format.formatter -> packed -> unit
+(** Print a packed component using its own pretty-printer. *)

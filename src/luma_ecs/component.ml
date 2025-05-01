@@ -42,3 +42,4 @@ let unpack : type a. (module S with type t = a) -> packed -> a option =
     None
 
 let id : packed -> Luma__id.Id.Component.t = function Packed ((module C), _) -> C.id
+let pp fmt (Packed ((module C), value)) = Format.fprintf fmt "%a" C.pp value

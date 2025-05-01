@@ -24,7 +24,9 @@
    ocaml 
    ppxlib
    ppx_inline_test
-   raylib)
+   raylib
+   ptime
+   fmt)
  (tags
   ("game engine" "ecs")))
 

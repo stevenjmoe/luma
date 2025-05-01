@@ -59,6 +59,6 @@ let unpack : type a. (module S with type t = a) -> packed -> (a, error) result =
     Error (`Type_mismatch M.id)
 
 let id : packed -> Luma__id.Id.Resource.t = function Packed ((module R), _) -> R.id
-let pp_packed fmt (Packed ((module C), value)) = Format.fprintf fmt "%s:%a" C.name C.pp value
+let pp_packed fmt (Packed ((module R), value)) = Format.fprintf fmt "%a" R.pp value
 
 module Query = struct end
