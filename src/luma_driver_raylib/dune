@@ -1,4 +1,5 @@
 (library
   (name luma__driver_raylib)
   (public_name luma.driver.raylib) 
+  (modules driver)
   (libraries raylib luma.driver luma.math luma.types))

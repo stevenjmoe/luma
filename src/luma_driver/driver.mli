@@ -12,6 +12,18 @@ module type S = sig
     val init : width:int -> height:int -> title:string -> unit
     val shutdown : unit -> unit
     val should_close : unit -> bool
+    val close : unit -> unit
+    val is_fullscreen : unit -> bool
+    val is_hidden : unit -> bool
+    val is_minimized : unit -> bool
+    val is_maximized : unit -> bool
+    val is_focused : unit -> bool
+    val is_resized : unit -> bool
+    val toggle_fullscreen : unit -> unit
+    val toggle_borderless_windowed : unit -> unit
+    val maximize : unit -> unit
+    val minimize : unit -> unit
+    val restore : unit -> unit
     val get_frame_time : unit -> float
     val begin_frame : unit -> unit
     val end_frame : unit -> unit
