@@ -19,7 +19,7 @@ struct
   let time_plugin = Time.plugin
   let asset_plugin = Luma__asset.Plugin.plugin
   let camera_plugin = Camera_plugin.plugin
-  let input_plugin = Input.plugin
+  let input_plugin = Input.Keyboard.plugin
   let default_config () : Config.t = { window = Window.Window_config.default () }
 
   let add_default_plugins ?(config : Config.t = default_config ()) app =

@@ -1,3 +1,4 @@
 (library
   (name luma__types)
-  (public_name luma.types))
+  (public_name luma.types)
+  (modules input_types))

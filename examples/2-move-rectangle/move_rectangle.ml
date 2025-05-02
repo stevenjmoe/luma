@@ -20,10 +20,9 @@ let input_system () =
     ~resources:Query.Resource.(Resource (module Time.R) & End)
     (fun world entities (time, _) ->
       let open Math in
-      let open Luma.Input in
+      let open Luma.Input.Keyboard in
       entities
       |> List.iter (fun (_, (velocity, _)) ->
-             Luma.Log.info (fun log -> log "%a" Velocity.pp velocity);
              let dt = Time.dt time in
              let vx =
                if is_key_down Key.A then

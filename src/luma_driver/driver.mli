@@ -68,12 +68,29 @@ module type S = sig
   end
 
   module Input : sig
-    open Luma__types
+    open Luma__types.Input_types
 
-    val begin_frame : unit -> unit
-    val is_key_down : Key.t -> bool
-    val is_key_pressed : Key.t -> bool
-    val is_key_released : Key.t -> bool
+    module Keyboard : sig
+      val begin_frame : unit -> unit
+      val is_key_down : Key.t -> bool
+      val is_key_pressed : Key.t -> bool
+      val is_key_released : Key.t -> bool
+    end
+
+    module Mouse : sig
+      val is_mouse_button_pressed : Mouse_button.t -> bool
+      val is_mouse_button_released : Mouse_button.t -> bool
+      val is_mouse_button_up : Mouse_button.t -> bool
+      val is_mouse_button_down : Mouse_button.t -> bool
+      val get_mouse_x : unit -> int
+      val get_mouse_y : unit -> int
+      val get_mouse_position : unit -> Luma__math.Vec2.t
+      val get_mouse_delta : unit -> Luma__math.Vec2.t
+      val set_mouse_position : x:int -> y:int -> unit
+      val set_mouse_offset : x:int -> y:int -> unit
+      val set_mouse_scale : x:float -> y:float -> unit
+      val get_mouse_wheel_move : unit -> float
+    end
   end
 end
 
