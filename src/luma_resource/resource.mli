@@ -33,3 +33,7 @@ val id : packed -> Luma__id.Id.Resource.t
 
 val pp_packed : Format.formatter -> packed -> unit
 (** Print a packed component using its own pretty-printer. *)
+
+val show : packed -> string
+(** [show packed] takes a packed resource and returns a formatted string based on the resources
+    pretty printer. *)

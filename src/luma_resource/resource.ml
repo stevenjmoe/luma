@@ -39,7 +39,13 @@ end) : S with type t = B.inner = struct
   let id = Luma__id.Id.Resource.next ()
   let name = B.name
   let pp fmt _ = Fmt.pf fmt "<%s #%d>" name (Luma__id.Id.Resource.to_int id)
-  let of_base = function T t -> t | _ -> failwith ""
+
+  let of_base = function
+    | T t -> t
+    | _ ->
+        failwith
+          "Unexpected base type: Expected a value wrapped in 'T', but got a different constructor."
+
   let of_base_opt = function T t -> Some t | _ -> None
   let to_base t = T t
 end
@@ -60,5 +66,4 @@ let unpack : type a. (module S with type t = a) -> packed -> (a, error) result =
 
 let id : packed -> Luma__id.Id.Resource.t = function Packed ((module R), _) -> R.id
 let pp_packed fmt (Packed ((module R), value)) = Format.fprintf fmt "%a" R.pp value
-
-module Query = struct end
+let show packed = Luma__core.Print.show_of_pp pp_packed packed

@@ -30,6 +30,8 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   let log = Luma__core.Log.sub_log "luma.time"
 
   let update_time () =
+    let open Luma__core.Error in
+    let open Luma__id in
     System.make
       ~components:Query.(End)
       (fun (world : World.t) _ ->
@@ -40,9 +42,19 @@ module Make (D : Luma__driver.Driver.S) : S = struct
                 let dt = D.get_frame_time () in
                 time.dt <- dt;
                 time.elapsed <- time.elapsed +. dt;
+                let error =
+                  resource_unpack_failed (Id.Resource.to_int R.id) (Luma__resource.Resource.show r)
+                in
+                log.error (fun log -> log "%s" @@ Luma__core.Error.show error);
                 world
-            | Error _ -> failwith "could not get time from resources")
-        | None -> failwith "could not get time from resources")
+            | Error e ->
+                let error = resource_unpack_failed (Id.Resource.to_int R.id) R.name in
+                log.error (fun log -> log "%s" @@ Luma__core.Error.show error);
+                world)
+        | None ->
+            let error = resource_not_found (Id.Resource.to_int R.id) R.name in
+            log.error (fun log -> log "%s" @@ Luma__core.Error.show error);
+            world)
 
   let plugin app =
     let open Luma__app in
