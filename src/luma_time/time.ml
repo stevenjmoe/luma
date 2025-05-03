@@ -42,10 +42,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
                 let dt = D.get_frame_time () in
                 time.dt <- dt;
                 time.elapsed <- time.elapsed +. dt;
-                let error =
-                  resource_unpack_failed (Id.Resource.to_int R.id) (Luma__resource.Resource.show r)
-                in
-                log.error (fun log -> log "%s" @@ Luma__core.Error.show error);
                 world
             | Error e ->
                 let error = resource_unpack_failed (Id.Resource.to_int R.id) R.name in

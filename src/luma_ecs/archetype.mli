@@ -1,5 +1,8 @@
 type t
-type operation = Add of Luma__id.Id.Component.t | Remove of Luma__id.Id.Component.t
+
+type operation =
+  | Add of Luma__id.Id.Component.t
+  | Remove of Luma__id.Id.Component.t
 
 val components : t -> Luma__id.Id.ComponentSet.t
 val entities : t -> Luma__id.Id.EntitySet.t

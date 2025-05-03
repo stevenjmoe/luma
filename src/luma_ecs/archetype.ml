@@ -14,6 +14,8 @@ type operation =
   | Add of Id.Component.t
   | Remove of Id.Component.t
 
+let log = Luma__core.Log.sub_log "luma.archetype"
+
 (* Convert to a string before hashing to get around the depth limit of 10 on Hashtbl.hash. *)
 let generate_hash (components : Id.Component.t list) =
   components
@@ -34,24 +36,30 @@ let create components =
 
 let empty () = create Id.ComponentSet.empty
 
-(* TODO: Validation  *)
-let add a entity_id components =
-  let add () = a.entities <- Id.EntitySet.add entity_id a.entities in
-  let entity_id = Id.Entity.to_int entity_id in
+(* Search for the component sparse set and performs an action on it. Fails if the set cannot be found *)
+let find_component_set_with_action a c entity_id action =
+  let c_id = Id.Component.to_int (Component.id c) in
+  match Sparse_set.get a.table c_id with
+  | Some s -> action s
+  | None ->
+      let error =
+        Luma__core.Error.archetype_component_not_found c_id a.hash (Component.show c)
+        |> Luma__core.Error.show
+      in
+      log.error (fun log -> log "%s" error);
+      failwith error
+
+let add a e_id components =
+  let add () = a.entities <- Id.EntitySet.add e_id a.entities in
+  let entity_id = Id.Entity.to_int e_id in
   components
   |> List.iter (fun c ->
-         let c_id = Id.Component.to_int (Component.id c) in
-         match Sparse_set.get a.table c_id with
-         | Some s -> Sparse_set.set s entity_id c
-         | None -> failwith "no component");
+         find_component_set_with_action a c entity_id (fun s -> Sparse_set.set s entity_id c));
   add ()
 
-let replace a entity_id component =
-  let entity_id = Id.Entity.to_int entity_id in
-  let component_id = Id.Component.to_int (Component.id component) in
-  match Sparse_set.get a.table component_id with
-  | Some comp_set -> Sparse_set.set comp_set entity_id component
-  | None -> invalid_arg "could not find component"
+let replace a e_id c =
+  let entity_id = Id.Entity.to_int e_id in
+  find_component_set_with_action a c entity_id (fun s -> Sparse_set.set s entity_id c)
 
 let remove_entity a entity_id =
   let remove () = a.entities <- Id.EntitySet.remove entity_id a.entities in
