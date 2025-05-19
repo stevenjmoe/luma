@@ -1,27 +1,21 @@
 (* exceptions *)
-type not_found = {
-  type_ : string;
+type entity_not_found = {
+  id : int;
   msg : string;
 }
 
-exception Not_found of not_found
+type component_not_found = {
+  component_id : int;
+  archetype_hash : int;
+  msg : string;
+}
 
-let not_found e = Not_found e
+exception Entity_not_found of entity_not_found
+exception Component_not_found of component_not_found
 
-type archetype_error =
-  [ `Component_not_found of string
-  | `Archetype_not_found of string
-  ]
-(** Archetype module errors.
+(** [entity_not_found id msg] returns `Entity_not_found` exception*)
+let entity_not_found id msg = Entity_not_found { id; msg }
 
-    ``Component_not_found str` : the string is expected to be the pretty printed output of the
-    packed component*)
-
-let component_not_found (msg : string) = `Component_not_found msg
-let archetype_not_found (msg : string) = `Archetype_not_found
-
-type error = [ | archetype_error ]
-
-let pp_error fmt = function
-  | `Component_not_found msg -> Format.fprintf fmt "Component could not be found: %s." msg
-  | `Archetype_not_found msg -> Format.fprintf fmt "Archetype could not be found. %s" msg
+(** [component_not_found id archetype_hash msg] returns `Component_not_found` exception*)
+let component_not_found component_id hash msg =
+  Component_not_found { component_id; archetype_hash = hash; msg }

@@ -9,7 +9,8 @@ val add_entity : t -> Luma__id.Id.Entity.t
 (** [add_component world packed_component entity] adds a component to the world and ensures that the
     world's Archetypes are kept up to date.
 
-    @raise Luma__core.Error.Not_found if the entity is not found. *)
+    @raise Luma__core.Error.Entity_not_found if the entity hasn't been added to the game world.
+    @raise Luma__core.Error.Component_not_found *)
 val add_component : t -> Component.packed -> Luma__id.Id.Entity.t -> unit
 
 (** [with_component world component_module component entity] provides a convenient way to add
@@ -33,7 +34,8 @@ val add_component : t -> Component.packed -> Luma__id.Id.Entity.t -> unit
       |> ignore
     ]}
 
-    @raise Luma__core.Error.Not_found if the entity is not found. *)
+    @raise Luma__core.Error.Entity_not_found if the entity hasn't been added to the game world.
+    @raise Luma__core.Error.Component_not_found *)
 val with_component :
   'a.
   t -> (module Component.S with type t = 'a) -> 'a -> Luma__id.Id.Entity.t -> Luma__id.Id.Entity.t

@@ -31,9 +31,9 @@ let add_resource key res w =
 let get_resource w key = Hashtbl.find_opt w.resources key
 let archetypes w = w.archetypes
 
-(* TODO: exception in Archetype.find_component_set_with_action *)
 let add_entity w =
   let entity = Luma__id.Id.Entity.next () in
+  (* these calls "should" never raise *)
   Archetype.add w.empty_archetype entity [];
   Hashtbl.replace w.entity_to_archetype_lookup entity (Archetype.hash w.empty_archetype);
   entity
@@ -76,9 +76,10 @@ let find_archetype w entity =
   | Some hash -> Hashtbl.find w.archetypes hash
   | None ->
       raise
-      @@ Luma__core.Error.not_found { type_ = "entity"; msg = "find_archetype in add_component" }
+      @@ Luma__core.Error.entity_not_found
+           (Luma__id.Id.Entity.to_int entity)
+           "find_archetype in add_component"
 
-(* TODO: exception in Archetype.replace -> Archetype.find_component_set_with_action *)
 let add_component w component entity =
   let old_arch = find_archetype w entity in
   let new_archetype = get_new_archetype w old_arch (Archetype.Add (Component.id component)) in

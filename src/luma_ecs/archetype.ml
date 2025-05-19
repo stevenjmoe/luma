@@ -15,6 +15,11 @@ type operation =
   | Remove of Id.Component.t
 
 let log = Luma__core.Log.sub_log "luma.archetype"
+let hash a = a.hash
+let components a = a.components
+let entities a = a.entities
+let pp fmt a = Fmt.pf fmt "<Archetype hash: %d>" a.hash
+let show a = Luma__core.Print.show_of_pp pp a
 
 (* Convert to a string before hashing to get around the depth limit of 10 on Hashtbl.hash. *)
 let generate_hash (components : Id.Component.t list) =
@@ -37,14 +42,14 @@ let create components =
 let empty () = create Id.ComponentSet.empty
 
 (* Search for the component sparse set and performs an action on it. Fails if the set cannot be found *)
-(* TODO: *)
 let find_component_set_with_action a c entity_id action =
   let c_id = Id.Component.to_int (Component.id c) in
   match Sparse_set.get a.table c_id with
   | Some s -> action s
   | None ->
-      log.error (fun log -> log "error");
-      failwith ""
+      let hash = hash a in
+      raise
+      @@ Luma__core.Error.component_not_found c_id hash "Archetype.find_component_set_with_action"
 
 let add a e_id components =
   let add () = a.entities <- Id.EntitySet.add e_id a.entities in
@@ -101,9 +106,3 @@ let query_table a entity_id component_id =
   match Sparse_set.get a.table component_id with
   | Some t -> ( match Sparse_set.get t entity_id with Some c -> Some c | None -> None)
   | None -> None
-
-let hash a = a.hash
-let components a = a.components
-let entities a = a.entities
-let pp fmt a = Fmt.pf fmt "<Archetype hash: %d>" a.hash
-let show a = Luma__core.Print.show_of_pp pp a
