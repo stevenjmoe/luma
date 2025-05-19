@@ -65,5 +65,5 @@ let unpack : type a. (module S with type t = a) -> packed -> (a, error) result =
     Error (`Type_mismatch M.id)
 
 let id : packed -> Luma__id.Id.Resource.t = function Packed ((module R), _) -> R.id
-let pp_packed fmt (Packed ((module R), value)) = Format.fprintf fmt "%a" R.pp value
+let pp_packed fmt (Packed ((module R), value)) = Fmt.pf fmt "%a" R.pp value
 let show packed = Luma__core.Print.show_of_pp pp_packed packed

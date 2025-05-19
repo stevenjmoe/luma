@@ -30,7 +30,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   let log = Luma__core.Log.sub_log "luma.time"
 
   let update_time () =
-    let open Luma__core.Error in
     let open Luma__id in
     System.make
       ~components:Query.(End)
@@ -44,12 +43,11 @@ module Make (D : Luma__driver.Driver.S) : S = struct
                 time.elapsed <- time.elapsed +. dt;
                 world
             | Error e ->
-                let error = resource_unpack_failed (Id.Resource.to_int R.id) R.name in
-                log.error (fun log -> log "%s" @@ Luma__core.Error.show error);
+                (* TODO:*)
+                log.error (fun log -> log "error");
                 world)
         | None ->
-            let error = resource_not_found (Id.Resource.to_int R.id) R.name in
-            log.error (fun log -> log "%s" @@ Luma__core.Error.show error);
+            log.error (fun log -> log "error");
             world)
 
   let plugin app =

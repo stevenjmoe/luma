@@ -53,7 +53,6 @@ module type S = sig
   end
 
   module Camera : Camera_component.S
-  module Archetype : module type of Archetype
   module Asset : module type of Asset
   module Assets : module type of Assets
   module Asset_server : module type of Server
@@ -85,6 +84,8 @@ module type S = sig
     val debug : ('a, unit) Luma__core__Log.conditional_log
     val info : ('a, unit) Luma__core__Log.conditional_log
   end
+
+  module Error : module type of Luma__core.Error
 end
 
 module Make (D : Luma__driver.Driver.S) : S = struct
@@ -171,4 +172,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   let screen_width = D.Window.screen_width
   let screen_height = D.Window.screen_height
+
+  module Error = Luma__core.Error
 end

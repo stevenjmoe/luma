@@ -8,6 +8,8 @@ type t = {
   resources : (Luma__id.Id.Resource.t, Luma__resource.Resource.packed) Hashtbl.t;
 }
 
+let log = Luma__core.Log.sub_log "luma.world"
+
 let create () =
   let archetypes = Hashtbl.create 16 in
   let empty_archetype = Archetype.empty () in
@@ -29,17 +31,12 @@ let add_resource key res w =
 let get_resource w key = Hashtbl.find_opt w.resources key
 let archetypes w = w.archetypes
 
+(* TODO: exception in Archetype.find_component_set_with_action *)
 let add_entity w =
   let entity = Luma__id.Id.Entity.next () in
   Archetype.add w.empty_archetype entity [];
   Hashtbl.replace w.entity_to_archetype_lookup entity (Archetype.hash w.empty_archetype);
   entity
-
-let get_archetype w entity =
-  (match Hashtbl.find_opt w.entity_to_archetype_lookup entity with
-  | Some hash -> Hashtbl.find_opt w.archetypes hash
-  | None -> None)
-  |> Option.to_result ~none:"entity or archetype could not be found"
 
 let get_new_archetype w old_archetype operation =
   let hash = Archetype.next_hash old_archetype operation in
@@ -74,28 +71,32 @@ let update_component_to_arch w archetype =
          Hashtbl.replace w.component_to_archetype_lookup cid
            (operation (Archetype.hash archetype) arch_set))
 
+let find_archetype w entity =
+  match Hashtbl.find_opt w.entity_to_archetype_lookup entity with
+  | Some hash -> Hashtbl.find w.archetypes hash
+  | None ->
+      raise
+      @@ Luma__core.Error.not_found { type_ = "entity"; msg = "find_archetype in add_component" }
+
+(* TODO: exception in Archetype.replace -> Archetype.find_component_set_with_action *)
 let add_component w component entity =
-  match get_archetype w entity with
-  | Ok old_archetype ->
-      let new_archetype =
-        get_new_archetype w old_archetype (Archetype.Add (Component.id component))
-      in
-      if Archetype.hash old_archetype = Archetype.hash new_archetype then
-        Archetype.replace old_archetype entity component
-      else (
-        Hashtbl.replace w.entity_to_archetype_lookup entity (Archetype.hash new_archetype);
-        (* TODO: validation *)
-        let new_components =
-          [ component ]
-          @ List.filter_map
-              (fun component_id -> Archetype.query_table old_archetype entity component_id)
-              (Luma__id.Id.ComponentSet.to_list (Archetype.components new_archetype))
-        in
-        Archetype.remove_entity old_archetype entity;
-        Archetype.add new_archetype entity new_components;
-        update_component_to_arch w old_archetype;
-        update_component_to_arch w new_archetype)
-  | Error e -> failwith e
+  let old_arch = find_archetype w entity in
+  let new_archetype = get_new_archetype w old_arch (Archetype.Add (Component.id component)) in
+  if Archetype.hash old_arch = Archetype.hash new_archetype then
+    Archetype.replace old_arch entity component
+  else (
+    Hashtbl.replace w.entity_to_archetype_lookup entity (Archetype.hash new_archetype);
+    (* TODO: validation *)
+    let new_components =
+      [ component ]
+      @ List.filter_map
+          (fun component_id -> Archetype.query_table old_arch entity component_id)
+          (Luma__id.Id.ComponentSet.to_list (Archetype.components new_archetype))
+    in
+    Archetype.remove_entity old_arch entity;
+    Archetype.add new_archetype entity new_components;
+    update_component_to_arch w old_arch;
+    update_component_to_arch w new_archetype)
 
 let with_component : type a.
     t -> (module Component.S with type t = a) -> a -> Luma__id.Id.Entity.t -> Luma__id.Id.Entity.t =

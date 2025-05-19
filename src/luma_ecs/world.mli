@@ -1,18 +1,17 @@
 type t
 
-val create : unit -> t
 (** Creates an empty [World.t]. *)
+val create : unit -> t
 
-val add_entity : t -> Luma__id.Id.Entity.t
 (** [add_entity world] returns the next entity id from [Id.Entity]. *)
+val add_entity : t -> Luma__id.Id.Entity.t
 
-val add_component : t -> Component.packed -> Luma__id.Id.Entity.t -> unit
 (** [add_component world packed_component entity] adds a component to the world and ensures that the
-    world's Archetypes are kept up to date. *)
+    world's Archetypes are kept up to date.
 
-val with_component :
-  'a.
-  t -> (module Component.S with type t = 'a) -> 'a -> Luma__id.Id.Entity.t -> Luma__id.Id.Entity.t
+    @raise Luma__core.Error.Not_found if the entity is not found. *)
+val add_component : t -> Component.packed -> Luma__id.Id.Entity.t -> unit
+
 (** [with_component world component_module component entity] provides a convenient way to add
     components to an entity without manually packing them. It automatically packs the component and
     calls [add_component] internally.
@@ -32,25 +31,31 @@ val with_component :
       |> World.with_component world (module Velocity.C) velocity
       |> World.with_component world (module Transform.C) transform
       |> ignore
-    ]} *)
+    ]}
 
-val archetypes : t -> (int, Archetype.t) Hashtbl.t
+    @raise Luma__core.Error.Not_found if the entity is not found. *)
+val with_component :
+  'a.
+  t -> (module Component.S with type t = 'a) -> 'a -> Luma__id.Id.Entity.t -> Luma__id.Id.Entity.t
+
 (** Returns world's archetypes. *)
+val archetypes : t -> (int, Archetype.t) Hashtbl.t
 
-val resources : t -> (Luma__id.Id.Resource.t, Luma__resource.Resource.packed) Hashtbl.t
 (** Returns the world's resources. *)
+val resources : t -> (Luma__id.Id.Resource.t, Luma__resource.Resource.packed) Hashtbl.t
 
 (* TODO: This should probably accept the module and the unpacked resource and handle the complexity internally *)
-val add_resource : Luma__id.Id.Resource.t -> Luma__resource.Resource.packed -> t -> t
+
 (** [add_resource id packed world] adds a packed resource to the table of resources using the id as
     key. *)
+val add_resource : Luma__id.Id.Resource.t -> Luma__resource.Resource.packed -> t -> t
 
-val get_resource : t -> Luma__id.Id.Resource.t -> Luma__resource.Resource.packed option
 (** Returns [Some packed] if found, otherwise [None] *)
+val get_resource : t -> Luma__id.Id.Resource.t -> Luma__resource.Resource.packed option
 
-val query :
-  'a.
-  t -> ?filter:Query.Component.Filter.t -> 'a Query.Component.t -> (Luma__id.Id.Entity.t * 'a) list
 (** [query world filter query] evaluates the optional filter and required query on the world's
     archetypes and returns a [(Id.Entity.t * 'a) list] where ['a] is a tuple of components returned
     by the query. *)
+val query :
+  'a.
+  t -> ?filter:Query.Component.Filter.t -> 'a Query.Component.t -> (Luma__id.Id.Entity.t * 'a) list

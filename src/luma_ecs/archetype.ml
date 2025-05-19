@@ -37,17 +37,14 @@ let create components =
 let empty () = create Id.ComponentSet.empty
 
 (* Search for the component sparse set and performs an action on it. Fails if the set cannot be found *)
+(* TODO: *)
 let find_component_set_with_action a c entity_id action =
   let c_id = Id.Component.to_int (Component.id c) in
   match Sparse_set.get a.table c_id with
   | Some s -> action s
   | None ->
-      let error =
-        Luma__core.Error.archetype_component_not_found c_id a.hash (Component.show c)
-        |> Luma__core.Error.show
-      in
-      log.error (fun log -> log "%s" error);
-      failwith error
+      log.error (fun log -> log "error");
+      failwith ""
 
 let add a e_id components =
   let add () = a.entities <- Id.EntitySet.add e_id a.entities in
@@ -108,3 +105,5 @@ let query_table a entity_id component_id =
 let hash a = a.hash
 let components a = a.components
 let entities a = a.entities
+let pp fmt a = Fmt.pf fmt "<Archetype hash: %d>" a.hash
+let show a = Luma__core.Print.show_of_pp pp a
