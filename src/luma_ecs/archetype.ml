@@ -49,7 +49,8 @@ let find_component_set_with_action a c entity_id action =
   | None ->
       let hash = hash a in
       raise
-      @@ Luma__core.Error.component_not_found c_id hash "Archetype.find_component_set_with_action"
+      @@ Luma__core.Error.component_not_found_exn c_id hash
+           "Archetype.find_component_set_with_action"
 
 let add a e_id components =
   let add () = a.entities <- Id.EntitySet.add e_id a.entities in

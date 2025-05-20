@@ -76,7 +76,7 @@ let find_archetype w entity =
   | Some hash -> Hashtbl.find w.archetypes hash
   | None ->
       raise
-      @@ Luma__core.Error.entity_not_found
+      @@ Luma__core.Error.entity_not_found_exn
            (Luma__id.Id.Entity.to_int entity)
            "find_archetype in add_component"
 

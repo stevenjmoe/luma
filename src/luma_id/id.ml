@@ -3,6 +3,7 @@ module type S = sig
 
   val next : unit -> t
   val compare : t -> t -> int
+  val eq : t -> t -> bool
   val of_int : int -> t
   val to_int : t -> int
 end
@@ -17,6 +18,7 @@ module Make () : S = struct
     !current
 
   let compare = compare
+  let eq a b = compare a b = 0
   let of_int i = i
   let to_int i = i
 end

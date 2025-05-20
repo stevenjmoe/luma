@@ -18,25 +18,36 @@ end) : S with type t = B.inner = struct
   type base += T of t
 
   let type_id = Luma__id.Id.Asset_type.next ()
-  let of_base = function T t -> t | _ -> failwith ""
+
+  let of_base = function
+    | T t -> t
+    | _ ->
+        Luma__core.Error.unexpected_asset_base_type_exn
+          (Luma__id.Id.Asset_type.to_int type_id)
+          "Unexpected value wrapped in 'T' constructor"
+
   let of_base_opt = function T t -> Some t | _ -> None
   let to_base t = T t
 end
 
-(* TODO: stop copy/pasting this stuff man *)
-type error = [ `Not_found of Luma__id.Id.Asset_type.t | `Type_mismatch of Luma__id.Id.Asset_type.t ]
 type packed = Packed : (module S with type t = 'a) * 'a -> packed
 
 let pack : type a. (module S with type t = a) -> a -> packed =
  fun component value -> Packed (component, value)
 
-let unpack : type a. (module S with type t = a) -> packed -> (a, error) result =
+let unpack : type a. (module S with type t = a) -> packed -> (a, Luma__core.Error.error) result =
  fun (module M) (Packed ((module M'), value)) ->
-  if M.type_id = M'.type_id then
+  let open Luma__id.Id.Asset_type in
+  if not @@ eq M.type_id M'.type_id then
+    Error
+      (Luma__core.Error.asset_type_mismatch (to_int M.type_id) (to_int M'.type_id)
+         "Asset type mismatch while unpacking")
+  else
     match M.of_base_opt (M'.to_base value) with
     | Some v -> Ok v
-    | None -> Error (`Type_mismatch M.type_id)
-  else
-    Error (`Type_mismatch M.type_id)
+    | None ->
+        Error
+          (Luma__core.Error.unexpected_asset_base_type (to_int M.type_id)
+             "Invalid asset base type conversion while unpacking")
 
 let type_id : packed -> Luma__id.Id.Asset_type.t = function Packed ((module R), _) -> R.type_id
