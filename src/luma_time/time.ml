@@ -31,10 +31,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   let update_time () =
     let open Luma__id in
-    System.make
-      ~components:Query.(End)
-      "update_time"
-      (fun (world : World.t) _ ->
+    System.make ~components:End "update_time" (fun (world : World.t) _ ->
         match World.get_resource world R.type_id with
         | Some r -> (
             match Luma__resource.Resource.unpack (module R) r with
@@ -44,8 +41,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
                 time.elapsed <- time.elapsed +. dt;
                 world
             | Error e ->
-                (* TODO:*)
-                log.error (fun log -> log "error");
+                log.error (fun log -> log "Error updating time: %a" Luma__core.Error.pp e);
                 world)
         | None ->
             log.error (fun log -> log "error");

@@ -97,4 +97,4 @@ let run_stage stage sched world =
   Hashtbl.find_opt sched.systems stage
   |> Option.value ~default:[]
   |> List.rev
-  |> List.fold_left (fun w (System sys) -> run_system world sys) world
+  |> List.fold_left (fun _ (System sys) -> run_system world sys) world

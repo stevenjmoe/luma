@@ -22,8 +22,6 @@ module Make (Texture : Texture.S) : S with type texture = Texture.t = struct
   type t = {
     mutable image : texture Luma__asset.Assets.handle;
     mutable texture_atlas : Texture_atlas.t option;
-    flip_x : bool;
-    flip_y : bool;
     custom_size : Luma__math.Vec2.t option;
   }
 
@@ -31,21 +29,11 @@ module Make (Texture : Texture.S) : S with type texture = Texture.t = struct
   let texture_atlas t = t.texture_atlas
   let set_image t image = t.image <- image
   let set_texture_atlas t atlas = t.texture_atlas <- Some atlas
-
-  let sized image custom_size =
-    { image; texture_atlas = None; flip_x = false; flip_y = false; custom_size = Some custom_size }
-
-  let from_image image =
-    { image; texture_atlas = None; flip_x = false; flip_y = false; custom_size = None }
+  let sized image custom_size = { image; texture_atlas = None; custom_size = Some custom_size }
+  let from_image image = { image; texture_atlas = None; custom_size = None }
 
   let from_atlas_image image texture_atlas =
-    {
-      image;
-      texture_atlas = Some texture_atlas;
-      flip_x = false;
-      flip_y = false;
-      custom_size = None;
-    }
+    { image; texture_atlas = Some texture_atlas; custom_size = None }
 
   let frame_size sprite =
     match sprite.texture_atlas with None -> None | Some atlas -> Texture_atlas.frame_size atlas

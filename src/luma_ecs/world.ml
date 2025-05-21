@@ -8,8 +8,6 @@ type t = {
   resources : (Luma__id.Id.Resource.t, Luma__resource.Resource.packed) Hashtbl.t;
 }
 
-let log = Luma__core.Log.sub_log "luma.world"
-
 let create () =
   let archetypes = Hashtbl.create 16 in
   let empty_archetype = Archetype.empty () in

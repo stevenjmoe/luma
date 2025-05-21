@@ -1,5 +1,4 @@
 open Luma__id
-open Luma__resource
 
 type ('w, 'a) without_resources = {
   name : string;

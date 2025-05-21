@@ -19,7 +19,6 @@ module Position = struct
 end
 
 let test_image_min () =
-  let open Luma__ecs.Query in
   let image = Texture_atlas_layout.empty () in
   let e = epsilon_float in
 
@@ -27,7 +26,6 @@ let test_image_min () =
   check (float e) "entity" 0. (Texture_atlas_layout.size image).y
 
 let test_texture_atlas_layout () =
-  let open Luma__ecs.Query in
   let tile_size = Math.Vec2.create 48. 48. in
   let layout = Texture_atlas_layout.from_grid tile_size 8 3 in
 

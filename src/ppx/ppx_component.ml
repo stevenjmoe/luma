@@ -46,8 +46,8 @@ let module_struct_rule () =
        This way the rest of the user-defined component can refer to module C.*)
     let rec split_at_type_t acc = function
       | [] -> Location.raise_errorf ~loc "The module must define a type t"
-      | ({ pstr_desc = Pstr_type (_, [ { ptype_name = { txt = "t"; _ }; _ } ]) } as type_t) :: rest
-        ->
+      | ({ pstr_desc = Pstr_type (_, [ { ptype_name = { txt = "t"; _ }; _ } ]); _ } as type_t)
+        :: rest ->
           (List.rev acc, type_t, rest)
       | item :: rest -> split_at_type_t (item :: acc) rest
     in

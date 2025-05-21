@@ -42,7 +42,7 @@ let create components =
 let empty () = create Id.ComponentSet.empty
 
 (* Search for the component sparse set and performs an action on it. Fails if the set cannot be found *)
-let find_component_set_with_action a c entity_id action =
+let find_component_set_with_action a c action =
   let c_id = Id.Component.to_int (Component.id c) in
   match Sparse_set.get a.table c_id with
   | Some s -> action s
@@ -56,13 +56,12 @@ let add a e_id components =
   let add () = a.entities <- Id.EntitySet.add e_id a.entities in
   let entity_id = Id.Entity.to_int e_id in
   components
-  |> List.iter (fun c ->
-         find_component_set_with_action a c entity_id (fun s -> Sparse_set.set s entity_id c));
+  |> List.iter (fun c -> find_component_set_with_action a c (fun s -> Sparse_set.set s entity_id c));
   add ()
 
 let replace a e_id c =
   let entity_id = Id.Entity.to_int e_id in
-  find_component_set_with_action a c entity_id (fun s -> Sparse_set.set s entity_id c)
+  find_component_set_with_action a c (fun s -> Sparse_set.set s entity_id c)
 
 let remove_entity a entity_id =
   let remove () = a.entities <- Id.EntitySet.remove entity_id a.entities in

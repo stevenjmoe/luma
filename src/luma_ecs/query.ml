@@ -66,7 +66,7 @@ module Component = struct
           | Some c -> (
               match Component.unpack (module C) c with
               | Ok u -> (Some u, fetch rest arch entity)
-              | Error e -> (None, fetch rest arch entity))
+              | Error _ -> (None, fetch rest arch entity))
           | None -> (None, fetch rest arch entity))
     in
     try
@@ -93,7 +93,6 @@ module Resource = struct
     | End : unit t
 
   let ( & ) term rest = Res (term, rest)
-  let log = Luma__core.Log.sub_log "query.resource"
 
   let evaluate : type a.
       a t -> (Luma__id.Id.Resource.t, packed) Hashtbl.t -> (a, Luma__core.Error.error) result =
