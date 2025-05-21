@@ -3,7 +3,6 @@
   (libraries 
     luma.app 
     luma.audio
-    luma.sound
     luma.driver 
     luma.render 
     luma.time 

@@ -11,7 +11,6 @@ module type S = sig
   open Luma__resource
   open Luma__id
   open Luma__audio
-  open Luma__sound
 
   module App : sig
     include module type of App
@@ -48,7 +47,6 @@ module type S = sig
     module Texture_atlas_layout : module type of Texture_atlas_layout
   end
 
-  module Sound : Sound.S with type t = sound
   module Audio : Audio.S
 
   module Colour : sig

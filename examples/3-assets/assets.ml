@@ -3,7 +3,7 @@ module Luma = Luma.Make (Driver)
 open Luma
 module Velocity = [%component: Raylib.Vector2.t]
 module Player_tag = [%component: int]
-module Player_sounds = [%component: Luma.Sound.t Luma.Assets.handle]
+module Player_sounds = [%component: Luma.Audio.Sound.t Luma.Assets.handle]
 
 [%%component
 module Animation_config = struct
@@ -66,9 +66,9 @@ let input_system () =
     (fun world entities (assets, _) ->
       entities
       |> List.iter (fun (_, (sounds, _)) ->
-             let sound = Assets.get (module Luma.Sound.A) assets sounds |> Option.get in
+             let sound = Assets.get (module Luma.Audio.Sound.A) assets sounds |> Option.get in
              if Luma.Input.Keyboard.is_key_down @@ Luma.Key.Space then
-               Luma.Sound.play_sound sound;
+               Luma.Audio.Sound.play_sound sound;
              ());
       world)
 

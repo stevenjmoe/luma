@@ -13,7 +13,6 @@
    luma.ecs
    luma.plugin
    luma.sprite
-   luma.sound
    luma.time
    luma.transform
    luma.image
