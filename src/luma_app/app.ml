@@ -42,8 +42,9 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
   let app = { app with world } in
 
   let rec loop (world, scheduler) =
-    if D.Window.should_close () then
-      D.Window.shutdown ()
+    if D.Window.should_close () then (
+      world |> Scheduler.run_stage Cleanup scheduler |> ignore;
+      D.Window.shutdown ())
     else (
       D.Window.begin_frame ();
       world

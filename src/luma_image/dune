@@ -1,7 +1,7 @@
 (library 
   (public_name luma.image)
   (name luma__image)
-  (libraries containers luma.math raylib luma.asset luma.ecs)
+  (libraries containers luma.math luma.asset luma.ecs)
   (modules 
     Texture
     Texture_atlas 

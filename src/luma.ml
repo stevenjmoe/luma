@@ -10,6 +10,8 @@ module type S = sig
   open Luma__math
   open Luma__resource
   open Luma__id
+  open Luma__audio
+  open Luma__sound
 
   module App : sig
     include module type of App
@@ -19,6 +21,7 @@ module type S = sig
 
   type colour
   type texture
+  type sound
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Input : Luma__input.Input.S
@@ -36,6 +39,7 @@ module type S = sig
     val asset_plugin : App.t -> App.t
     val time_plugin : App.t -> App.t
     val input_plugin : App.t -> App.t
+    val audio_plugin : App.t -> App.t
   end
 
   module Image : sig
@@ -43,6 +47,9 @@ module type S = sig
     module Texture_atlas : module type of Texture_atlas
     module Texture_atlas_layout : module type of Texture_atlas_layout
   end
+
+  module Sound : Sound.S with type t = sound
+  module Audio : Audio.S
 
   module Colour : sig
     type t = colour
@@ -95,7 +102,12 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Camera_plugin = Luma__render.Camera_plugin.Make (D) (Camera_component)
   module Input = Luma__input.Input.Make (D)
   module Time = Luma__time.Time.Make (D)
-  module Plugin = Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time)
+  module Audio = Luma__audio.Audio.Make (D)
+  module Sound = Luma__sound.Sound.Make (D)
+
+  module Plugin =
+    Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time) (Audio) (Sound)
+
   module Window_config = Window.Window_config
 
   module App = struct
@@ -112,6 +124,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   type colour = D.colour
   type texture = Image.Texture.t
+  type sound = Sound.t
 
   module S = Luma__sprite.Sprite.Make (Image.Texture)
   module R = Luma__render.Render.Make (D)

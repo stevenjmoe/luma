@@ -8,6 +8,7 @@ type scheduled =
   | PreRender : (World.t, 'a) System.t -> scheduled
   | Render : (World.t, 'a) System.t -> scheduled
   | PostRender : (World.t, 'a) System.t -> scheduled
+  | Cleanup : (World.t, 'a) System.t -> scheduled
 
 (** Type to determine when a system will be run. *)
 type stage =
@@ -20,15 +21,16 @@ type stage =
   | PreRender
   | Render
   | PostRender
+  | Cleanup
 
 type system = System : (World.t, 'a) System.t -> system
 type t
 
-val create : unit -> t
 (** Creates a scheduler with no systems. *)
+val create : unit -> t
 
-val add_system : t -> stage -> (World.t, 'a) System.t -> unit
 (** [add_system scheduler schedule] adds the system constructed by the [schedule] to the system. *)
+val add_system : t -> stage -> (World.t, 'a) System.t -> unit
 
 val add_scheduled : t -> scheduled -> unit
 val run_stage : stage -> t -> World.t -> World.t

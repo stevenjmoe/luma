@@ -7,11 +7,13 @@
    luma.core
    luma.app
    luma.asset
+   luma.audio
    luma.driver
    luma.driver.raylib
    luma.ecs
    luma.plugin
    luma.sprite
+   luma.sound
    luma.time
    luma.transform
    luma.image

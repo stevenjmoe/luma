@@ -4,6 +4,7 @@ module type S = sig
   type camera
   type colour
   type texture
+  type sound
 
   val draw_rect : Rect.t -> colour -> unit
   val get_frame_time : unit -> float
@@ -65,6 +66,25 @@ module type S = sig
     val height : t -> int
     val draw_texture : t -> Rect.t -> Rect.t -> Vec2.t -> float -> colour -> unit
     val load_texture_from_image : Image.t -> t
+  end
+
+  module Audio : sig
+    val init_audio_device : unit -> unit
+    val close_audio_device : unit -> unit
+  end
+
+  module Sound : sig
+    type t = sound
+
+    val load_sound : string -> t
+    val play_sound : t -> unit
+    val stop_sound : t -> unit
+    val pause_sound : t -> unit
+    val resume_sound : t -> unit
+    val is_sound_playing : t -> bool
+    val set_sound_volume : t -> float -> unit
+    val set_sound_pan : t -> float -> unit
+    val unload_sound : t -> unit
   end
 
   module Input : sig

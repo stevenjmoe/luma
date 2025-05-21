@@ -1,0 +1,6 @@
+(library 
+  (public_name luma.audio)
+  (name luma__audio)
+  (libraries luma.app luma.asset luma.sound luma.driver luma.ecs)
+  (preprocess 
+   (pps ppx_inline_test ppx_assert)))

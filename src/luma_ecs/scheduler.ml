@@ -10,6 +10,7 @@ type scheduled =
   | PreRender : (World.t, 'a) System.t -> scheduled
   | Render : (World.t, 'a) System.t -> scheduled
   | PostRender : (World.t, 'a) System.t -> scheduled
+  | Cleanup : (World.t, 'a) System.t -> scheduled
 
 type stage =
   | PreStartup
@@ -21,6 +22,7 @@ type stage =
   | PreRender
   | Render
   | PostRender
+  | Cleanup
 
 type system = System : (World.t, 'a) System.t -> system
 type t = { systems : (stage, system list) Hashtbl.t }
@@ -31,7 +33,16 @@ let create () =
   List.iter
     (fun stage -> Hashtbl.add systems stage [])
     [
-      PreStartup; Startup; PostStartup; PreUpdate; Update; PostUpdate; PreRender; Render; PostRender;
+      PreStartup;
+      Startup;
+      PostStartup;
+      PreUpdate;
+      Update;
+      PostUpdate;
+      PreRender;
+      Render;
+      PostRender;
+      Cleanup;
     ];
   { systems }
 
@@ -50,6 +61,7 @@ let add_scheduled (sched : t) (s : scheduled) =
   | PreRender s -> add_system sched PreRender s
   | Render s -> add_system sched Render s
   | PostRender s -> add_system sched PostRender s
+  | Cleanup s -> add_system sched Cleanup s
 
 let run_system (world : World.t) (system : (World.t, 'a) System.t) : World.t =
   let archetypes = World.archetypes world |> Hashtbl.to_seq_values |> List.of_seq in

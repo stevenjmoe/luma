@@ -4,6 +4,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   type camera = Raylib.Camera2D.t
   type colour = Raylib.Color.t
   type texture = Raylib.Texture2D.t
+  type sound = Raylib.Sound.t
 
   let draw_rect rect colour =
     Raylib.draw_rectangle
@@ -35,6 +36,25 @@ module Raylib_driver : Luma__driver.Driver.S = struct
     type t = texture
 
     include Texture
+  end
+
+  module Audio = struct
+    let init_audio_device = Raylib.init_audio_device
+    let close_audio_device = Raylib.close_audio_device
+  end
+
+  module Sound = struct
+    type t = sound
+
+    let load_sound = Raylib.load_sound
+    let play_sound = Raylib.play_sound
+    let stop_sound = Raylib.stop_sound
+    let pause_sound = Raylib.pause_sound
+    let resume_sound = Raylib.resume_sound
+    let is_sound_playing = Raylib.is_sound_playing
+    let set_sound_volume = Raylib.set_sound_volume
+    let set_sound_pan = Raylib.set_sound_pan
+    let unload_sound = Raylib.unload_sound
   end
 end
 
