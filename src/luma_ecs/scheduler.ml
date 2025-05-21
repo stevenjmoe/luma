@@ -54,20 +54,32 @@ let add_scheduled (sched : t) (s : scheduled) =
 let run_system (world : World.t) (system : (World.t, 'a) System.t) : World.t =
   let archetypes = World.archetypes world |> Hashtbl.to_seq_values |> List.of_seq in
   match system with
-  | System.WithoutResources s ->
-      let matching_entities =
-        Query.Component.evaluate ~filter:s.filter s.components_query archetypes
-      in
-      s.run world matching_entities
-  | System.WithResources s -> (
-      let matching_entities =
-        Query.Component.evaluate ~filter:s.filter s.components_query archetypes
-      in
-      match Query.Resource.evaluate s.resources_query (World.resources world) with
-      | Ok resource_value -> s.run world matching_entities resource_value
+  | System.WithoutResources s -> (
+      match Query.Component.evaluate ~filter:s.filter s.components_query archetypes with
+      | Ok matching_entities -> s.run world matching_entities
       | Error e ->
-          failwith
-            (Printf.sprintf "Failed to run system. %s" (Luma__resource.Resource.error_to_string e)))
+          let msg = Format.asprintf "Failed to run system: %s. %a" s.name Luma__core.Error.pp e in
+          log.error (fun l -> l "%s" msg);
+          Luma__core.Error.system_run_exn s.name msg)
+  | System.WithResources s -> (
+      match Query.Component.evaluate ~filter:s.filter s.components_query archetypes with
+      | Ok matching_entities -> (
+          match Query.Resource.evaluate s.resources_query (World.resources world) with
+          | Ok resource_value -> s.run world matching_entities resource_value
+          | Error e ->
+              let msg =
+                Format.asprintf "Failed evaluate Resource query for system: %s. %a" s.name
+                  Luma__core.Error.pp e
+              in
+              log.error (fun l -> l "%s" msg);
+              Luma__core.Error.system_run_exn s.name msg)
+      | Error e ->
+          let msg =
+            Format.asprintf "Failed evaluate Component query for system: %s. %a" s.name
+              Luma__core.Error.pp e
+          in
+          log.error (fun l -> l "%s" msg);
+          Luma__core.Error.system_run_exn s.name msg)
 
 let run_stage stage sched world =
   Hashtbl.find_opt sched.systems stage

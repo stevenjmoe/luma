@@ -34,7 +34,7 @@ module Make (D : Luma__driver.Driver.S) = struct
     let is_key_released = D.Input.Keyboard.is_key_released
 
     let begin_frame () =
-      System.make ~components:End (fun world _ ->
+      System.make ~components:End "begin_frame" (fun world _ ->
           D.Input.Keyboard.begin_frame ();
           world)
 

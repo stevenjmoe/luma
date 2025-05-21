@@ -113,4 +113,5 @@ let query :
     (Luma__id.Id.Entity.t * 'a) list =
  fun w ?(filter = Query.Component.Filter.Any) query ->
   let archetypes = w.archetypes |> Hashtbl.to_seq_values |> List.of_seq in
-  Query.Component.evaluate ~filter query archetypes
+  (* TODO: fail or ...? *)
+  Query.Component.evaluate ~filter query archetypes |> Result.value ~default:[]

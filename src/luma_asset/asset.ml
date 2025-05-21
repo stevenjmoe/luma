@@ -22,7 +22,7 @@ end) : S with type t = B.inner = struct
   let of_base = function
     | T t -> t
     | _ ->
-        Luma__core.Error.unexpected_asset_base_type_exn
+        Luma__core.Error.unpacked_unexpected_base_type_exn
           (Luma__id.Id.Asset_type.to_int type_id)
           "Unexpected value wrapped in 'T' constructor"
 
@@ -40,14 +40,14 @@ let unpack : type a. (module S with type t = a) -> packed -> (a, Luma__core.Erro
   let open Luma__id.Id.Asset_type in
   if not @@ eq M.type_id M'.type_id then
     Error
-      (Luma__core.Error.asset_type_mismatch (to_int M.type_id) (to_int M'.type_id)
+      (Luma__core.Error.unpacked_type_mismatch (to_int M.type_id) (to_int M'.type_id)
          "Asset type mismatch while unpacking")
   else
     match M.of_base_opt (M'.to_base value) with
     | Some v -> Ok v
     | None ->
         Error
-          (Luma__core.Error.unexpected_asset_base_type (to_int M.type_id)
+          (Luma__core.Error.unpacked_unexpected_base_type (to_int M.type_id)
              "Invalid asset base type conversion while unpacking")
 
 let type_id : packed -> Luma__id.Id.Asset_type.t = function Packed ((module R), _) -> R.type_id

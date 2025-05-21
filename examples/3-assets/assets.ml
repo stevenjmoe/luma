@@ -20,6 +20,7 @@ let render () =
     ~components:
       Query.Component.(Required (module Sprite.C) & Required (module Animation_config.C) & End)
     ~resources:Query.Resource.(Resource (module Assets.R) & End)
+    "render"
     (fun world entities (assets, _) ->
       entities
       |> List.iter (fun (_, (sprite, (anim_config, _))) ->
@@ -38,6 +39,7 @@ let execute_animations () =
   System.make_with_resources
     ~components:Query.Component.(Required (module Animation_config.C) & End)
     ~resources:Query.Resource.(Resource (module Assets.R) & Resource (module Time.R) & End)
+    "execute_animations"
     (fun world entities (assets, (time, _)) ->
       let dt = Time.dt time in
       entities
@@ -58,6 +60,7 @@ let execute_animations () =
 let setup_player () =
   System.make_with_resources ~components:End
     ~resources:Query.Resource.(Resource (module Asset_server.R) & Resource (module Assets.R) & End)
+    "setup_player"
     (fun world entities (asset_server, (assets, _)) ->
       match Asset_server.load asset_server "examples/3-assets/assets/Player Idle 48x48.png" with
       | Ok handle ->

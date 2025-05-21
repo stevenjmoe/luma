@@ -3,8 +3,8 @@ type base
 module type S = sig
   type t
 
-  val id : Luma__id.Id.Component.t
   (** Gets the unique identifier for the component type. *)
+  val id : Luma__id.Id.Component.t
 
   val name : string
   val pp : t Fmt.t
@@ -55,7 +55,6 @@ end) : S with type t = B.inner
     different types to be stored together. *)
 type packed = Packed : (module S with type t = 'a) * 'a -> packed
 
-val pack : 'a. (module S with type t = 'a) -> 'a -> packed
 (** Packs a component value with its module into a [packed] value. This allows you to store and
     access the component's ID and data together. Example:
     {[
@@ -65,22 +64,18 @@ val pack : 'a. (module S with type t = 'a) -> 'a -> packed
 
       let packed = Component.pack (module MyComponent) 42
     ]} *)
+val pack : 'a. (module S with type t = 'a) -> 'a -> packed
 
-val unpack : 'a. (module S with type t = 'a) -> packed -> 'a option
-(** Attempts to extract a component value from a [packed] value. Returns [Some value] if successful,
-    otherwise [None]. Example:
-    {[
-      match Component.unpack (module MyComponent) packed with
-      | Some value -> (* Use the value *)
-      | None -> (* Handle mismatch *)
-    ]} *)
+(** Attempts to extract a component value from a [packed] value. Returns [Ok value] if successful,
+    otherwise [Luma__core.Error.error]. *)
+val unpack : 'a. (module S with type t = 'a) -> packed -> ('a, Luma__core.Error.error) result
 
-val id : packed -> Luma__id.Id.Component.t
 (** Gets the [Component] id from the packed component. *)
+val id : packed -> Luma__id.Id.Component.t
 
-val pp_packed : Format.formatter -> packed -> unit
 (** Print a packed component using its own pretty-printer. *)
+val pp_packed : Format.formatter -> packed -> unit
 
-val show : packed -> string
 (** [show packed] takes a packed component and returns a formatted string based on the component's
     pretty printer. *)
+val show : packed -> string

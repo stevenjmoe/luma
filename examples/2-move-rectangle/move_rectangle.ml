@@ -18,6 +18,7 @@ let input_system () =
     ?filter:(Some Query.Component.Filter.(With Player_tag.C.id))
     ~components:Query.Component.(Required (module Velocity.C) & End)
     ~resources:Query.Resource.(Resource (module Time.R) & End)
+    "input_system"
     (fun world entities (time, _) ->
       let open Math in
       let open Luma.Input.Keyboard in
@@ -55,6 +56,7 @@ let movement_system () =
         & Required (module Camera.Component.C)
         & End)
     ~resources:Query.Resource.(Resource (module Time.R) & End)
+    "movement_system"
     (fun world entities (time, _) ->
       let open Math in
       let open Luma.Camera.Component in
@@ -69,6 +71,7 @@ let movement_system () =
 let render_system () =
   System.make
     ~components:Query.Component.(Required (module Rectangle.C) & End)
+    "render_system"
     (fun world entities ->
       let open Raylib in
       entities
@@ -80,6 +83,7 @@ let render_system () =
 let setup_rectangle () =
   System.make
     ~components:Query.(End)
+    "setup_rectangle"
     (fun world entities ->
       let open World in
       let open Luma.Camera in
@@ -107,6 +111,7 @@ let setup_rectangle () =
 let setup_other_rectangle () =
   System.make
     ~components:Query.(End)
+    "setup_other_rectangle"
     (fun world entities ->
       let open World in
       let open Math in

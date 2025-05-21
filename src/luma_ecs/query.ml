@@ -35,8 +35,14 @@ module Component = struct
     | Query (Optional (module C), rest) -> required_ids rest
     | End -> Luma__id.Id.ComponentSet.empty
 
+  (* TODO: Not too happy with handling with this in an exception but it was the fastest approach. Fix later!*)
+  exception Eval_exn of Luma__core.Error.error
+
   let evaluate : type a.
-      ?filter:Filter.t -> a t -> Archetype.t list -> (Luma__id.Id.Entity.t * a) list =
+      ?filter:Filter.t ->
+      a t ->
+      Archetype.t list ->
+      ((Luma__id.Id.Entity.t * a) list, Luma__core.Error.error) result =
    fun ?(filter = Filter.Any) query archetypes ->
     let matches = Filter.matches filter in
     let rec fetch : type a. a t -> Archetype.t -> Luma__id.Id.Entity.t -> a =
@@ -46,29 +52,35 @@ module Component = struct
       | Query (Required (module C), rest) -> (
           match Archetype.query_table arch entity C.id with
           | Some c -> (
-              let unpacked = Component.unpack (module C) c in
-              match unpacked with
-              | Some u -> (u, fetch rest arch entity)
-              | None -> failwith "TODO: unpacked not found.")
-          | None -> failwith "TODO: arch not found")
+              match Component.unpack (module C) c with
+              | Ok u -> (u, fetch rest arch entity)
+              | Error e -> raise @@ Eval_exn e)
+          | None ->
+              raise
+              @@ Eval_exn
+                   (Luma__core.Error.component_not_found
+                      (Luma__id.Id.Component.to_int C.id)
+                      (Archetype.hash arch) "Could not evaluate query."))
       | Query (Optional (module C), rest) -> (
           match Archetype.query_table arch entity C.id with
           | Some c -> (
-              let unpacked = Component.unpack (module C) c in
-              match unpacked with
-              | Some u -> (Some u, fetch rest arch entity)
-              | None -> (None, fetch rest arch entity))
+              match Component.unpack (module C) c with
+              | Ok u -> (Some u, fetch rest arch entity)
+              | Error e -> (None, fetch rest arch entity))
           | None -> (None, fetch rest arch entity))
     in
-    archetypes
-    |> List.filter (fun a ->
-           let components = Archetype.components a in
-           let required_ids = required_ids query in
-           matches components && Luma__id.Id.ComponentSet.subset required_ids components)
-    |> List.concat_map (fun a ->
-           Archetype.entities a
-           |> Luma__id.Id.EntitySet.to_list
-           |> List.map (fun e -> (e, fetch query a e)))
+    try
+      Ok
+        (archetypes
+        |> List.filter (fun a ->
+               let components = Archetype.components a in
+               let required_ids = required_ids query in
+               matches components && Luma__id.Id.ComponentSet.subset required_ids components)
+        |> List.concat_map (fun a ->
+               Archetype.entities a
+               |> Luma__id.Id.EntitySet.to_list
+               |> List.map (fun e -> (e, fetch query a e))))
+    with Eval_exn e -> Error e
 end
 
 module Resource = struct
@@ -83,22 +95,25 @@ module Resource = struct
   let ( & ) term rest = Res (term, rest)
   let log = Luma__core.Log.sub_log "query.resource"
 
-  let evaluate : type a. a t -> (Luma__id.Id.Resource.t, packed) Hashtbl.t -> (a, error) result =
+  let evaluate : type a.
+      a t -> (Luma__id.Id.Resource.t, packed) Hashtbl.t -> (a, Luma__core.Error.error) result =
    fun query store ->
-    let rec fetch : type a. a t -> (Luma__id.Id.Resource.t, packed) Hashtbl.t -> (a, error) result =
+    let rec fetch : type a.
+        a t -> (Luma__id.Id.Resource.t, packed) Hashtbl.t -> (a, Luma__core.Error.error) result =
      fun query store ->
       match query with
       | End -> Ok ()
       | Res (Resource (module R), rest) -> (
-          match Hashtbl.find_opt store R.id with
+          match Hashtbl.find_opt store R.type_id with
           | Some packed -> (
               match unpack (module R) packed with
               | Ok result -> (
                   match fetch rest store with Ok rest -> Ok (result, rest) | Error e -> Error e)
               | Error e -> Error e)
           | None ->
-              log.error (fun log -> log "Could not find resource %s" R.name);
-              Error (`Not_found R.id))
+              Error
+                (Luma__core.Error.resource_not_found
+                   (Printf.sprintf "Could not find resource %s" R.name)))
     in
     fetch query store
 end

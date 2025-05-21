@@ -24,7 +24,13 @@ end) : S with type t = B.inner = struct
   let id = Luma__id.Id.Component.next ()
   let name = B.name
   let pp fmt _ = Fmt.pf fmt "<%s #%d>" name (Luma__id.Id.Component.to_int id)
-  let of_base = function T t -> t | _ -> failwith ""
+
+  let of_base = function
+    | T t -> t
+    | _ ->
+        Luma__core.Error.unpacked_unexpected_base_type_exn (Luma__id.Id.Component.to_int id)
+          "Unexpected value wrapped in 'T' constructor"
+
   let of_base_opt = function T t -> Some t | _ -> None
   let to_base t = T t
 end
@@ -34,12 +40,20 @@ type packed = Packed : (module S with type t = 'a) * 'a -> packed
 let pack : type a. (module S with type t = a) -> a -> packed =
  fun component value -> Packed (component, value)
 
-let unpack : type a. (module S with type t = a) -> packed -> a option =
+let unpack : type a. (module S with type t = a) -> packed -> (a, Luma__core.Error.error) result =
  fun (module C) (Packed ((module C'), value)) ->
-  if C.id = C'.id then
-    C.of_base_opt (C'.to_base value)
+  let open Luma__id.Id.Component in
+  if not @@ Luma__id.Id.Component.eq C.id C'.id then
+    Error
+      (Luma__core.Error.unpacked_type_mismatch (to_int C.id) (to_int C'.id)
+         "Component type mismatch while unpacking")
   else
-    None
+    match C.of_base_opt (C'.to_base value) with
+    | Some v -> Ok v
+    | None ->
+        Error
+          (Luma__core.Error.unpacked_unexpected_base_type (to_int C.id)
+             "Invalid component base type conversion while unpacking")
 
 let id : packed -> Luma__id.Id.Component.t = function Packed ((module C), _) -> C.id
 let pp_packed fmt (Packed ((module C), value)) = Format.fprintf fmt "%a" C.pp value

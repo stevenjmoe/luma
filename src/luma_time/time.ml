@@ -33,8 +33,9 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     let open Luma__id in
     System.make
       ~components:Query.(End)
+      "update_time"
       (fun (world : World.t) _ ->
-        match World.get_resource world R.id with
+        match World.get_resource world R.type_id with
         | Some r -> (
             match Luma__resource.Resource.unpack (module R) r with
             | Ok time ->
@@ -55,6 +56,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     let world = App.world app in
     let time = { dt = 0.0016; elapsed = 0. } in
     let packed_time = Luma__resource.Resource.pack (module R) time in
-    world |> World.add_resource R.id packed_time |> ignore;
+    world |> World.add_resource R.type_id packed_time |> ignore;
     app |> App.add_system (Update (WithoutResources (update_time ())))
 end

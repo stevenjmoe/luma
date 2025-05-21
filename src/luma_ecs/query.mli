@@ -25,7 +25,6 @@ module Component : sig
       | Or of t * t
       | Any
 
-    val ( & ) : t -> t -> t
     (** Infix provided to simplify filtering syntax.
 
         Example:
@@ -33,9 +32,10 @@ module Component : sig
         {[
           ?filter:(Some Query.Filter.(With Player_tag.C.id & With Velocity.C.id))
         ]}*)
+    val ( & ) : t -> t -> t
 
-    val matches : t -> Luma__id.Id.ComponentSet.t -> bool
     (** Recursively evaluates the filter against a set of components. *)
+    val matches : t -> Luma__id.Id.ComponentSet.t -> bool
   end
 
   type _ term =
@@ -46,7 +46,6 @@ module Component : sig
     | Query : ('a term * 'b t) -> ('a * 'b) t
     | End : unit t
 
-  val ( & ) : 'a term -> 'b t -> ('a * 'b) t
   (** Infix provided to simplify querying syntax.
 
       Example:
@@ -54,11 +53,16 @@ module Component : sig
       {[
         System.make Query.(Required (module Player_state.C) & Required (module Velocity.C) & End)
       ]}*)
+  val ( & ) : 'a term -> 'b t -> ('a * 'b) t
 
-  val evaluate :
-    'a. ?filter:Filter.t -> 'a t -> Archetype.t list -> (Luma__id.Id.Entity.t * 'a) list
   (** Evaluates a query over a list of archetypes, returning a list of entities and their matching
       components in a tuple. *)
+  val evaluate :
+    'a.
+    ?filter:Filter.t ->
+    'a t ->
+    Archetype.t list ->
+    ((Luma__id.Id.Entity.t * 'a) list, Luma__core.Error.error) result
 end
 
 module Resource : sig
@@ -81,7 +85,6 @@ module Resource : sig
     | Res : ('a term * 'b t) -> ('a * 'b) t
     | End : unit t
 
-  val ( & ) : 'a term -> 'b t -> ('a * 'b) t
   (** Infix operator to simplify query syntax.
 
       Example:
@@ -89,11 +92,12 @@ module Resource : sig
       {[
         Resource.Resource_query.(Resource (module App.Time.R) & End)
       ]} *)
+  val ( & ) : 'a term -> 'b t -> ('a * 'b) t
 
+  (** [evaluate query tbl] accepts a [Resource_query.t] and an [(int, packed) Hashtbl.t], evaluates
+      the query on the table, and returns a tuple of the Resources that satisfy the query. *)
   val evaluate :
     'a t ->
     (Luma__id.Id.Resource.t, Luma__resource.Resource.packed) Hashtbl.t ->
-    ('a, Luma__resource.Resource.error) result
-  (** [evaluate query tbl] accepts a [Resource_query.t] and an [(int, packed) Hashtbl.t], evaluates
-      the query on the table, and returns a tuple of the Resources that satisfy the query. *)
+    ('a, Luma__core.Error.error) result
 end

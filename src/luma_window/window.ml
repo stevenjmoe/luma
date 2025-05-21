@@ -46,13 +46,13 @@ module Make (D : Driver.S) : S with type colour = D.colour = struct
   end
 
   let clear_window (config : Window_config.t) =
-    System.make ~components:End (fun world entities ->
+    System.make ~components:End "clear_window" (fun world entities ->
         let colour = Option.value config.colour ~default:D.Colour.white in
         D.Window.clear colour;
         world)
 
   let init (config : Window_config.t) =
-    System.make ~components:End (fun world entities ->
+    System.make ~components:End "init" (fun world entities ->
         D.Window.init ~width:config.width ~height:config.height
           ~title:(Option.value config.title ~default:"");
         world)
