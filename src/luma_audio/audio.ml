@@ -2,10 +2,12 @@ module type S = sig
   val plugin : Luma__app__App.t -> Luma__app__App.t
 
   module Sound : Sound.S
+  module Music : Music.S
 end
 
 module Make (D : Luma__driver.Driver.S) : S = struct
   module Sound = Sound.Make (D)
+  module Music = Music.Make (D)
 
   let init () =
     Luma__ecs.System.make ~components:End "audio.init" (fun world _ ->
@@ -22,4 +24,5 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     |> Luma__app.App.add_system (PreStartup (WithoutResources (init ())))
     |> Luma__app.App.add_system (Cleanup (WithoutResources (cleanup ())))
     |> Sound.plugin
+    |> Music.plugin
 end

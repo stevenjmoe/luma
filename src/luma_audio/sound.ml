@@ -25,6 +25,7 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Sound.t = struct
               (fun path ->
                 let sound = D.Sound.load_sound path in
                 Ok (Loaded ((module A), sound)));
+            type_id = A.type_id;
           })
 
   (* TODO: unload the asset without a handle? *)

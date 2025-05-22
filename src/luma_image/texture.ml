@@ -21,5 +21,6 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Texture.t = struct
                 let image = D.Image.load_image path in
                 let texture = D.Texture.load_texture_from_image image in
                 Ok (Loaded ((module A), texture)));
+            type_id = A.type_id;
           })
 end
