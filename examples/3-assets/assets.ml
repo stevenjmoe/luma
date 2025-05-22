@@ -77,7 +77,11 @@ let setup_player () =
     ~resources:Query.Resource.(Resource (module Asset_server.R) & Resource (module Assets.R) & End)
     "setup_player"
     (fun world entities (asset_server, (assets, _)) ->
-      match Asset_server.load asset_server "examples/3-assets/assets/Player Idle 48x48.png" with
+      match
+        Asset_server.load
+          (module Image.Texture.A)
+          asset_server "examples/3-assets/assets/Player Idle 48x48.png"
+      with
       | Ok handle ->
           let layout =
             Luma.Image.Texture_atlas_layout.from_grid (Luma.Math.Vec2.create 48. 48.) 10 1
@@ -114,12 +118,15 @@ let setup_player () =
     "setup_player"
     (fun world entities (asset_server, (assets, _)) : World.t ->
       let texture =
-        Asset_server.load asset_server "examples/3-assets/assets/Player Idle 48x48.png"
+        Asset_server.load
+          (module Image.Texture.A)
+          asset_server "examples/3-assets/assets/Player Idle 48x48.png"
         |> Result.get_ok
       in
       let sound =
-        Asset_server.load asset_server
-          "examples/3-assets/assets/FreeSFX/GameSFX/Animal Insects/Retro Birds 07.wav"
+        Asset_server.load
+          (module Audio.Sound.A)
+          asset_server "examples/3-assets/assets/FreeSFX/GameSFX/Animal Insects/Retro Birds 07.wav"
         |> Result.get_ok
       in
       let layout = Luma.Image.Texture_atlas_layout.from_grid (Luma.Math.Vec2.create 48. 48.) 10 1 in
