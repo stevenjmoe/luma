@@ -47,6 +47,7 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
       D.Window.shutdown ())
     else (
       D.Window.begin_frame ();
+
       world
       |> Scheduler.run_stage PreUpdate scheduler
       |> Scheduler.run_stage Update scheduler

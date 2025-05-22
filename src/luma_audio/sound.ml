@@ -7,14 +7,14 @@ module type S = sig
   val plugin : Luma__app.App.t -> Luma__app.App.t
 end
 
-module Make (D : Luma__driver.Driver.S) : S with type t = D.Sound.t = struct
-  type t = D.Sound.t
+module Make (D : Luma__driver.Driver.S) : S with type t = D.Audio.Sound.t = struct
+  type t = D.Audio.Sound.t
 
   module A = Luma__asset.Asset.Make (struct
     type inner = t
   end)
 
-  let play_sound = D.Sound.play_sound
+  let play_sound = D.Audio.Sound.play_sound
 
   let () =
     Luma__asset.Server.register_loader_hook (fun server ->
@@ -23,7 +23,7 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Sound.t = struct
             Luma__asset.Loader.exts = [ ".wav"; ".ogg"; ".mp3"; ".qoa"; ".xm"; ".mod"; ".flac" ];
             load =
               (fun path ->
-                let sound = D.Sound.load_sound path in
+                let sound = D.Audio.Sound.load_sound path in
                 Ok (Loaded ((module A), sound)));
             type_id = A.type_id;
           })
@@ -35,7 +35,7 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Sound.t = struct
       "sound.cleanup"
       (fun world _ (assets, _) ->
         let sounds = Luma__asset.Assets.get_all (module A) assets in
-        sounds |> List.iter (fun s -> D.Sound.unload_sound s);
+        sounds |> List.iter (fun s -> D.Audio.Sound.unload_sound s);
         world)
 
   let plugin app = app |> Luma__app.App.add_system (Cleanup (WithResources (cleanup ())))

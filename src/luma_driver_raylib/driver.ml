@@ -39,46 +39,48 @@ module Raylib_driver : Luma__driver.Driver.S = struct
     include Texture
   end
 
+  module Text = struct end
+
   module Audio = struct
     let init_audio_device = Raylib.init_audio_device
     let close_audio_device = Raylib.close_audio_device
-  end
 
-  module Sound = struct
-    type t = sound
+    module Sound = struct
+      type t = sound
 
-    let load_sound = Raylib.load_sound
+      let load_sound = Raylib.load_sound
 
-    let play_sound sound =
-      if Raylib.is_sound_ready sound then
-        Raylib.play_sound sound
+      let play_sound sound =
+        if Raylib.is_sound_ready sound then
+          Raylib.play_sound sound
 
-    let stop_sound = Raylib.stop_sound
-    let pause_sound = Raylib.pause_sound
-    let resume_sound = Raylib.resume_sound
-    let is_sound_playing = Raylib.is_sound_playing
-    let set_sound_volume = Raylib.set_sound_volume
-    let set_sound_pan = Raylib.set_sound_pan
-    let unload_sound = Raylib.unload_sound
-  end
+      let stop_sound = Raylib.stop_sound
+      let pause_sound = Raylib.pause_sound
+      let resume_sound = Raylib.resume_sound
+      let is_sound_playing = Raylib.is_sound_playing
+      let set_sound_volume = Raylib.set_sound_volume
+      let set_sound_pan = Raylib.set_sound_pan
+      let unload_sound = Raylib.unload_sound
+    end
 
-  module Music = struct
-    type t = music
+    module Music = struct
+      type t = music
 
-    let load_music_stream = Raylib.load_music_stream
-    let is_music_ready = Raylib.is_music_ready
-    let unload_music_stream = Raylib.unload_music_stream
-    let play_music_stream = Raylib.play_music_stream
-    let is_music_stream_playing = Raylib.is_music_stream_playing
-    let update_music_stream = Raylib.update_music_stream
-    let stop_music_stream = Raylib.stop_music_stream
-    let pause_music_stream = Raylib.pause_music_stream
-    let resume_music_stream = Raylib.resume_music_stream
-    let seek_music_stream = Raylib.seek_music_stream
-    let set_music_volume = Raylib.set_music_volume
-    let set_music_pan = Raylib.set_music_pan
-    let get_music_time_length = Raylib.get_music_time_length
-    let get_music_time_played = Raylib.get_music_time_played
+      let load_music_stream = Raylib.load_music_stream
+      let is_music_ready = Raylib.is_music_ready
+      let unload_music_stream = Raylib.unload_music_stream
+      let play_music_stream = Raylib.play_music_stream
+      let is_music_stream_playing = Raylib.is_music_stream_playing
+      let update_music_stream = Raylib.update_music_stream
+      let stop_music_stream = Raylib.stop_music_stream
+      let pause_music_stream = Raylib.pause_music_stream
+      let resume_music_stream = Raylib.resume_music_stream
+      let seek_music_stream = Raylib.seek_music_stream
+      let set_music_volume = Raylib.set_music_volume
+      let set_music_pan = Raylib.set_music_pan
+      let get_music_time_length = Raylib.get_music_time_length
+      let get_music_time_played = Raylib.get_music_time_played
+    end
   end
 end
 

@@ -72,40 +72,42 @@ module type S = sig
   module Audio : sig
     val init_audio_device : unit -> unit
     val close_audio_device : unit -> unit
+
+    module Music : sig
+      type t = music
+
+      val load_music_stream : string -> t
+      val is_music_ready : t -> bool
+      val unload_music_stream : t -> unit
+      val play_music_stream : t -> unit
+      val is_music_stream_playing : t -> bool
+      val update_music_stream : t -> unit
+      val stop_music_stream : t -> unit
+      val pause_music_stream : t -> unit
+      val resume_music_stream : t -> unit
+      val seek_music_stream : t -> float -> unit
+      val set_music_volume : t -> float -> unit
+      val set_music_pan : t -> float -> unit
+      val get_music_time_length : t -> float
+      val get_music_time_played : t -> float
+    end
+
+    module Sound : sig
+      type t = sound
+
+      val load_sound : string -> t
+      val play_sound : t -> unit
+      val stop_sound : t -> unit
+      val pause_sound : t -> unit
+      val resume_sound : t -> unit
+      val is_sound_playing : t -> bool
+      val set_sound_volume : t -> float -> unit
+      val set_sound_pan : t -> float -> unit
+      val unload_sound : t -> unit
+    end
   end
 
-  module Music : sig
-    type t = music
-
-    val load_music_stream : string -> t
-    val is_music_ready : t -> bool
-    val unload_music_stream : t -> unit
-    val play_music_stream : t -> unit
-    val is_music_stream_playing : t -> bool
-    val update_music_stream : t -> unit
-    val stop_music_stream : t -> unit
-    val pause_music_stream : t -> unit
-    val resume_music_stream : t -> unit
-    val seek_music_stream : t -> float -> unit
-    val set_music_volume : t -> float -> unit
-    val set_music_pan : t -> float -> unit
-    val get_music_time_length : t -> float
-    val get_music_time_played : t -> float
-  end
-
-  module Sound : sig
-    type t = sound
-
-    val load_sound : string -> t
-    val play_sound : t -> unit
-    val stop_sound : t -> unit
-    val pause_sound : t -> unit
-    val resume_sound : t -> unit
-    val is_sound_playing : t -> bool
-    val set_sound_volume : t -> float -> unit
-    val set_sound_pan : t -> float -> unit
-    val unload_sound : t -> unit
-  end
+  module Text : sig end
 
   module Input : sig
     open Luma__types.Input_types

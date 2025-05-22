@@ -15,8 +15,8 @@ module type S = sig
   val plugin : Luma__app.App.t -> Luma__app.App.t
 end
 
-module Make (D : Luma__driver.Driver.S) : S with type music = D.Music.t = struct
-  type music = D.Music.t
+module Make (D : Luma__driver.Driver.S) : S with type music = D.Audio.Music.t = struct
+  type music = D.Audio.Music.t
 
   type t = {
     stream : music;
@@ -35,40 +35,42 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Music.t = struct
 
   let set_volume t vol =
     t.volume <- vol;
-    D.Music.set_music_volume t.stream vol
+    D.Audio.Music.set_music_volume t.stream vol
 
   let set_pan t pan =
     t.pan <- pan;
-    D.Music.set_music_pan t.stream pan
+    D.Audio.Music.set_music_pan t.stream pan
 
   let is_playing t = match t.state with `Playing -> true | _ -> false
 
   let play ?(volume = 1.) ?(loop = false) t =
     set_volume t volume;
     t.loop <- loop;
-    D.Music.play_music_stream t.stream;
+    D.Audio.Music.play_music_stream t.stream;
     set_state t `Playing
 
   let pause t =
     if t.state = `Playing then (
-      D.Music.pause_music_stream t.stream;
+      D.Audio.Music.pause_music_stream t.stream;
       set_state t `Paused)
 
   let resume t =
     if t.state = `Paused then (
       set_state t `Playing;
-      D.Music.resume_music_stream t.stream)
+      D.Audio.Music.resume_music_stream t.stream)
 
   let stop t =
     if t.state <> `Stopped then (
-      D.Music.stop_music_stream t.stream;
+      D.Audio.Music.stop_music_stream t.stream;
       t.state <- `Stopped)
 
   let progress t =
     if t.state = `Stopped then
       None
     else
-      Some (D.Music.get_music_time_played t.stream /. D.Music.get_music_time_length t.stream)
+      Some
+        (D.Audio.Music.get_music_time_played t.stream
+        /. D.Audio.Music.get_music_time_length t.stream)
 
   (* TODO: unload the asset without a handle? *)
   let cleanup () =
@@ -77,7 +79,7 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Music.t = struct
       "music.cleanup"
       (fun world _ (assets, _) ->
         let music = Luma__asset.Assets.get_all (module A) assets in
-        music |> List.iter (fun s -> D.Music.unload_music_stream s.stream);
+        music |> List.iter (fun s -> D.Audio.Music.unload_music_stream s.stream);
         world)
 
   let update_music_stream () =
@@ -86,12 +88,12 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Music.t = struct
       "music.stream"
       (fun world _ (assets, _) ->
         let update_music m =
-          D.Music.update_music_stream m.stream;
+          D.Audio.Music.update_music_stream m.stream;
           if m.state = `Playing && not m.loop then
-            let time_played = D.Music.get_music_time_played m.stream in
+            let time_played = D.Audio.Music.get_music_time_played m.stream in
 
             (* small buffer for floating point precision *)
-            let length = D.Music.get_music_time_length m.stream -. 0.1 in
+            let length = D.Audio.Music.get_music_time_length m.stream -. 0.1 in
 
             if length > 0.0 && time_played >= length then
               stop m
@@ -111,7 +113,7 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Music.t = struct
             Luma__asset.Loader.exts = [ ".wav"; ".ogg"; ".mp3"; ".qoa"; ".xm"; ".mod"; ".flac" ];
             load =
               (fun path ->
-                let stream = D.Music.load_music_stream path in
+                let stream = D.Audio.Music.load_music_stream path in
                 Ok
                   (Loaded
                      ((module A), { stream; state = `Stopped; volume = 1.; pan = 1.0; loop = false })));
