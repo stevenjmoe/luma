@@ -48,10 +48,7 @@ module Make (D : Luma__driver.Driver.S) :
       | Some atlas -> (
           match Texture_atlas.get_frame atlas frame_index with
           | None -> create_rect texture
-          | Some frame ->
-              Rect.create
-                ~pos:(Vec2.create frame.min.x frame.min.y)
-                ~size:(Vec2.create (frame.max.x -. frame.min.x) (frame.max.y -. frame.min.y)))
+          | Some frame -> frame)
     in
     let x = Rect.x src_rect in
     let y = Rect.y src_rect in
@@ -59,12 +56,9 @@ module Make (D : Luma__driver.Driver.S) :
     let h = Rect.height src_rect in
 
     let src_rect =
-      if flip_x then
-        Rect.create ~pos:(Vec2.create (x +. w) y) ~size:(Vec2.create (-.w) h)
-      else if flip_y then
-        Rect.create ~pos:(Vec2.create x (y +. h)) ~size:(Vec2.create w (-.h))
-      else
-        src_rect
+      if flip_x then Rect.create ~pos:(Vec2.create (x +. w) y) ~size:(Vec2.create (-.w) h)
+      else if flip_y then Rect.create ~pos:(Vec2.create x (y +. h)) ~size:(Vec2.create w (-.h))
+      else src_rect
     in
     let dest_rec =
       Rect.create

@@ -14,7 +14,7 @@ module type S = sig
   end
 
   val default : unit -> camera
-  val make : position:Vec2.t -> target:Vec2.t -> rotation:float -> zoom:float -> camera
+  val make : position:Vec2.t -> target:Vec2.t -> rotation:float -> zoom:float -> unit -> camera
   val set_target : camera -> float * float -> unit
 end
 

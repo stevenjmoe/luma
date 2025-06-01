@@ -21,6 +21,7 @@ depends: [
   "raylib"
   "ptime"
   "fmt"
+  "box2d"
   "odoc" {with-doc}
 ]
 build: [

@@ -28,8 +28,9 @@ let from_grid ?(padding = Vec2.zero) ?(offset = Vec2.zero) tile_size columns row
 
       let cell = Vec2.create (foi x) (foi y) in
 
-      let rect_min = (tile_size *.. cell) +.. offset in
-      Vector.push sprites Rect.{ min = rect_min; max = rect_min +.. tile_size };
+      let pos = (tile_size *.. cell) +.. offset in
+      let rect = Rect.create ~pos ~size:tile_size in
+      Vector.push sprites rect;
 
       if x < columns then
         loop_cols (x + 1)

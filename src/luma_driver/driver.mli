@@ -42,6 +42,7 @@ module type S = sig
       target:Luma__math.Vec2.t ->
       rotation:float ->
       zoom:float ->
+      unit ->
       camera
 
     val default : unit -> camera

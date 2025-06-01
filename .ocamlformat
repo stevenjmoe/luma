@@ -2,9 +2,7 @@ profile = default
 version = 0.27.0
 
 margin = 100
-if-then-else = vertical 
 break-infix = fit-or-vertical
 break-fun-decl = fit-or-vertical
 break-fun-sig = fit-or-vertical
 type-decl = sparse
-doc-comments = before

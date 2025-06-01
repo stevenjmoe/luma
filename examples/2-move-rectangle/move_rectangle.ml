@@ -89,7 +89,7 @@ let setup_rectangle () =
       let open Luma.Camera in
       let open Math in
       let player_tag = 1 in
-      let rect = Rect.create ~pos:(Vec2.create 100. (-10.)) ~size:(Vec2.create 100. 50.) in
+      let rect = Rect.create ~pos:(Vec2.create 100. 50.) ~size:(Vec2.create 20. 50.) in
       let velocity = Math.Vec2.zero in
       let position =
         Vec2.create
@@ -97,7 +97,7 @@ let setup_rectangle () =
           (Float.of_int (Luma.screen_height ()) /. 2.)
       in
       let target = Vec2.create (Rect.x rect) (Rect.y rect) in
-      let camera = Camera.make ~position ~target ~rotation:0. ~zoom:1. in
+      let camera = Camera.make ~position ~target ~rotation:0. ~zoom:1. () in
 
       world
       |> add_entity

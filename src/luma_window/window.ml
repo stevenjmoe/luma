@@ -13,7 +13,9 @@ module type Window_config = sig
   }
 
   val default : unit -> t
+
   val create : int -> int -> colour option -> string option -> t
+  (** [create width height colour title] *)
 end
 
 module type S = sig
@@ -37,12 +39,12 @@ module Make (D : Driver.S) : S with type colour = D.colour = struct
       title : string option;
     }
 
-    let default () = { height = 1080; width = 1920; colour = Some D.Colour.white; title = None }
+    let default () = { width = 1920; height = 1080; colour = Some D.Colour.white; title = None }
 
-    let create height width colour title =
+    let create width height colour title =
       let colour = Option.value colour ~default:D.Colour.white in
       let title = Option.value title ~default:"" in
-      { height; width; colour = Some colour; title = Some title }
+      { width; height; colour = Some colour; title = Some title }
   end
 
   let clear_window (config : Window_config.t) =

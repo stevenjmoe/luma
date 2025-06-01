@@ -1,0 +1,5 @@
+(executable
+  (name physics)
+  (libraries luma box2d)
+  (preprocess
+    (pps ppx_component)))
