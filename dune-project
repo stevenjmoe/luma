@@ -9,10 +9,6 @@
 (authors "Steven")
 (maintainers "Steven")
 
-(pin
-  (url "/home/steven/projects/personal/games/box2d_ocaml/")
-  (package (name box2d)))
-
 (package
  (name luma)
  (synopsis "Does this need to exist?")
