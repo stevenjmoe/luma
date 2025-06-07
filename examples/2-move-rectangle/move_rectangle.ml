@@ -26,21 +26,15 @@ let input_system () =
       |> List.iter (fun (_, (velocity, _)) ->
              let dt = Time.dt time in
              let vx =
-               if is_key_down Key.A then
-                 Vec2.x velocity -. (10. *. dt)
-               else if is_key_down Key.D then
-                 Vec2.x velocity +. (10. *. dt)
-               else
-                 0.
+               if is_key_down Key.A then Vec2.x velocity -. (10. *. dt)
+               else if is_key_down Key.D then Vec2.x velocity +. (10. *. dt)
+               else 0.
              in
 
              let vy =
-               if is_key_down Key.W then
-                 Vec2.y velocity -. (10. *. dt)
-               else if is_key_down Key.S then
-                 Vec2.y velocity +. (10. *. dt)
-               else
-                 0.
+               if is_key_down Key.W then Vec2.y velocity -. (10. *. dt)
+               else if is_key_down Key.S then Vec2.y velocity +. (10. *. dt)
+               else 0.
              in
              Vec2.set_x velocity vx;
              Vec2.set_y velocity vy;
@@ -64,7 +58,7 @@ let movement_system () =
       |> List.iter (fun (_, (rect, (velocity, (camera, _)))) ->
              Rect.set_x rect (Rect.x rect +. Vec2.x velocity);
              Rect.set_y rect (Rect.y rect +. Vec2.y velocity);
-             Luma.Camera.set_target camera.camera (Rect.x rect, Rect.y rect);
+             Luma.Camera.set_target camera.camera (Vec2.create (Rect.x rect) (Rect.y rect));
              ());
       world)
 
@@ -91,13 +85,13 @@ let setup_rectangle () =
       let player_tag = 1 in
       let rect = Rect.create ~pos:(Vec2.create 100. 50.) ~size:(Vec2.create 20. 50.) in
       let velocity = Math.Vec2.zero in
-      let position =
+      let offset =
         Vec2.create
           (Float.of_int (Luma.screen_width ()) /. 2.)
           (Float.of_int (Luma.screen_height ()) /. 2.)
       in
       let target = Vec2.create (Rect.x rect) (Rect.y rect) in
-      let camera = Camera.make ~position ~target ~rotation:0. ~zoom:1. () in
+      let camera = Camera.make ~offset ~target ~rotation:0. ~zoom:1. () in
 
       world
       |> add_entity
@@ -122,7 +116,7 @@ let setup_other_rectangle () =
 
 let () =
   let window_config =
-    Luma.Window_config.create 1080 1920 (Some (Colour.rgb ~r:100 ~g:299 ~b:200)) None
+    Luma.Window_config.create 1920 1080 (Some (Colour.rgb ~r:100 ~g:299 ~b:200)) None
   in
   let config = Luma.Plugin.Config.{ window = window_config } in
   App.create ()

@@ -26,8 +26,7 @@
    ppx_inline_test
    raylib
    ptime
-   fmt
-   box2d)
+   fmt)
  (tags
   ("game engine" "ecs")))
 

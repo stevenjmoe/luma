@@ -38,7 +38,7 @@ module type S = sig
 
   module Camera : sig
     val make :
-      position:Luma__math.Vec2.t ->
+      offset:Luma__math.Vec2.t ->
       target:Luma__math.Vec2.t ->
       rotation:float ->
       zoom:float ->
@@ -46,7 +46,10 @@ module type S = sig
       camera
 
     val default : unit -> camera
-    val set_target : camera -> float * float -> unit
+    val set_target : camera -> Vec2.t -> unit
+    val set_offset : camera -> Vec2.t -> unit
+    val set_zoom : camera -> float -> unit
+    val set_rotation : camera -> float -> unit
   end
 
   module Colour : sig

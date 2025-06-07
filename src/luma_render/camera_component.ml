@@ -14,8 +14,11 @@ module type S = sig
   end
 
   val default : unit -> camera
-  val make : position:Vec2.t -> target:Vec2.t -> rotation:float -> zoom:float -> unit -> camera
-  val set_target : camera -> float * float -> unit
+  val make : offset:Vec2.t -> target:Vec2.t -> rotation:float -> zoom:float -> unit -> camera
+  val set_target : camera -> Vec2.t -> unit
+  val set_offset : camera -> Vec2.t -> unit
+  val set_zoom : camera -> float -> unit
+  val set_rotation : camera -> float -> unit
 end
 
 module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
@@ -32,4 +35,7 @@ module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
   let default = D.Camera.default
   let make = D.Camera.make
   let set_target = D.Camera.set_target
+  let set_offset = D.Camera.set_offset
+  let set_zoom = D.Camera.set_zoom
+  let set_rotation = D.Camera.set_rotation
 end

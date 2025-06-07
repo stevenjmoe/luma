@@ -33,3 +33,6 @@ let make_with_resources
     name
     (run_fn : 'w -> (Id.Entity.t * 'a) list -> 'b -> 'w) : ('w, 'a, 'b) with_resources =
   { name; filter; components_query = components; resources_query = resources; run = run_fn }
+
+let name (system : _ t) =
+  match system with WithResources sys -> sys.name | WithoutResources sys -> sys.name

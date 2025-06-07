@@ -48,7 +48,7 @@ let create () =
 
 let add_system sched stage sys =
   let systems = Hashtbl.find sched.systems stage in
-  Hashtbl.replace sched.systems stage (System sys :: systems)
+  Hashtbl.replace sched.systems stage (systems @ [ System sys ])
 
 let add_scheduled (sched : t) (s : scheduled) =
   match s with
