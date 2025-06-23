@@ -160,8 +160,8 @@ let () =
   let open Luma.App in
   create ()
   |> Plugin.add_default_plugins
-  |> add_system (Startup (WithResources (setup_player ())))
-  |> add_system (Render (WithResources (render ())))
-  |> add_system (Update (WithResources (execute_animations ())))
-  |> add_system (Update (WithResources (input_system ())))
+  |> on Startup (setup_player ())
+  |> on Render (render ())
+  |> on Update (execute_animations ())
+  |> on Update (input_system ())
   |> run

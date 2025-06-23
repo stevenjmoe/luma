@@ -54,10 +54,8 @@ let get_new_archetype w old_archetype operation =
 
 let update_component_to_arch w archetype =
   let operation =
-    if Luma__id.Id.EntitySet.is_empty (Archetype.entities archetype) then
-      ArchetypeHashSet.remove
-    else
-      ArchetypeHashSet.add
+    if Luma__id.Id.EntitySet.is_empty (Archetype.entities archetype) then ArchetypeHashSet.remove
+    else ArchetypeHashSet.add
   in
   Archetype.components archetype
   |> Luma__id.Id.ComponentSet.iter (fun cid ->

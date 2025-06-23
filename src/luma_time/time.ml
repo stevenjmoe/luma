@@ -8,7 +8,7 @@ module type S = sig
 
   module R : Luma__resource.Resource.S with type t = t
 
-  val update_time : unit -> (World.t, unit) System.without_resources
+  val update_time : unit -> (World.t, unit) System.t
   val plugin : Luma__app__App.t -> Luma__app__App.t
 end
 
@@ -53,5 +53,5 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     let time = { dt = 0.0016; elapsed = 0. } in
     let packed_time = Luma__resource.Resource.pack (module R) time in
     world |> World.add_resource R.type_id packed_time |> ignore;
-    app |> App.add_system (Update (WithoutResources (update_time ())))
+    app |> App.on Scheduler.Update (update_time ())
 end

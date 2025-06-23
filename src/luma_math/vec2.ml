@@ -26,6 +26,8 @@ let sub t rhs =
   let y = t.y -. rhs.y in
   { x; y }
 
+let scale k v = create (k *. x v) (k *. y v)
+
 module Infix = struct
   let ( *.. ) a b = mul a b
   let ( +.. ) a b = add a b

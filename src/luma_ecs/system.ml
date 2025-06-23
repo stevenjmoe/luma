@@ -23,16 +23,17 @@ let make
     ?(filter = Query.Component.Filter.Any)
     ~(components : 'a Query.Component.t)
     name
-    (run_fn : 'w -> (Id.Entity.t * 'a) list -> 'w) : ('w, 'a) without_resources =
-  { name; filter; components_query = components; run = run_fn }
+    (run_fn : 'w -> (Id.Entity.t * 'a) list -> 'w) =
+  WithoutResources { name; filter; components_query = components; run = run_fn }
 
 let make_with_resources
     ?(filter = Query.Component.Filter.Any)
     ~(components : 'a Query.Component.t)
     ~(resources : 'b Query.Resource.t)
     name
-    (run_fn : 'w -> (Id.Entity.t * 'a) list -> 'b -> 'w) : ('w, 'a, 'b) with_resources =
-  { name; filter; components_query = components; resources_query = resources; run = run_fn }
+    (run_fn : 'w -> (Id.Entity.t * 'a) list -> 'b -> 'w) =
+  WithResources
+    { name; filter; components_query = components; resources_query = resources; run = run_fn }
 
 let name (system : _ t) =
   match system with WithResources sys -> sys.name | WithoutResources sys -> sys.name

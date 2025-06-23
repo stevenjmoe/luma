@@ -65,8 +65,7 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Audio.Music.t = 
       t.state <- `Stopped)
 
   let progress t =
-    if t.state = `Stopped then
-      None
+    if t.state = `Stopped then None
     else
       Some
         (D.Audio.Music.get_music_time_played t.stream
@@ -95,16 +94,13 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Audio.Music.t = 
             (* small buffer for floating point precision *)
             let length = D.Audio.Music.get_music_time_length m.stream -. 0.1 in
 
-            if length > 0.0 && time_played >= length then
-              stop m
+            if length > 0.0 && time_played >= length then stop m
         in
         Luma__asset.Assets.get_all (module A) assets |> List.iter update_music;
         world)
 
   let plugin app =
-    app
-    |> Luma__app.App.add_system (Update (WithResources (update_music_stream ())))
-    |> Luma__app.App.add_system (Cleanup (WithResources (cleanup ())))
+    app |> Luma__app.App.on Update (update_music_stream ()) |> Luma__app.App.on Cleanup (cleanup ())
 
   let () =
     Luma__asset.Server.register_loader_hook (fun server ->

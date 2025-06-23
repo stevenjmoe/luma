@@ -9,11 +9,9 @@ val world : t -> World.t
 (** Returns the associated world. *)
 
 val scheduler : t -> Scheduler.t
-val add_system : Scheduler.scheduled -> t -> t
 
-(** Adds either a [Startup] or [Update] system to the scheduler.
-
-    [Startup] systems will before the main game loop and [Update] systems are run on every tick. *)
+val on : Scheduler.stage -> (World.t, 'a) System.t -> t -> t
+(** Registers a system to run during the specified scheduler stage. *)
 
 val add_plugin : (t -> t) -> t -> t
 (** [add_plugin plugin app] applies a plugin function to the application.

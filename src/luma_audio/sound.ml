@@ -38,5 +38,5 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Audio.Sound.t = stru
         sounds |> List.iter (fun s -> D.Audio.Sound.unload_sound s);
         world)
 
-  let plugin app = app |> Luma__app.App.add_system (Cleanup (WithResources (cleanup ())))
+  let plugin app = app |> Luma__app.App.on Cleanup (cleanup ())
 end

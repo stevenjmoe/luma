@@ -16,8 +16,8 @@ let world (app : t) = app.world
 let scheduler (app : t) = app.scheduler
 let add_plugin plugin app = { app with plugins = plugin :: app.plugins }
 
-let add_system sys app =
-  Scheduler.add_scheduled app.scheduler sys;
+let on stage system app =
+  Scheduler.add_system app.scheduler stage (Scheduler.System system);
   app
 
 let check_plugins plugins () =

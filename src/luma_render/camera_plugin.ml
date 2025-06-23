@@ -43,7 +43,7 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
 
   let plugin app =
     app
-    |> App.add_system (PostStartup (WithoutResources (add_camera ())))
-    |> App.add_system (PreRender (WithoutResources (begin_camera_pass ())))
-    |> App.add_system (PostRender (WithoutResources (end_camera_pass ())))
+    |> App.on PostStartup (add_camera ())
+    |> App.on PreRender (begin_camera_pass ())
+    |> App.on PostRender (end_camera_pass ())
 end

@@ -1,17 +1,5 @@
 let log = Luma__core.Log.sub_log "luma.scheduler"
 
-type scheduled =
-  | PreStartup : (World.t, 'a) System.t -> scheduled
-  | Startup : (World.t, 'a) System.t -> scheduled
-  | PostStartup : (World.t, 'a) System.t -> scheduled
-  | PreUpdate : (World.t, 'a) System.t -> scheduled
-  | Update : (World.t, 'a) System.t -> scheduled
-  | PostUpdate : (World.t, 'a) System.t -> scheduled
-  | PreRender : (World.t, 'a) System.t -> scheduled
-  | Render : (World.t, 'a) System.t -> scheduled
-  | PostRender : (World.t, 'a) System.t -> scheduled
-  | Cleanup : (World.t, 'a) System.t -> scheduled
-
 type stage =
   | PreStartup
   | Startup
@@ -24,12 +12,13 @@ type stage =
   | PostRender
   | Cleanup
 
-type system = System : (World.t, 'a) System.t -> system
+type system = System : (World.t, _) System.t -> system
 type t = { systems : (stage, system list) Hashtbl.t }
 
 let create () =
   log.info (fun log -> log "Creating scheduler.");
   let systems = Hashtbl.create 16 in
+
   List.iter
     (fun stage -> Hashtbl.add systems stage [])
     [
@@ -46,22 +35,9 @@ let create () =
     ];
   { systems }
 
-let add_system sched stage sys =
+let add_system (sched : t) (stage : stage) (system : system) =
   let systems = Hashtbl.find sched.systems stage in
-  Hashtbl.replace sched.systems stage (systems @ [ System sys ])
-
-let add_scheduled (sched : t) (s : scheduled) =
-  match s with
-  | PreStartup s -> add_system sched PreStartup s
-  | Startup s -> add_system sched Startup s
-  | PostStartup s -> add_system sched PostStartup s
-  | PreUpdate s -> add_system sched PreUpdate s
-  | Update s -> add_system sched Update s
-  | PostUpdate s -> add_system sched PostUpdate s
-  | PreRender s -> add_system sched PreRender s
-  | Render s -> add_system sched Render s
-  | PostRender s -> add_system sched PostRender s
-  | Cleanup s -> add_system sched Cleanup s
+  Hashtbl.replace sched.systems stage (systems @ [ system ])
 
 let run_system (world : World.t) (system : (World.t, 'a) System.t) : World.t =
   let archetypes = World.archetypes world |> Hashtbl.to_seq_values |> List.of_seq in

@@ -60,7 +60,5 @@ module Make (D : Driver.S) : S with type colour = D.colour = struct
         world)
 
   let plugin ?(config : Window_config.t = Window_config.default ()) app =
-    app
-    |> App.add_system (PreUpdate (WithoutResources (clear_window config)))
-    |> App.add_system (PreStartup (WithoutResources (init config)))
+    app |> App.on PreUpdate (clear_window config) |> App.on PreStartup (init config)
 end

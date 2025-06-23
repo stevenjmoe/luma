@@ -53,6 +53,6 @@ And finally running the game.
 let () =
   App.create ()
   |> Plugin.add_default_plugins
-  |> App.add_system (Scheduler.Render (Luma.System.WithoutResources (setup_rectangle ())))
+  |> App.on Scheduler.Render (setup_rectangle ())
   |> App.run
 ```

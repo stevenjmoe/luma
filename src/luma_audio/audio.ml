@@ -21,8 +21,8 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   let plugin app =
     app
-    |> Luma__app.App.add_system (PreStartup (WithoutResources (init ())))
-    |> Luma__app.App.add_system (Cleanup (WithoutResources (cleanup ())))
+    |> Luma__app.App.on PreStartup (init ())
+    |> Luma__app.App.on Cleanup (cleanup ())
     |> Sound.plugin
     |> Music.plugin
 end

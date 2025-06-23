@@ -121,9 +121,9 @@ let () =
   let config = Luma.Plugin.Config.{ window = window_config } in
   App.create ()
   |> Luma.Plugin.add_default_plugins ~config
-  |> App.add_system (Scheduler.Startup (Luma.System.WithoutResources (setup_rectangle ())))
-  |> App.add_system (Scheduler.Startup (System.WithoutResources (setup_other_rectangle ())))
-  |> App.add_system (Scheduler.Update (Luma.System.WithResources (input_system ())))
-  |> App.add_system (Scheduler.Update (Luma.System.WithResources (movement_system ())))
-  |> App.add_system (Scheduler.Render (Luma.System.WithoutResources (render_system ())))
+  |> App.on Startup (setup_rectangle ())
+  |> App.on Scheduler.Startup (setup_other_rectangle ())
+  |> App.on Scheduler.Update (input_system ())
+  |> App.on Scheduler.Update (movement_system ())
+  |> App.on Scheduler.Render (render_system ())
   |> App.run

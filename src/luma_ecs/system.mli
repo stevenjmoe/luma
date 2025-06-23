@@ -30,7 +30,7 @@ val make :
   components:'a Query.Component.t ->
   string ->
   ('w -> (Luma__id.Id.Entity.t * 'a) list -> 'w) ->
-  ('w, 'a) without_resources
+  ('w, 'a) t
 (** Makes a system with no required resources. *)
 
 val make_with_resources :
@@ -39,7 +39,7 @@ val make_with_resources :
   resources:'b Query.Resource.t ->
   string ->
   ('w -> (Luma__id.Id.Entity.t * 'a) list -> 'b -> 'w) ->
-  ('w, 'a, 'b) with_resources
+  ('w, 'a) t
 (** Makes a system with resource represented by type ['b]. *)
 
 val name : ('w, 'a) t -> string
