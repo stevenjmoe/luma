@@ -11,6 +11,7 @@ module type S = sig
   open Luma__resource
   open Luma__id
   open Luma__audio
+  module Raylib_driver = Luma__driver_raylib.Driver
 
   module App : sig
     include module type of App
@@ -103,6 +104,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Audio = Luma__audio.Audio.Make (D)
   module Plugin = Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time) (Audio)
   module Window_config = Window.Window_config
+  module Raylib_driver = Luma__driver_raylib.Driver
 
   module App = struct
     include Luma__app.App

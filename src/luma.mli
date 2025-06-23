@@ -11,6 +11,7 @@ module type S = sig
   open Luma__resource
   open Luma__id
   open Luma__audio
+  module Raylib_driver = Luma__driver_raylib.Driver
 
   module App : sig
     include module type of App

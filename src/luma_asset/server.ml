@@ -1,7 +1,3 @@
-type load_error =
-  | Unsupported_extension of string
-  | Loader_error of string
-
 type t = {
   assets : Assets.t;
   mutable loaders : Loader.t list;
@@ -19,10 +15,10 @@ let run_loader_hooks server = List.iter (fun hook -> hook server) !loader_hooks
 
 let load (type a) (module A : Asset.S with type t = a) server path =
   match find_loader (module A) server path with
-  | None -> Error (Unsupported_extension path)
+  | None -> Error (Luma__core.Error.asset_ext_unsupported path)
   | Some loader -> (
       match loader.load path with
-      | Error msg -> Error (Loader_error msg)
+      | Error msg -> Error (Luma__core.Error.asset_load msg)
       | Ok (Loaded (asset_mod, asset)) ->
           let handle = Assets.add asset_mod server.assets asset in
           Ok handle)

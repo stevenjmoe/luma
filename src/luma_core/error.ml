@@ -27,6 +27,9 @@ type system_run = {
   msg : string;
 }
 
+type asset_load = { msg : string }
+type asset_ext_unsupported = { path : string }
+
 type error =
   [ `Entity_not_found of entity_not_found
   | `Component_not_found of component_not_found
@@ -34,6 +37,8 @@ type error =
   | `Unpacked_unexpected_base_type of unpacked_unexpected_base_type
   | `Unpacked_type_mismatch of unpacked_type_mismatch
   | `System_run of system_run
+  | `Asset_load of asset_load
+  | `Asset_ext_unsupported of asset_ext_unsupported
   ]
 
 let pp fmt (e : error) =
@@ -53,6 +58,9 @@ let pp fmt (e : error) =
       Format.fprintf fmt "Packed record has an unexpected base type. Expected type id: %d. Msg: %s"
         expected_type_id msg
   | `System_run { name; msg } -> Format.fprintf fmt "Failed to run system %s. Msg: %s" name msg
+  | `Asset_load { msg } -> Format.fprintf fmt "Failed to load asset. Msg: %s" msg
+  | `Asset_ext_unsupported { path } ->
+      Format.fprintf fmt "Incompatible asset extension. Path: %s" path
 
 exception Engine_error of error
 
@@ -73,7 +81,8 @@ let component_not_found_exn component_id hash msg =
   raise_error @@ component_not_found component_id hash msg
 
 (** [resource_not_found msg] returns `Resource_not_found` exception*)
-let resource_not_found msg = `Resource_not_found { msg }
+let resource_not_found msg : [> `Resource_not_found of resource_not_found ] =
+  `Resource_not_found { msg }
 
 (** [unpacked_unexpected_base_type expected_type_id msg] Returns the
     ``Unpacked_unexpected_base_type` error *)
@@ -97,8 +106,20 @@ let unpacked_type_mismatch_exn expected_type_id actual_type_id msg =
 (** [system_run system_name msg] returns the ``System_run` error *)
 let system_run name msg : error = `System_run { name; msg }
 
-(** [system_run_exn system_name msg] returns Engine_error exception *)
+(** [system_run_exn system_name msg] returns `Engine_error` exception *)
 let system_run_exn name msg = raise_error @@ system_run name msg
+
+(** [asset_load msg] returns the ``Asset_load` error *)
+let asset_load msg : error = `Asset_load { msg }
+
+(** [asset_load_exn msg] returns the `Engine_error` exception *)
+let asset_load_exn msg = raise_error @@ asset_load msg
+
+(** [asset_ext_unsupported ext ] returns the ``Asset_ext_unsupported` error *)
+let asset_ext_unsupported path : error = `Asset_ext_unsupported { path }
+
+(** [asset_ext_unsupported_exn] returns the `Engine_error` exception *)
+let asset_ext_unsupported_exn path = raise_error @@ asset_ext_unsupported path
 
 let try_with f = try Ok f with Engine_error e -> Error e
 let or_raise = function Ok x -> x | Error e -> raise_error e
