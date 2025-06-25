@@ -79,6 +79,7 @@ module type S = sig
   module Renderer : Render.Renderer with type texture = texture and type colour = colour
   module Key : module type of Luma__types.Input_types.Key
   module Mouse_button : module type of Luma__types.Input_types.Mouse_button
+  module State : module type of Luma__state.State
 
   val screen_width : unit -> int
   val screen_height : unit -> int
@@ -178,6 +179,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Texture_atlas_layout = Luma__image.Texture_atlas_layout
   module Key = Luma__types.Input_types.Key
   module Mouse_button = Luma__types.Input_types.Mouse_button
+  module State = Luma__state.State
 
   let screen_width = D.Window.screen_width
   let screen_height = D.Window.screen_height

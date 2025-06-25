@@ -2,6 +2,17 @@ open Luma__ecs
 
 type t
 
+module State_resource : sig
+  type t
+
+  val type_id : Luma__id__Id.Resource.t
+  val name : string
+  val pp : t Fmt.t
+  val of_base : Luma__resource__Resource.base -> t
+  val of_base_opt : Luma__resource__Resource.base -> t option
+  val to_base : t -> Luma__resource__Resource.base
+end
+
 val create : unit -> t
 (** Initializes the engine with an empty world, scheduler, and plugins *)
 
@@ -9,8 +20,14 @@ val world : t -> World.t
 (** Returns the associated world. *)
 
 val scheduler : t -> Scheduler.t
+val init_state : (module Luma__state__State.S with type t = 's) -> 's -> t -> t
 
-val on : Scheduler.stage -> (World.t, 'a) System.t -> t -> t
+val on :
+  ?in_state:(module Luma__state__State.S with type t = 's) * 's ->
+  Scheduler.stage ->
+  (World.t, 'a) System.t ->
+  t ->
+  t
 (** Registers a system to run during the specified scheduler stage. *)
 
 val add_plugin : (t -> t) -> t -> t

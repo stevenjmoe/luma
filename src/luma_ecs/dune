@@ -2,8 +2,8 @@
   (public_name luma.ecs)
   (name luma__ecs)
   (libraries 
-    raylib 
     luma.storage 
+    luma.state
     luma.resource
     luma.id
     luma.core
