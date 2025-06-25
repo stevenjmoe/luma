@@ -1,0 +1,4 @@
+(library
+  (public_name luma.state)
+  (libraries luma.id luma.core fmt luma.resource)
+  (name luma__state))
