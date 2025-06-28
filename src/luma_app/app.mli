@@ -19,8 +19,43 @@ val create : unit -> t
 val world : t -> World.t
 (** Returns the associated world. *)
 
+val plugins : t -> (t -> t) list
+(** Returns all app plugins. *)
+
 val scheduler : t -> Scheduler.t
+(** Returns the app scheduler. *)
+
 val init_state : (module Luma__state__State.S with type t = 's) -> 's -> t -> t
+(** [init_state (module S) value app] registers the initial game-state resource.
+
+    @param S
+      A first-class module satisfying [Luma.State.S]. Its [type t] is the concrete state value that
+      will be stored.
+    @param value The initial value of type [S.t] to place in the world.
+    @param app The application being configured.
+
+    @return The updated [app] containing the newly-added state resource.
+
+    @raise Invalid_argument
+      if a state resource is already present. Call [init_state] exactly once, before any systems
+      that rely on [~in_state] predicates.
+
+    {[
+      module App_state = struct
+        type t =
+          | Menu
+          | InGame
+
+        module S = Luma.State.Make (struct
+          type inner = t
+
+          let name = "app_state"
+        end)
+      end
+    ]} *)
+
+val clear_plugins : t -> t
+(** [clear_plugins app] returns the app without any of the previously added plugins. *)
 
 val on :
   ?in_state:(module Luma__state__State.S with type t = 's) * 's ->

@@ -4,6 +4,7 @@ type stage =
   | Startup
   | PostStartup
   | PreUpdate
+  | StateTransition
   | Update
   | PostUpdate
   | PreRender
@@ -11,7 +12,13 @@ type stage =
   | PostRender
   | Cleanup
 
-type system = System : (World.t, 'a) System.t -> system
+type system =
+  | System : {
+      sys : (World.t, 'a) System.t;
+      run_if : World.t -> bool;
+    }
+      -> system
+
 type t
 
 val create : unit -> t

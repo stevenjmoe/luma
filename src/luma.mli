@@ -14,8 +14,23 @@ module type S = sig
   module Raylib_driver = Luma__driver_raylib.Driver
 
   module App : sig
-    include module type of App
+    type t
 
+    module State_resource = App.State_resource
+
+    val create : unit -> t
+    val world : t -> World.t
+    val init_state : (module Luma__state__State.S with type t = 's) -> 's -> t -> t
+
+    val on :
+      ?in_state:(module Luma__state__State.S with type t = 's) * 's ->
+      Scheduler.stage ->
+      (World.t, 'a) System.t ->
+      t ->
+      t
+
+    val add_plugin : (t -> t) -> t -> t
+    val run : t -> unit
     val run : t -> unit
   end
 

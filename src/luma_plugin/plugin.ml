@@ -24,12 +24,26 @@ struct
   let audio_plugin = Audio.plugin
   let default_config () : Config.t = { window = Window.Window_config.default () }
 
+  (** [add_default_plugins ?config app] installs the engine’s core plugins (input, audio, window,
+      camera, time, asset).
+
+      Call order matters. Any plugins the caller has already added via [add_plugin] are preserved
+      and executed before the engine defaults. Plugins added after [add_default_plugins] are
+      executed later from [App.run].
+
+      [config] – optional engine-level settings. Use [default_config ()] when unsure. *)
   let add_default_plugins ?(config : Config.t = default_config ()) app =
-    app
-    |> add_plugin input_plugin
-    |> add_plugin audio_plugin
-    |> add_plugin (window_plugin ~config:config.window)
-    |> add_plugin camera_plugin
-    |> add_plugin time_plugin
-    |> add_plugin asset_plugin
+    let plugins = Luma__app.App.plugins app in
+    let plugins =
+      [
+        input_plugin;
+        audio_plugin;
+        window_plugin ~config:config.window;
+        camera_plugin;
+        time_plugin;
+        asset_plugin;
+      ]
+      @ plugins
+    in
+    List.fold_right (fun p a -> p a) plugins app |> Luma__app.App.clear_plugins
 end

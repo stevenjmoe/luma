@@ -12,6 +12,7 @@
    luma.driver.raylib
    luma.ecs
    luma.plugin
+   luma.window
    luma.sprite
    luma.state
    luma.time
