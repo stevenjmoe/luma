@@ -4,6 +4,7 @@
   (libraries 
     luma.ecs
     luma.driver
+    luma.state
     ppx_component
     luma.core)
   (preprocess 

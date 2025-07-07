@@ -1,5 +1,7 @@
 module ArchetypeHashSet = Set.Make (Int)
 
+let log = Luma__core.Log.sub_log "world"
+
 type t = {
   empty_archetype : Archetype.t;
   archetypes : (int, Archetype.t) Hashtbl.t;
@@ -23,9 +25,18 @@ let create () =
 let resources w = w.resources
 
 let add_resource key res w =
-  Hashtbl.add w.resources key res;
+  if Hashtbl.mem w.resources key then (
+    let res_pp = Luma__resource.Resource.show res in
+    log.error (fun l -> l "Attempted to add resource %s more than once." res_pp);
+    failwith @@ Printf.sprintf "Attempted to add resource %s more than once." res_pp)
+  else Hashtbl.add w.resources key res;
   w
 
+let set_resource key res w =
+  Hashtbl.replace w.resources key res;
+  w
+
+let has_resource key w = Hashtbl.mem w.resources key
 let get_resource w key = Hashtbl.find_opt w.resources key
 let archetypes w = w.archetypes
 

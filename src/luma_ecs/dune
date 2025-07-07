@@ -3,7 +3,6 @@
   (name luma__ecs)
   (libraries 
     luma.storage 
-    luma.state
     luma.resource
     luma.id
     luma.core

@@ -13,6 +13,19 @@ type stage =
   | PostRender
   | Cleanup
 
+let stage_name = function
+  | PreStartup -> "PreStartup"
+  | Startup -> "Startup"
+  | PostStartup -> "PostStartup"
+  | PreUpdate -> "PreUpdate"
+  | StateTransition -> "StateTransition"
+  | Update -> "Update"
+  | PostUpdate -> "PostUpdate"
+  | PreRender -> "PreRender"
+  | Render -> "Render"
+  | PostRender -> "PostRender"
+  | Cleanup -> "Cleanup"
+
 type system =
   | System : {
       sys : (World.t, _) System.t;
@@ -52,7 +65,6 @@ let run_system (world : World.t) (System { sys = system; run_if }) : World.t =
     let archetypes = World.archetypes world |> Hashtbl.to_seq_values |> List.of_seq in
     match system with
     | System.WithoutResources s -> (
-        log.debug (fun l -> l "sys: %s" s.name);
         match Query.Component.evaluate ~filter:s.filter s.components_query archetypes with
         | Ok matching_entities -> s.run world matching_entities
         | Error e ->
@@ -60,7 +72,6 @@ let run_system (world : World.t) (System { sys = system; run_if }) : World.t =
             log.error (fun l -> l "%s" msg);
             Luma__core.Error.system_run_exn s.name msg)
     | System.WithResources s -> (
-        log.debug (fun l -> l "sys: %s" s.name);
         match Query.Component.evaluate ~filter:s.filter s.components_query archetypes with
         | Ok matching_entities -> (
             match Query.Resource.evaluate s.resources_query (World.resources world) with

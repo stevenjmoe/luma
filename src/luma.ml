@@ -16,16 +16,15 @@ module type S = sig
   module App : sig
     type t
 
-    module State_resource = App.State_resource
-
     val create : unit -> t
     val world : t -> World.t
-    val init_state : (module Luma__state__State.S with type t = 's) -> 's -> t -> t
+    val init_state : (module Luma__state__State.STATE with type t = 'a) -> 'a -> t -> t
 
     val on :
-      ?in_state:(module Luma__state__State.S with type t = 's) * 's ->
+      'a 'b.
+      ?in_state:(module Luma__state__State.STATE with type t = 'a) * 'a ->
       Scheduler.stage ->
-      (World.t, 'a) System.t ->
+      (World.t, 'b) System.t ->
       t ->
       t
 
@@ -125,8 +124,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     open Luma__app.App
 
     type nonrec t = t
-
-    module State_resource = State_resource
 
     let world = world
     let create = create

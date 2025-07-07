@@ -18,62 +18,38 @@ let add_plugin plugin app = { app with plugins = plugin :: app.plugins }
 let plugins app = app.plugins
 let clear_plugins app = { app with plugins = [] }
 
-type state_instance =
-  | State : ((module Luma__state.State.S with type t = 'a) * 'a) -> state_instance
-
-module State_resource = struct
-  include Luma__resource.Resource.Make (struct
-    type inner = state_instance
-
-    let name = "state_resource"
-  end)
-end
-
-let init_state (type s) (module S : Luma__state.State.S with type t = s) (state : s) app =
-  if World.get_resource app.world State_resource.type_id |> Option.is_some then (
-    log.error (fun l ->
-        l "State has already been initialized. Did you call `init_state` more than once?");
-    invalid_arg "State has already been initialized. Did you call `init_state` more than once?")
-  else
-    let instance = State ((module S), state) in
-    let packed = Luma__resource.Resource.pack (module State_resource) instance in
-    World.add_resource State_resource.type_id packed app.world |> ignore;
-    app
-
-let matches_state
-    (type s)
-    (module S : Luma__state.State.S with type t = s)
-    (expected_state : s)
-    (State ((module R), current_state)) =
-  if S.type_id = R.type_id then
-    let s = R.to_base current_state in
-    let s2 = S.to_base expected_state in
-    s = s2
-  else false
-
-let current_state world =
-  match World.get_resource world State_resource.type_id with
-  | None -> None
-  | Some p -> (
-      match Luma__resource.Resource.unpack (module State_resource) p with
-      | Ok s -> Some s
-      | Error _ -> assert false)
-
 let on
     (type s)
-    ?in_state:(state : ((module Luma__state.State.S with type t = s) * s) option)
+    ?in_state:(m : ((module Luma__state.State.STATE with type t = s) * s) option)
     stage
     system
     app =
-  let predicate world =
-    match state with
+  let run_if world =
+    match m with
     | None -> true
-    | Some ((module Q), expected_state) -> (
-        match current_state world with
-        | Some current_state -> matches_state (module Q) expected_state current_state
-        | None -> false)
+    | Some ((module S), next_state) -> (
+        match World.get_resource world Luma__state.State.State_res.R.type_id with
+        | None ->
+            log.error (fun l ->
+                l "init_state must be called before scheduling a state-gated system");
+            invalid_arg "on: init_state must be called before scheduling a state-gated system"
+        | Some packed -> (
+            match Luma__resource.Resource.unpack (module Luma__state.State.State_res.R) packed with
+            | Ok current -> Luma__state.State.eq_state (State ((module S), next_state)) current
+            | Error _ ->
+                log.error (fun l -> l "State resource has wrong type");
+                invalid_arg "on: wrong type in State_res resource."))
   in
-  Scheduler.add_system app.scheduler stage (Scheduler.System { sys = system; run_if = predicate });
+  Scheduler.add_system app.scheduler stage (Scheduler.System { sys = system; run_if });
+  app
+
+let init_state (type a) state_mod state app =
+  let app =
+    app |> add_plugin (fun a -> a |> on StateTransition (Luma__state.State.transition_system ()))
+  in
+  let s = Luma__state.State.State (state_mod, state) in
+  let packed = Luma__resource.Resource.pack (module Luma__state.State.State_res.R) s in
+  World.add_resource Luma__state.State.State_res.R.type_id packed app.world |> ignore;
   app
 
 let check_plugins plugins () =

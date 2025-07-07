@@ -2,17 +2,6 @@ open Luma__ecs
 
 type t
 
-module State_resource : sig
-  type t
-
-  val type_id : Luma__id__Id.Resource.t
-  val name : string
-  val pp : t Fmt.t
-  val of_base : Luma__resource__Resource.base -> t
-  val of_base_opt : Luma__resource__Resource.base -> t option
-  val to_base : t -> Luma__resource__Resource.base
-end
-
 val create : unit -> t
 (** Initializes the engine with an empty world, scheduler, and plugins *)
 
@@ -25,42 +14,16 @@ val plugins : t -> (t -> t) list
 val scheduler : t -> Scheduler.t
 (** Returns the app scheduler. *)
 
-val init_state : (module Luma__state__State.S with type t = 's) -> 's -> t -> t
-(** [init_state (module S) value app] registers the initial game-state resource.
-
-    @param S
-      A first-class module satisfying [Luma.State.S]. Its [type t] is the concrete state value that
-      will be stored.
-    @param value The initial value of type [S.t] to place in the world.
-    @param app The application being configured.
-
-    @return The updated [app] containing the newly-added state resource.
-
-    @raise Invalid_argument
-      if a state resource is already present. Call [init_state] exactly once, before any systems
-      that rely on [~in_state] predicates.
-
-    {[
-      module App_state = struct
-        type t =
-          | Menu
-          | InGame
-
-        module S = Luma.State.Make (struct
-          type inner = t
-
-          let name = "app_state"
-        end)
-      end
-    ]} *)
-
 val clear_plugins : t -> t
 (** [clear_plugins app] returns the app without any of the previously added plugins. *)
 
+val init_state : (module Luma__state__State.STATE with type t = 'a) -> 'a -> t -> t
+
 val on :
-  ?in_state:(module Luma__state__State.S with type t = 's) * 's ->
+  'a 'b.
+  ?in_state:(module Luma__state__State.STATE with type t = 'a) * 'a ->
   Scheduler.stage ->
-  (World.t, 'a) System.t ->
+  (World.t, 'b) System.t ->
   t ->
   t
 (** Registers a system to run during the specified scheduler stage. *)
