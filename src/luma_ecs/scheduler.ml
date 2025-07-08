@@ -38,7 +38,6 @@ type t = { systems : (stage, system list) Hashtbl.t }
 let create () =
   log.info (fun log -> log "Creating scheduler.");
   let systems = Hashtbl.create 16 in
-
   List.iter
     (fun stage -> Hashtbl.add systems stage [])
     [

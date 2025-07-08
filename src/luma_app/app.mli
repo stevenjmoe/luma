@@ -28,6 +28,11 @@ val on :
   t
 (** Registers a system to run during the specified scheduler stage. *)
 
+val on_enter :
+  (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
+(** [on_enter state_module state_value system sched] registers a system to run once, immediately
+    after transitioning into the given state. *)
+
 val add_plugin : (t -> t) -> t -> t
 (** [add_plugin plugin app] applies a plugin function to the application.
 

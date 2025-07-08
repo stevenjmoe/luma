@@ -28,6 +28,9 @@ module type S = sig
       t ->
       t
 
+    val on_enter :
+      (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
+
     val add_plugin : (t -> t) -> t -> t
     val run : t -> unit
   end
@@ -131,6 +134,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     let scheduler = scheduler
     let init_state = init_state
     let on = on
+    let on_enter = on_enter
     let add_plugin = add_plugin
     let run app = run (module D) app
   end

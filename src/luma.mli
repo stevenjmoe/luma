@@ -28,8 +28,10 @@ module type S = sig
       t ->
       t
 
+    val on_enter :
+      (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
+
     val add_plugin : (t -> t) -> t -> t
-    val run : t -> unit
     val run : t -> unit
   end
 

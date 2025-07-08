@@ -24,18 +24,23 @@ let on
     stage
     system
     app =
+  let open Luma__state.State in
+  let open Luma__resource in
   let run_if world =
     match m with
     | None -> true
     | Some ((module S), next_state) -> (
-        match World.get_resource world Luma__state.State.State_res.R.type_id with
+        match World.get_resource world State_res.R.type_id with
         | None ->
             log.error (fun l ->
                 l "init_state must be called before scheduling a state-gated system");
             invalid_arg "on: init_state must be called before scheduling a state-gated system"
         | Some packed -> (
-            match Luma__resource.Resource.unpack (module Luma__state.State.State_res.R) packed with
-            | Ok current -> Luma__state.State.eq_state (State ((module S), next_state)) current
+            match Resource.unpack (module State_res.R) packed with
+            | Ok state -> (
+                match State_res.current state with
+                | Some c -> eq_state (State ((module S), next_state)) c
+                | None -> false)
             | Error _ ->
                 log.error (fun l -> l "State resource has wrong type");
                 invalid_arg "on: wrong type in State_res resource."))
@@ -43,13 +48,27 @@ let on
   Scheduler.add_system app.scheduler stage (Scheduler.System { sys = system; run_if });
   app
 
-let init_state (type a) state_mod state app =
-  let app =
-    app |> add_plugin (fun a -> a |> on StateTransition (Luma__state.State.transition_system ()))
+let on_enter
+    (type s)
+    (module S : Luma__state.State.STATE with type t = s)
+    (s : s)
+    (system : (World.t, 'a) System.t)
+    (app : t) =
+  Scheduler.add_system app.scheduler StateTransition
+    (Scheduler.System { sys = system; run_if = (fun w -> true) });
+  app
+
+(* TODO: Clean up*)
+let init_state (type a) state_mod (state : a) app =
+  let open Luma__resource.Resource in
+  let open Luma__state in
+  let app = app |> add_plugin (fun a -> a |> on StateTransition (State.transition_system ())) in
+  let packed =
+    Luma__state.State.State (state_mod, state)
+    |> State.State_res.create
+    |> pack (module State.State_res.R)
   in
-  let s = Luma__state.State.State (state_mod, state) in
-  let packed = Luma__resource.Resource.pack (module Luma__state.State.State_res.R) s in
-  World.add_resource Luma__state.State.State_res.R.type_id packed app.world |> ignore;
+  World.add_resource State.State_res.R.type_id packed app.world |> ignore;
   app
 
 let check_plugins plugins () =

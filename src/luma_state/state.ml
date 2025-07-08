@@ -1,5 +1,7 @@
 type base = ..
 
+let log = Luma__core.Log.sub_log "state"
+
 module Key : sig
   type 'a t = Luma__id.Id.State.t
   type (_, _) eq = Eq : ('a, 'a) eq
@@ -37,7 +39,13 @@ end) : STATE with type t = S.inner = struct
   let key = Key.make ()
   let eq = ( = )
   let to_base t = T t
-  let of_base = function T t -> t | _ -> failwith ""
+
+  let of_base = function
+    | T t -> t
+    | _ ->
+        Luma__core.Error.unpacked_unexpected_base_type_exn (Luma__id.Id.State.to_int key)
+          "Unexpected value wrapped in 'T' constructor"
+
   let of_base_opt = function T t -> Some t | _ -> None
 end
 
@@ -56,14 +64,34 @@ let unpack : type a. (module STATE with type t = a) -> state -> (a, Luma__core.E
 
 let cast : type a b. (a, b) Key.eq -> a -> b = function Key.Eq -> fun x -> x
 
-let rec eq_state : type a b. state -> state -> bool =
+let eq_state : type a b. state -> state -> bool =
  fun a b ->
   match (a, b) with
   | State ((module A), s1), State ((module B), s2) -> (
       match Key.witness A.key B.key with None -> false | Some proof -> A.eq s1 (cast proof s2))
 
+type transition_result =
+  | NoChange
+  | Transitioned of {
+      from : state;
+      to_ : state;
+    }
+
+type state_resource = {
+  previous : state option;
+  current : state option;
+  next : state option;
+  last_result : transition_result;
+}
+
 module State_res = struct
-  type t = state
+  type t = state_resource
+
+  let create s = { current = Some s; next = None; previous = None; last_result = NoChange }
+  let previous s = s.previous
+  let current s = s.current
+  let next s = s.next
+  let last_result s = s.last_result
 
   module R = Luma__resource.Resource.Make (struct
     type inner = t
@@ -72,45 +100,61 @@ module State_res = struct
   end)
 end
 
-module Next_state_res = struct
-  type t = state option
-
-  module R = Luma__resource.Resource.Make (struct
-    type inner = t
-
-    let name = "next_state_res"
-  end)
-end
-
 let queue_state (type s) (module S : STATE with type t = s) (v : s) (world : Luma__ecs.World.t) =
+  let open Luma__ecs in
   let pending = State ((module S), v) in
-  let packed = Luma__resource.Resource.pack (module Next_state_res.R) (Some pending) in
-  Luma__ecs.World.set_resource Next_state_res.R.type_id packed world
+  match World.get_resource world State_res.R.type_id with
+  | Some packed -> (
+      match Luma__resource.Resource.unpack_opt (module State_res.R) packed with
+      | Some sr ->
+          (* TODO: perform some checks of the existing resource. eg. Don't overwrite next if it's some *)
+          let next =
+            State_res.
+              {
+                next = Some pending;
+                current = sr.current;
+                previous = sr.previous;
+                last_result = sr.last_result;
+              }
+          in
+          let packed = Luma__resource.Resource.pack (module State_res.R) next in
+          World.set_resource State_res.R.type_id packed world
+      | None ->
+          log.warn (fun l -> l "queue_state: Failed to unpack state resource.");
+          world)
+  | None ->
+      let packed =
+        State_res.{ next = Some pending; current = None; previous = None; last_result = NoChange }
+        |> Luma__resource.Resource.pack (module State_res.R)
+      in
+      World.set_resource State_res.R.type_id packed world
 
 let is (type a) (module S : STATE with type t = a) (v : a) (st : state) : bool =
   eq_state st (State ((module S), v))
 
 let transition_system () =
+  let open Luma__ecs in
+  let open Luma__resource in
   Luma__ecs.System.make ~components:End "transition_system" (fun w e ->
       let ( >>= ) = Option.bind in
       match
-        Luma__ecs.World.get_resource w Next_state_res.R.type_id >>= fun r ->
-        Luma__resource.Resource.unpack_opt (module Next_state_res.R) r >>= fun next_state_res ->
-        next_state_res
+        World.get_resource w State_res.R.type_id >>= fun s ->
+        Resource.unpack_opt (module State_res.R) s
       with
-      | None -> w
-      | Some next_state -> (
-          match
-            Luma__ecs.World.get_resource w State_res.R.type_id >>= fun s ->
-            Luma__resource.Resource.unpack_opt (module State_res.R) s
-          with
-          | Some state ->
-              if eq_state state next_state then w
-              else
-                let new_packed = Luma__resource.Resource.pack (module State_res.R) next_state in
-                let old_packed = Luma__resource.Resource.pack (module Next_state_res.R) None in
-                Luma__ecs.World.set_resource State_res.R.type_id new_packed w
-                |> Luma__ecs.World.set_resource Next_state_res.R.type_id old_packed
-                |> ignore;
-                w
-          | None -> w))
+      | Some { current = Some current_state; previous = _; next = Some next_state } ->
+          if eq_state current_state next_state then w
+          else
+            let last_result' = Transitioned { from = current_state; to_ = next_state } in
+            let next =
+              State_res.
+                {
+                  next = None;
+                  previous = Some current_state;
+                  current = Some next_state;
+                  last_result = last_result';
+                }
+            in
+            let new_packed = Resource.pack (module State_res.R) next in
+            World.set_resource State_res.R.type_id new_packed w |> ignore;
+            w
+      | _ -> w)
