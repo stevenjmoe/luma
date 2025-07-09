@@ -11,6 +11,7 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Texture.t = struct
     type inner = t
   end)
 
+  (* TODO: potentially unsafe to load textures here *)
   let () =
     Luma__asset.Server.register_loader_hook (fun server ->
         Luma__asset.Server.register_loader server

@@ -73,6 +73,9 @@ module State_res : sig
 end
 with type t = state_resource
 
+val just_entered : (module STATE with type t = 's) -> 's -> state_resource -> bool
+val just_exited : (module STATE with type t = 's) -> 's -> state_resource -> bool
+
 val eq_state : 'a 'b. state -> state -> bool
 (** Structural equality on existential states. *)
 

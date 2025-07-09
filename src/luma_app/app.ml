@@ -18,34 +18,58 @@ let add_plugin plugin app = { app with plugins = plugin :: app.plugins }
 let plugins app = app.plugins
 let clear_plugins app = { app with plugins = [] }
 
-let on
+let on (type s) stage system app =
+  let open Luma__state.State in
+  let open Luma__resource in
+  Scheduler.add_system app.scheduler stage
+    (Scheduler.System { sys = system; run_if = (fun _ -> true) });
+  app
+
+let while_in
     (type s)
-    ?in_state:(m : ((module Luma__state.State.STATE with type t = s) * s) option)
-    stage
-    system
+    (module S : Luma__state.State.STATE with type t = s)
+    (next_state : s)
+    ~stage
+    ~system
     app =
   let open Luma__state.State in
   let open Luma__resource in
   let run_if world =
-    match m with
-    | None -> true
-    | Some ((module S), next_state) -> (
-        match World.get_resource world State_res.R.type_id with
-        | None ->
-            log.error (fun l ->
-                l "init_state must be called before scheduling a state-gated system");
-            invalid_arg "on: init_state must be called before scheduling a state-gated system"
-        | Some packed -> (
-            match Resource.unpack (module State_res.R) packed with
-            | Ok state -> (
-                match State_res.current state with
-                | Some c -> eq_state (State ((module S), next_state)) c
-                | None -> false)
-            | Error _ ->
-                log.error (fun l -> l "State resource has wrong type");
-                invalid_arg "on: wrong type in State_res resource."))
+    match World.get_resource world State_res.R.type_id with
+    | None ->
+        log.error (fun l -> l "init_state must be called before scheduling a state-gated system");
+        invalid_arg "on: init_state must be called before scheduling a state-gated system"
+    | Some packed -> (
+        match Resource.unpack (module State_res.R) packed with
+        | Ok state -> (
+            match State_res.current state with
+            | Some c -> eq_state (State ((module S), next_state)) c
+            | None -> false)
+        | Error _ ->
+            log.error (fun l -> l "State resource has wrong type");
+            invalid_arg "on: wrong type in State_res resource.")
   in
   Scheduler.add_system app.scheduler stage (Scheduler.System { sys = system; run_if });
+  app
+
+let on_
+    (type s)
+    (module S : Luma__state.State.STATE with type t = s)
+    (s : s)
+    (system : (World.t, 'a) System.t)
+    (app : t)
+    (pred : Luma__state__State.state_resource -> bool) =
+  let open Luma__state in
+  let open Luma__resource in
+  let run_if world =
+    match World.get_resource world State.State_res.R.type_id with
+    | Some packed -> (
+        match Resource.unpack_opt (module State.State_res.R) packed with
+        | Some state -> pred state
+        | None -> false)
+    | None -> false
+  in
+  Scheduler.add_system app.scheduler StateTransition (Scheduler.System { sys = system; run_if });
   app
 
 let on_enter
@@ -54,9 +78,15 @@ let on_enter
     (s : s)
     (system : (World.t, 'a) System.t)
     (app : t) =
-  Scheduler.add_system app.scheduler StateTransition
-    (Scheduler.System { sys = system; run_if = (fun w -> true) });
-  app
+  on_ (module S) s system app (Luma__state.State.just_entered (module S) s)
+
+let on_exit
+    (type s)
+    (module S : Luma__state.State.STATE with type t = s)
+    (s : s)
+    (system : (World.t, 'a) System.t)
+    (app : t) =
+  on_ (module S) s system app (Luma__state.State.just_exited (module S) s)
 
 (* TODO: Clean up*)
 let init_state (type a) state_mod (state : a) app =
@@ -83,7 +113,16 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
 
   (* TODO: perform this check in some other way *)
   (*check_plugins app.plugins ();*)
-  let app = List.fold_right (fun plugin app -> plugin app) app.plugins app in
+  let rec apply_plugins app =
+    match app.plugins with
+    | [] -> app
+    | plugins ->
+        let app = { app with plugins = [] } in
+        let app = List.fold_right (fun plugin app -> plugin app) plugins app in
+        apply_plugins app
+  in
+  let app = apply_plugins app in
+
   let world =
     Scheduler.run_stage Scheduler.PreStartup app.scheduler app.world
     |> Scheduler.run_stage Scheduler.Startup app.scheduler

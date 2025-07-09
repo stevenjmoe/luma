@@ -19,19 +19,28 @@ val clear_plugins : t -> t
 
 val init_state : (module Luma__state__State.STATE with type t = 'a) -> 'a -> t -> t
 
-val on :
-  'a 'b.
-  ?in_state:(module Luma__state__State.STATE with type t = 'a) * 'a ->
-  Scheduler.stage ->
-  (World.t, 'b) System.t ->
+val on : 'a 'b. Scheduler.stage -> (World.t, 'b) System.t -> t -> t
+(** Registers a system to run during the specified scheduler stage. *)
+
+val while_in :
+  (module Luma__state__State.STATE with type t = 's) ->
+  's ->
+  stage:Scheduler.stage ->
+  system:(World.t, 'a) System.t ->
   t ->
   t
-(** Registers a system to run during the specified scheduler stage. *)
+(** [while in state_module state stage system] registers a system to run during the specified
+    scheduler stage, only while in the provided State. *)
 
 val on_enter :
   (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
 (** [on_enter state_module state_value system sched] registers a system to run once, immediately
     after transitioning into the given state. *)
+
+val on_exit :
+  (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
+(** [on_exit state_module state_value system sched] registers a system to run once, immediately
+    after transitioning from the given state. *)
 
 val add_plugin : (t -> t) -> t -> t
 (** [add_plugin plugin app] applies a plugin function to the application.

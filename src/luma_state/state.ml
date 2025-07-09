@@ -100,6 +100,20 @@ module State_res = struct
   end)
 end
 
+let just_entered (type s) (module S : STATE with type t = s) (value : s) (res : state_resource) =
+  match res.last_result with
+  | Transitioned { to_ } ->
+      let expected = State ((module S), value) in
+      eq_state to_ expected
+  | _ -> false
+
+let just_exited (type s) (module S : STATE with type t = s) (value : s) (res : state_resource) =
+  match res.last_result with
+  | Transitioned { from } ->
+      let expected = State ((module S), value) in
+      eq_state from expected
+  | _ -> false
+
 let queue_state (type s) (module S : STATE with type t = s) (v : s) (world : Luma__ecs.World.t) =
   let open Luma__ecs in
   let pending = State ((module S), v) in
@@ -108,15 +122,7 @@ let queue_state (type s) (module S : STATE with type t = s) (v : s) (world : Lum
       match Luma__resource.Resource.unpack_opt (module State_res.R) packed with
       | Some sr ->
           (* TODO: perform some checks of the existing resource. eg. Don't overwrite next if it's some *)
-          let next =
-            State_res.
-              {
-                next = Some pending;
-                current = sr.current;
-                previous = sr.previous;
-                last_result = sr.last_result;
-              }
-          in
+          let next = State_res.{ sr with next = Some pending } in
           let packed = Luma__resource.Resource.pack (module State_res.R) next in
           World.set_resource State_res.R.type_id packed world
       | None ->
@@ -141,20 +147,23 @@ let transition_system () =
         World.get_resource w State_res.R.type_id >>= fun s ->
         Resource.unpack_opt (module State_res.R) s
       with
-      | Some { current = Some current_state; previous = _; next = Some next_state } ->
-          if eq_state current_state next_state then w
+      | Some { current = Some curr; next = Some next_; _ } ->
+          if eq_state curr next_ then w
           else
-            let last_result' = Transitioned { from = current_state; to_ = next_state } in
-            let next =
+            let s =
               State_res.
                 {
                   next = None;
-                  previous = Some current_state;
-                  current = Some next_state;
-                  last_result = last_result';
+                  previous = Some curr;
+                  current = Some next_;
+                  last_result = Transitioned { from = curr; to_ = next_ };
                 }
             in
-            let new_packed = Resource.pack (module State_res.R) next in
-            World.set_resource State_res.R.type_id new_packed w |> ignore;
-            w
+            let new_packed = Resource.pack (module State_res.R) s in
+            World.set_resource State_res.R.type_id new_packed w
+      | Some ({ next = None; last_result = Transitioned _ } as r) ->
+          (* Clear last_result one frame after a transition, if no new transition is queued. *)
+          let cleared = { r with last_result = NoChange } in
+          let packed = Resource.pack (module State_res.R) cleared in
+          World.set_resource State_res.R.type_id packed w
       | _ -> w)
