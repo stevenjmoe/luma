@@ -24,6 +24,10 @@ val textures : t -> (Rect.t, Containers.Vector.rw) Containers.Vector.t
 val frame_size : t -> Vec2.t option
 (** [frame_size t] returns the size of an individual frame. *)
 
+val last_index : t -> int option
+(** [last_index t] returns [None] if the vector is empty, otherwise the index of the last inserted
+    texture. *)
+
 val from_grid : ?padding:Vec2.t -> ?offset:Vec2.t -> Vec2.t -> int -> int -> t
 (** [from_grid ~padding ~offset tile_size columns rows] creates a [Texture_atlas_layout] for a
     grid-based texture atlas.
@@ -46,5 +50,16 @@ val get_frame : t -> int -> Rect.t option
 (** [get_frame t index] retrievs a frame from [t.textures] at the given index or None if the index
     is out of bounds. *)
 
-val add_texture : t -> Rect.t -> int
-(** [add_texture t texture] Adds a texture to the layout and returns its index. *)
+val append_texture : Rect.t -> t -> t
+(** [add_texture texture  t] appends [texture] to the end of layout [t] and updates [last_index] to
+    reflect the new last position.
+
+    @return the updated layout [t]. *)
+
+val insert_texture : Rect.t -> int -> t -> t
+(** [insert_texture texture idx t] inserts [texture] into layout [t] at position [idx], shifting
+    subsequent elements to the right and updates [last_index] to reflect the new last position.
+
+    @raise Invalid_arg if [idx < 0] or [idx > length t.textures].
+
+    @return the updated layout [t]. *)
