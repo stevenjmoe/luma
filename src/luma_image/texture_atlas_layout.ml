@@ -23,13 +23,15 @@ let from_grid ?(padding = Vec2.zero) ?(offset = Vec2.zero) tile_size columns row
   let foi = Float.of_int in
   let index = ref 0 in
 
-  for y = 1 to rows do
+  for y = rows downto 1 do
     if y > 1 then current_padding.y <- padding.y;
+    let row = foi (y - 1) in
 
     for x = 1 to columns do
       if x > 1 then current_padding.x <- padding.x;
+      let col = foi (x - 1) in
 
-      let cell = Vec2.create (foi x) (foi y) in
+      let cell = Vec2.create col row in
       let pos = (tile_size *.. cell) +.. offset in
       let rect = Rect.create ~pos ~size:tile_size in
       Vector.push sprites rect;
