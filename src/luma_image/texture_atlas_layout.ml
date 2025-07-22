@@ -19,34 +19,26 @@ let last_index t = t.last_index
 let from_grid ?(padding = Vec2.zero) ?(offset = Vec2.zero) tile_size columns rows =
   let open Vec2.Infix in
   let sprites = Vector.create () in
-  let current_padding = Vec2.zero in
   let foi = Float.of_int in
-  let index = ref 0 in
 
-  for y = rows downto 1 do
-    if y > 1 then current_padding.y <- padding.y;
-    let row = foi (y - 1) in
-
-    for x = 1 to columns do
-      if x > 1 then current_padding.x <- padding.x;
-      let col = foi (x - 1) in
-
-      let cell = Vec2.create col row in
-      let pos = (tile_size *.. cell) +.. offset in
-      let rect = Rect.create ~pos ~size:tile_size in
-      Vector.push sprites rect;
-      incr index
+  for y = 0 to rows - 1 do
+    for x = 0 to columns - 1 do
+      let pos =
+        (tile_size *.. Vec2.create (foi x) (foi y))
+        +.. offset
+        +.. (padding *.. Vec2.create (foi x) (foi y))
+      in
+      Vector.push sprites (Rect.create ~pos ~size:tile_size)
     done
   done;
 
-  let last_index = if !index = 0 then None else Some (!index - 1) in
-  let grid_size = Vec2.create (foi columns) (foi rows) in
-
   {
-    size = ((tile_size +.. current_padding) *.. grid_size) -.. current_padding;
+    size =
+      (tile_size *.. Vec2.create (foi columns) (foi rows))
+      +.. (padding *.. Vec2.create (foi (columns - 1)) (foi (rows - 1)));
     textures = sprites;
     frame_size = Some tile_size;
-    last_index;
+    last_index = (if rows * columns = 0 then None else Some ((rows * columns) - 1));
   }
 
 let length t = Vector.length t.textures

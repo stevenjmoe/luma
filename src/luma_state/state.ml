@@ -100,17 +100,17 @@ module State_res = struct
   end)
 end
 
-let just_entered (type s) (module S : STATE with type t = s) (value : s) (res : state_resource) =
+let just_entered (type s) (module S : STATE with type t = s) expected_state res =
   match res.last_result with
   | Transitioned { to_ } ->
-      let expected = State ((module S), value) in
+      let expected = State ((module S), expected_state) in
       eq_state to_ expected
   | _ -> false
 
-let just_exited (type s) (module S : STATE with type t = s) (value : s) (res : state_resource) =
+let just_exited (type s) (module S : STATE with type t = s) expected_state res =
   match res.last_result with
   | Transitioned { from } ->
-      let expected = State ((module S), value) in
+      let expected = State ((module S), expected_state) in
       eq_state from expected
   | _ -> false
 
