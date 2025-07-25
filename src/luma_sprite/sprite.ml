@@ -16,8 +16,8 @@ module type S = sig
   module C : Luma__ecs.Component.S with type t = t
 end
 
-module Make (Texture : Texture.S) : S with type texture = Texture.t = struct
-  type texture = Texture.t
+module Make (D : Luma__driver.Driver.S) : S with type texture = D.texture = struct
+  type texture = D.Texture.t
 
   type t = {
     mutable image : texture Luma__asset.Assets.handle;
@@ -43,4 +43,86 @@ module Make (Texture : Texture.S) : S with type texture = Texture.t = struct
 
     let name = "Sprite"
   end)
+end
+
+module type Sprite_plugin = sig
+  open Luma__app
+
+  type texture
+  type queue
+
+  module R : Luma__resource.Resource.S
+
+  val add_plugin : App.t -> App.t
+end
+
+module Sprite_plugin
+    (D : Luma__driver.Driver.S)
+    (Texture : Texture.S with type t = D.Texture.t)
+    (Renderer : Luma__render.Render.Renderer with type texture = D.Texture.t)
+    (Sprite : S with type texture = D.Texture.t) : Sprite_plugin with type texture = D.Texture.t =
+struct
+  open Luma__ecs
+  open Luma__transform
+  open Luma__resource
+  open Luma__ecs
+  open Luma__app
+  open Luma__render
+
+  type texture = D.Texture.t
+  type queue = Sprite.t List.t
+
+  module R = Luma__resource.Resource.Make (struct
+    type inner = queue
+
+    let name = "sprite_render_queue"
+  end)
+
+  let order_sprites () =
+    Luma__ecs.System.make_with_resources
+      ~components:Query.Component.(Required (module Sprite.C) & Required (module Transform.C) & End)
+      ~resources:Query.Resource.(Resource (module R) & End)
+      "order_sprites"
+      (fun w e (queue, _) ->
+        let open Transform in
+        let sorted =
+          e
+          |> List.sort (fun (_, (_, (t1, _))) (_, (_, (t2, _))) ->
+                 compare t1.position.z t2.position.z)
+          |> List.map (fun (_, (sprite, _)) -> sprite)
+        in
+        let packed = Resource.pack (module R) sorted in
+        Luma__ecs.World.set_resource R.type_id packed w)
+
+  let render_ordered_sprites () =
+    let open Render in
+    let open Luma__asset in
+    Luma__ecs.System.make_with_resources
+      ~components:Query.Component.(Required (module Sprite.C) & Required (module Transform.C) & End)
+      ~resources:Query.Resource.(Resource (module Luma__asset.Assets.R) & End)
+      "render_ordered_sprites"
+      (fun (w : World.t) e (assets, _) ->
+        e
+        |> List.iter (fun (_, (sprite, (transform, _))) ->
+               let position =
+                 Luma__transform.Transform.(
+                   Luma__math.Vec2.create transform.position.x transform.position.y)
+               in
+               let size =
+                 Luma__transform.Transform.(
+                   Luma__math.Vec2.create transform.scale.x transform.scale.y)
+               in
+               let texture_atlas = Sprite.texture_atlas sprite in
+
+               match Assets.get (module Texture.A) assets (Sprite.image sprite) with
+               | Some t -> Renderer.draw_texture t ~position ~size ~texture_atlas ()
+               | None ->
+                   ();
+                   ());
+        w)
+
+  let add_plugin app =
+    let packed = Resource.pack (module R) [] in
+    World.add_resource R.type_id packed (App.world app) |> ignore;
+    app |> App.on Update @@ order_sprites () |> App.on Render @@ render_ordered_sprites ()
 end

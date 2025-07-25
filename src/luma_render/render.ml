@@ -10,7 +10,6 @@ module type Renderer = sig
     size:Luma__math.Vec2.t ->
     ?flip_x:bool ->
     ?flip_y:bool ->
-    ?frame_index:int ->
     ?texture_atlas:Luma__image.Texture_atlas.t option ->
     unit ->
     unit
@@ -32,7 +31,6 @@ module Make (D : Luma__driver.Driver.S) :
       ~size
       ?(flip_x = false)
       ?(flip_y = false)
-      ?(frame_index = 0)
       ?(texture_atlas = None)
       () =
     let create_rect texture =
@@ -46,7 +44,7 @@ module Make (D : Luma__driver.Driver.S) :
       match texture_atlas with
       | None -> create_rect texture
       | Some atlas -> (
-          match Texture_atlas.get_frame atlas frame_index with
+          match Texture_atlas.get_frame atlas with
           | None -> create_rect texture
           | Some frame -> frame)
     in

@@ -8,7 +8,8 @@
     luma.time 
     luma.asset 
     luma.window 
-    luma.input)
+    luma.input
+    luma.sprite)
   (name luma__plugin)
   (preprocess 
    (pps ppx_assert)))

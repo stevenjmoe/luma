@@ -1,4 +1,4 @@
 (library
   (public_name luma.sprite)
-  (libraries luma.ecs luma.image raylib)
+  (libraries luma.ecs luma.image luma.transform luma.render)
   (name luma__sprite))

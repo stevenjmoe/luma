@@ -60,6 +60,7 @@ module type S = sig
     val time_plugin : App.t -> App.t
     val input_plugin : App.t -> App.t
     val audio_plugin : App.t -> App.t
+    val sprite_plugin : App.t -> App.t
   end
 
   module Image : sig
@@ -76,7 +77,6 @@ module type S = sig
     val rgb : r:int -> g:int -> b:int -> t
     val rgba : r:int -> g:int -> b:int -> a:int -> t
     val white : t
-    (* Plus any other functions your D.Colour module exposes, you must repeat them here manually if you want them visible *)
   end
 
   module Camera : Camera_component.S
@@ -96,8 +96,9 @@ module type S = sig
   module Math : module type of Luma__math
   module Texture_atlas : module type of Texture_atlas
   module Texture_atlas_layout : module type of Texture_atlas_layout
-  module Sprite : Sprite.S with type texture = texture
   module Renderer : Render.Renderer with type texture = texture and type colour = colour
+  module Sprite_plugin : Sprite.Sprite_plugin with type texture = texture
+  module Sprite : Sprite.S with type texture = texture
   module Key : module type of Luma__types.Input_types.Key
   module Mouse_button : module type of Luma__types.Input_types.Mouse_button
   module State : module type of Luma__state.State
