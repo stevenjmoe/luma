@@ -122,3 +122,9 @@ let query :
   let archetypes = w.archetypes |> Hashtbl.to_seq_values |> List.of_seq in
   (* TODO: fail or ...? *)
   Query.Component.evaluate ~filter query archetypes |> Result.value ~default:[]
+
+let get_component (type a) w (module C : Component.S with type t = a) e =
+  let arch = find_archetype w e in
+  match Archetype.query_table arch e C.id with
+  | Some p -> Component.unpack_opt (module C) p
+  | None -> None

@@ -70,7 +70,7 @@ struct
   open Luma__render
 
   type texture = D.Texture.t
-  type queue = Sprite.t List.t
+  type queue = Luma__id.Id.Entity.t List.t
 
   module R = Luma__resource.Resource.Make (struct
     type inner = queue
@@ -89,7 +89,7 @@ struct
           e
           |> List.sort (fun (_, (_, (t1, _))) (_, (_, (t2, _))) ->
                  compare t1.position.z t2.position.z)
-          |> List.map (fun (_, (sprite, _)) -> sprite)
+          |> List.map (fun (e, (_, _)) -> e)
         in
         let packed = Resource.pack (module R) sorted in
         Luma__ecs.World.set_resource R.type_id packed w)
@@ -97,28 +97,30 @@ struct
   let render_ordered_sprites () =
     let open Render in
     let open Luma__asset in
+    let open Luma__math in
+    let open Luma__transform in
     Luma__ecs.System.make_with_resources
-      ~components:Query.Component.(Required (module Sprite.C) & Required (module Transform.C) & End)
-      ~resources:Query.Resource.(Resource (module Luma__asset.Assets.R) & End)
+      ~components:Query.Component.(End)
+      ~resources:Query.Resource.(Resource (module Luma__asset.Assets.R) & Resource (module R) & End)
       "render_ordered_sprites"
-      (fun (w : World.t) e (assets, _) ->
-        e
-        |> List.iter (fun (_, (sprite, (transform, _))) ->
-               let position =
-                 Luma__transform.Transform.(
-                   Luma__math.Vec2.create transform.position.x transform.position.y)
-               in
-               let size =
-                 Luma__transform.Transform.(
-                   Luma__math.Vec2.create transform.scale.x transform.scale.y)
-               in
-               let texture_atlas = Sprite.texture_atlas sprite in
+      (fun w _ (assets, (queue, _)) ->
+        queue
+        |> List.iter (fun e ->
+               match
+                 ( World.get_component w (module Sprite.C) e,
+                   World.get_component w (module Transform.C) e )
+               with
+               | Some sprite, Some transform -> (
+                   let position =
+                     Transform.(Vec2.create transform.position.x transform.position.y)
+                   in
+                   let size = Transform.(Vec2.create transform.scale.x transform.scale.y) in
+                   let texture_atlas = Sprite.texture_atlas sprite in
 
-               match Assets.get (module Texture.A) assets (Sprite.image sprite) with
-               | Some t -> Renderer.draw_texture t ~position ~size ~texture_atlas ()
-               | None ->
-                   ();
-                   ());
+                   match Assets.get (module Texture.A) assets (Sprite.image sprite) with
+                   | Some t -> Renderer.draw_texture t ~position ~size ~texture_atlas ()
+                   | None -> ())
+               | _, _ -> ());
         w)
 
   let add_plugin app =

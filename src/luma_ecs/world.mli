@@ -70,3 +70,6 @@ val query :
 (** [query world filter query] evaluates the optional filter and required query on the world's
     archetypes and returns a [(Id.Entity.t * 'a) list] where ['a] is a tuple of components returned
     by the query. *)
+
+val get_component : t -> (module Component.S with type t = 'a) -> Luma__id__Id.Entity.t -> 'a option
+(** Tries to retrieve the Component. Returns [Some component] if successful, otherwise None. *)

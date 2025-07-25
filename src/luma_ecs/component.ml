@@ -55,6 +55,9 @@ let unpack : type a. (module S with type t = a) -> packed -> (a, Luma__core.Erro
           (Luma__core.Error.unpacked_unexpected_base_type (to_int C.id)
              "Invalid component base type conversion while unpacking")
 
+let unpack_opt : type a. (module S with type t = a) -> packed -> a option =
+ fun (module C) packed -> match unpack (module C) packed with Ok v -> Some v | Error _ -> None
+
 let id : packed -> Luma__id.Id.Component.t = function Packed ((module C), _) -> C.id
 let pp_packed fmt (Packed ((module C), value)) = Format.fprintf fmt "%a" C.pp value
 let show packed = Luma__core.Print.show_of_pp pp_packed packed
