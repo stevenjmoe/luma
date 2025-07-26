@@ -1,0 +1,5 @@
+(executable
+  (name state)
+  (libraries luma)
+  (preprocess
+    (pps ppx_component)))
