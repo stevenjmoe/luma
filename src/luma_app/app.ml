@@ -137,15 +137,17 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
     else (
       D.Window.begin_frame ();
 
-      world
-      |> Scheduler.run_stage PreUpdate scheduler
-      |> Scheduler.run_stage StateTransition scheduler
-      |> Scheduler.run_stage Update scheduler
-      |> Scheduler.run_stage PostUpdate scheduler
-      |> Scheduler.run_stage PreRender scheduler
-      |> Scheduler.run_stage Render scheduler
-      |> Scheduler.run_stage PostRender scheduler
-      |> ignore;
+      let world =
+        world
+        |> Scheduler.run_stage PreUpdate scheduler
+        |> Scheduler.run_stage StateTransition scheduler
+        |> Scheduler.run_stage Update scheduler
+        |> Scheduler.run_stage PostUpdate scheduler
+        |> Scheduler.run_stage PreRender scheduler
+        |> Scheduler.run_stage Render scheduler
+        |> Scheduler.run_stage PostRender scheduler
+        |> Scheduler.run_stage Overlay scheduler
+      in
 
       D.Window.end_frame ();
       loop (world, scheduler))

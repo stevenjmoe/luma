@@ -10,6 +10,7 @@ type stage =
   | PreRender
   | Render
   | PostRender
+  | Overlay
   | Cleanup
 
 type system =

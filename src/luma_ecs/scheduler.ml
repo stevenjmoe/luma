@@ -11,6 +11,7 @@ type stage =
   | PreRender
   | Render
   | PostRender
+  | Overlay
   | Cleanup
 
 let stage_name = function
@@ -24,6 +25,7 @@ let stage_name = function
   | PreRender -> "PreRender"
   | Render -> "Render"
   | PostRender -> "PostRender"
+  | Overlay -> "Overlay"
   | Cleanup -> "Cleanup"
 
 type system =
@@ -51,6 +53,7 @@ let create () =
       PreRender;
       Render;
       PostRender;
+      Overlay;
       Cleanup;
     ];
   { systems }
