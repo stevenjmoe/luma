@@ -8,6 +8,8 @@ module type S = sig
   type music
 
   val draw_rect : Rect.t -> colour -> unit
+  val draw_rect_lines : Rect.t -> float -> colour -> unit
+  val draw_circle : int -> int -> float -> colour -> unit
   val get_frame_time : unit -> float
 
   module Window : sig

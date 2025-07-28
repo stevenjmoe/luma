@@ -15,6 +15,14 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       (Int.of_float (Rect.height rect))
       colour
 
+  let draw_rect_lines rect line colour =
+    Raylib.draw_rectangle_lines_ex
+      (Raylib.Rectangle.create (Rect.x rect) (Rect.y rect) (Rect.width rect) (Rect.height rect))
+      line colour
+
+  let draw_circle center_x center_y radius colour =
+    Raylib.draw_circle center_x center_y radius colour
+
   let get_frame_time = Raylib.get_frame_time
 
   module Window = Window
@@ -49,11 +57,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       type t = sound
 
       let load_sound = Raylib.load_sound
-
-      let play_sound sound =
-        if Raylib.is_sound_ready sound then
-          Raylib.play_sound sound
-
+      let play_sound sound = if Raylib.is_sound_ready sound then Raylib.play_sound sound
       let stop_sound = Raylib.stop_sound
       let pause_sound = Raylib.pause_sound
       let resume_sound = Raylib.resume_sound

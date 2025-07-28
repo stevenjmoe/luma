@@ -3,6 +3,7 @@ module type Renderer = sig
   type colour
 
   val draw_rect : Luma__math.Rect.t -> colour -> unit
+  val draw_rect_lines : Luma__math.Rect.t -> float -> colour -> unit
 
   val draw_texture :
     texture ->
@@ -13,6 +14,8 @@ module type Renderer = sig
     ?texture_atlas:Luma__image.Texture_atlas.t option ->
     unit ->
     unit
+
+  val draw_circle : int -> int -> float -> colour -> unit
 end
 
 module Make (D : Luma__driver.Driver.S) :
@@ -24,6 +27,8 @@ module Make (D : Luma__driver.Driver.S) :
   type colour = D.colour
 
   let draw_rect rect colour = D.draw_rect rect colour
+  let draw_rect_lines rect line colour = D.draw_rect_lines rect line colour
+  let draw_circle center_x center_y radius colour = D.draw_circle center_x center_y radius colour
 
   let draw_texture
       texture
