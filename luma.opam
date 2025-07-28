@@ -19,6 +19,7 @@ depends: [
   "ppxlib"
   "ppx_inline_test"
   "raylib"
+  "raygui"
   "ptime"
   "fmt"
   "odoc" {with-doc}

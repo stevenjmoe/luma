@@ -45,6 +45,7 @@ module type S = sig
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Input : Luma__input.Input.S
+  module Ui : Luma__ui.Ui.S
 
   module Plugin : sig
     module Config : sig
@@ -133,6 +134,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Camera_component = Luma__render.Camera_component.Make (D)
   module Camera_plugin = Luma__render.Camera_plugin.Make (D) (Camera_component)
   module Input = Luma__input.Input.Make (D)
+  module Ui = Luma__ui.Ui.Make (D)
   module Time = Luma__time.Time.Make (D)
   module Audio = Luma__audio.Audio.Make (D)
   module S = Luma__sprite.Sprite.Make (D)

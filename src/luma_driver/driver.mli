@@ -140,6 +140,23 @@ module type S = sig
       val get_mouse_wheel_move : unit -> float
     end
   end
+
+  module UI : sig
+    val begin_window :
+      title:string -> ?pos:Luma__math.Vec2.t -> ?size:Luma__math.Vec2.t -> unit -> bool
+
+    val end_window : unit -> unit
+    val text : string -> unit
+  end
+
+  module Debug_draw : sig
+    type space =
+      [ `World
+      | `Screen
+      ]
+
+    val line : space -> p0:Luma__math.Vec2.t -> p1:Luma__math.Vec2.t -> colour:colour -> unit
+  end
 end
 
 include S

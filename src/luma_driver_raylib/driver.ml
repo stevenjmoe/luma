@@ -86,6 +86,65 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       let get_music_time_played = Raylib.get_music_time_played
     end
   end
+
+  module UI = struct
+    open Raylib
+
+    type win = {
+      x : float;
+      y : float;
+      w : float;
+      h : float;
+      mutable cursor_y : float;
+      title : string;
+    }
+
+    let win_stack : win list ref = ref []
+    let window_open : (string, bool) Hashtbl.t = Hashtbl.create 16
+    let title_bar_h = 28.0
+    let pad_x = 8.0
+    let line_h = 18.0
+    let line_gap = 2.0
+
+    let begin_window ~title ?pos ?size () =
+      let x = Option.map (fun (v : Vec2.t) -> v.x) pos |> Option.value ~default:20. in
+      let y = Option.map (fun (v : Vec2.t) -> v.y) pos |> Option.value ~default:20. in
+      let w = Option.map (fun (v : Vec2.t) -> v.x) size |> Option.value ~default:360. in
+      let h = Option.map (fun (v : Vec2.t) -> v.y) size |> Option.value ~default:220. in
+      let rect = Rectangle.create x y w h in
+
+      let active = Option.value (Hashtbl.find_opt window_open title) ~default:true in
+      if not active then false
+      else
+        let closed = Raygui.window_box rect title in
+        if closed then Hashtbl.replace window_open title false;
+
+        let wctx = { x; y; w; h; cursor_y = y +. title_bar_h; title } in
+        win_stack := wctx :: !win_stack;
+        true
+
+    let end_window () = match !win_stack with _ :: rest -> win_stack := rest | [] -> ()
+
+    let text s =
+      match !win_stack with
+      | [] -> ()
+      | w ->
+          let w = List.hd w in
+          let label_bounds =
+            Rectangle.create (w.x +. pad_x) w.cursor_y (w.w -. (2.0 *. pad_x)) line_h
+          in
+          Raygui.label label_bounds s;
+          w.cursor_y <- w.cursor_y +. line_h +. line_gap
+  end
+
+  module Debug_draw = struct
+    type space =
+      [ `World
+      | `Screen
+      ]
+
+    let line space ~p0 ~p1 ~colour = ()
+  end
 end
 
 include Raylib_driver

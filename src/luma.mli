@@ -45,6 +45,7 @@ module type S = sig
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Input : Luma__input.Input.S
+  module Ui : Luma__ui.Ui.S
 
   module Plugin : sig
     module Config : sig

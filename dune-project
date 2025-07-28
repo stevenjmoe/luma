@@ -25,6 +25,7 @@
    ppxlib
    ppx_inline_test
    raylib
+   raygui
    ptime
    fmt)
  (tags

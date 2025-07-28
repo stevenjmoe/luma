@@ -21,6 +21,7 @@
    luma.render
    luma.input
    luma.types
+   luma.ui
    ppx_component
    fmt.tty)
  (preprocess 

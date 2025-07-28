@@ -24,7 +24,7 @@ module type S = sig
   end
 end
 
-module Make (D : Luma__driver.Driver.S) = struct
+module Make (D : Luma__driver.Driver.S) : S = struct
   open Luma__ecs
   open Luma__app
 
