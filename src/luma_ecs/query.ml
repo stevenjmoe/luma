@@ -1,66 +1,3 @@
-module Tuple = struct
-  let with1 (a, _) fn = fn a
-  let with2 (a, (b, _)) fn = fn a b
-  let with3 (a, (b, (c, _))) fn = fn a b c
-  let with4 (a, (b, (c, (d, _)))) fn = fn a b c d
-  let with5 (a, (b, (c, (d, (e, _))))) fn = fn a b c d e
-  let with6 (a, (b, (c, (d, (e, (f, _)))))) fn = fn a b c d e f
-  let with7 (a, (b, (c, (d, (e, (f, (g, _))))))) fn = fn a b c d e f g
-  let with8 (a, (b, (c, (d, (e, (f, (g, (h, _)))))))) fn = fn a b c d e f g h
-  let with9 (a, (b, (c, (d, (e, (f, (g, (h, (i, _))))))))) fn = fn a b c d e f g h i
-  let with10 (a, (b, (c, (d, (e, (f, (g, (h, (i, (j, _)))))))))) fn = fn a b c d e f g h i j
-  let iter1 f ents = List.iter (fun (_e, comps) -> with1 comps f) ents
-  let iter2 f ents = List.iter (fun (_e, comps) -> with2 comps f) ents
-  let iter3 f ents = List.iter (fun (_e, comps) -> with3 comps f) ents
-  let iter4 f ents = List.iter (fun (_e, comps) -> with4 comps f) ents
-  let iter5 f ents = List.iter (fun (_e, comps) -> with5 comps f) ents
-  let iter6 f ents = List.iter (fun (_e, comps) -> with6 comps f) ents
-  let iter7 f ents = List.iter (fun (_e, comps) -> with7 comps f) ents
-  let iter8 f ents = List.iter (fun (_e, comps) -> with8 comps f) ents
-  let iter9 f ents = List.iter (fun (_e, comps) -> with9 comps f) ents
-  let iter10 f ents = List.iter (fun (_e, comps) -> with10 comps f) ents
-
-  let iter_e1 f ents =
-    let step (e, comps) = with1 comps (f e) in
-    List.iter step ents
-
-  let iter_e2 f ents =
-    let step (e, comps) = with2 comps (f e) in
-    List.iter step ents
-
-  let iter_e3 f ents =
-    let step (e, comps) = with3 comps (f e) in
-    List.iter step ents
-
-  let iter_e4 f ents =
-    let step (e, comps) = with4 comps (f e) in
-    List.iter step ents
-
-  let iter_e5 f ents =
-    let step (e, comps) = with5 comps (f e) in
-    List.iter step ents
-
-  let iter_e6 f ents =
-    let step (e, comps) = with6 comps (f e) in
-    List.iter step ents
-
-  let iter_e7 f ents =
-    let step (e, comps) = with7 comps (f e) in
-    List.iter step ents
-
-  let iter_e8 f ents =
-    let step (e, comps) = with8 comps (f e) in
-    List.iter step ents
-
-  let iter_e9 f ents =
-    let step (e, comps) = with9 comps (f e) in
-    List.iter step ents
-
-  let iter_e10 f ents =
-    let step (e, comps) = with10 comps (f e) in
-    List.iter step ents
-end
-
 module Component = struct
   module Filter = struct
     type t =
@@ -178,4 +115,67 @@ module Resource = struct
                    (Printf.sprintf "Could not find resource %s" R.name)))
     in
     fetch query store
+end
+
+module Tuple = struct
+  let with1 (a, _) fn = fn a
+  let with2 (a, (b, _)) fn = fn a b
+  let with3 (a, (b, (c, _))) fn = fn a b c
+  let with4 (a, (b, (c, (d, _)))) fn = fn a b c d
+  let with5 (a, (b, (c, (d, (e, _))))) fn = fn a b c d e
+  let with6 (a, (b, (c, (d, (e, (f, _)))))) fn = fn a b c d e f
+  let with7 (a, (b, (c, (d, (e, (f, (g, _))))))) fn = fn a b c d e f g
+  let with8 (a, (b, (c, (d, (e, (f, (g, (h, _)))))))) fn = fn a b c d e f g h
+  let with9 (a, (b, (c, (d, (e, (f, (g, (h, (i, _))))))))) fn = fn a b c d e f g h i
+  let with10 (a, (b, (c, (d, (e, (f, (g, (h, (i, (j, _)))))))))) fn = fn a b c d e f g h i j
+  let iter1 f ents = List.iter (fun (_e, comps) -> with1 comps f) ents
+  let iter2 f ents = List.iter (fun (_e, comps) -> with2 comps f) ents
+  let iter3 f ents = List.iter (fun (_e, comps) -> with3 comps f) ents
+  let iter4 f ents = List.iter (fun (_e, comps) -> with4 comps f) ents
+  let iter5 f ents = List.iter (fun (_e, comps) -> with5 comps f) ents
+  let iter6 f ents = List.iter (fun (_e, comps) -> with6 comps f) ents
+  let iter7 f ents = List.iter (fun (_e, comps) -> with7 comps f) ents
+  let iter8 f ents = List.iter (fun (_e, comps) -> with8 comps f) ents
+  let iter9 f ents = List.iter (fun (_e, comps) -> with9 comps f) ents
+  let iter10 f ents = List.iter (fun (_e, comps) -> with10 comps f) ents
+
+  let iter_e1 f ents =
+    let step (e, comps) = with1 comps (f e) in
+    List.iter step ents
+
+  let iter_e2 f ents =
+    let step (e, comps) = with2 comps (f e) in
+    List.iter step ents
+
+  let iter_e3 f ents =
+    let step (e, comps) = with3 comps (f e) in
+    List.iter step ents
+
+  let iter_e4 f ents =
+    let step (e, comps) = with4 comps (f e) in
+    List.iter step ents
+
+  let iter_e5 f ents =
+    let step (e, comps) = with5 comps (f e) in
+    List.iter step ents
+
+  let iter_e6 f ents =
+    let step (e, comps) = with6 comps (f e) in
+    List.iter step ents
+
+  let iter_e7 f ents =
+    let step (e, comps) = with7 comps (f e) in
+    List.iter step ents
+
+  let iter_e8 f ents =
+    let step (e, comps) = with8 comps (f e) in
+    List.iter step ents
+
+  let iter_e9 f ents =
+    let step (e, comps) = with9 comps (f e) in
+    List.iter step ents
+
+  let iter_e10 f ents =
+    let step (e, comps) = with10 comps (f e) in
+    List.iter step ents
 end

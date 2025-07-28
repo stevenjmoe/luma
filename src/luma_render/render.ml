@@ -58,10 +58,6 @@ module Make (D : Luma__driver.Driver.S) :
       else if flip_y then Rect.create ~pos:(Vec2.create x (y +. h)) ~size:(Vec2.create w (-.h))
       else src_rect
     in
-    let dest_rec =
-      Rect.create
-        ~pos:(Vec2.create (Vec2.x position) (Vec2.y position))
-        ~size:(Vec2.create (Vec2.x size) (Vec2.y size))
-    in
+    let dest_rec = Rect.create ~pos:position ~size in
     D.Texture.draw_texture texture src_rect dest_rec Vec2.zero 0.0 D.Colour.white
 end
