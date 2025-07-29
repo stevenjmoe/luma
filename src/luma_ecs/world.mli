@@ -3,6 +3,9 @@ type t
 val create : unit -> t
 (** Creates an empty [World.t]. *)
 
+val entities : t -> Luma__id__Id.Entity.t list
+(** [entities world] returns the ids of all entities in the world. *)
+
 val add_entity : t -> Luma__id.Id.Entity.t
 (** [add_entity world] returns the next entity id from [Id.Entity]. *)
 
@@ -73,3 +76,26 @@ val query :
 
 val get_component : t -> (module Component.S with type t = 'a) -> Luma__id__Id.Entity.t -> 'a option
 (** Tries to retrieve the Component. Returns [Some component] if successful, otherwise None. *)
+
+module Introspect : sig
+  val revision : t -> int
+
+  val iter_entities : (Luma__id__Id.Entity.t -> unit) -> t -> unit
+  (** [iter_entities f world] applies f to every entity in world. *)
+
+  val entities_seq : t -> Luma__id__Id.Entity.t Seq.t
+  (** [entities_seq world] returns a sequence of all entities. *)
+
+  val entity_components : t -> Luma__id__Id.Entity.t -> Luma__id__Id.ComponentSet.t
+  (** [entity_components world entity] returns the component set of the given entity. *)
+
+  val get_component_packed :
+    t -> Luma__id__Id.Entity.t -> Luma__id__Id.Component.t -> Component.packed option
+  (** [get_component_packed world entity component] retrieves the packed component if present. *)
+
+  val iter_entities_with_component :
+    (Luma__id__Id.Entity.t -> unit) -> t -> Luma__id__Id.Component.t -> unit
+  (** [iter_entities_with_component f world component] applies f to each entity with component. *)
+
+  val resources_seq : t -> (Luma__id__Id.Resource.t * Luma__resource__Resource.packed) Seq.t
+end

@@ -9,7 +9,8 @@
     luma.asset 
     luma.window 
     luma.input
-    luma.sprite)
+    luma.sprite
+    luma.debug)
   (name luma__plugin)
   (preprocess 
    (pps ppx_assert)))

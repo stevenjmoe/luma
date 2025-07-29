@@ -11,6 +11,7 @@ module type S = sig
   val draw_rect_lines : Rect.t -> float -> colour -> unit
   val draw_circle : int -> int -> float -> colour -> unit
   val get_frame_time : unit -> float
+  val draw_text : string -> int -> int -> int -> colour -> unit
 
   module Window : sig
     val init : width:int -> height:int -> title:string -> unit

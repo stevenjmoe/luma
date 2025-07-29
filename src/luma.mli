@@ -62,6 +62,7 @@ module type S = sig
     val input_plugin : App.t -> App.t
     val audio_plugin : App.t -> App.t
     val sprite_plugin : App.t -> App.t
+    val debug_plugin : App.t -> App.t
   end
 
   module Image : sig

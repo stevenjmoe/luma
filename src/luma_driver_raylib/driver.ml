@@ -23,6 +23,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   let draw_circle center_x center_y radius colour =
     Raylib.draw_circle center_x center_y radius colour
 
+  let draw_text text x y size colour = Raylib.draw_text text x y size colour
   let get_frame_time = Raylib.get_frame_time
 
   module Window = Window

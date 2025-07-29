@@ -62,6 +62,7 @@ module type S = sig
     val input_plugin : App.t -> App.t
     val audio_plugin : App.t -> App.t
     val sprite_plugin : App.t -> App.t
+    val debug_plugin : App.t -> App.t
   end
 
   module Image : sig
@@ -139,9 +140,11 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Audio = Luma__audio.Audio.Make (D)
   module S = Luma__sprite.Sprite.Make (D)
   module Sprite_plugin = Luma__sprite.Sprite.Sprite_plugin (D) (Image.Texture) (R) (S)
+  module Debug_plugin = Luma__debug.Debug.Make (D)
 
   module Plugin =
     Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time) (Audio) (Sprite_plugin)
+      (Debug_plugin)
 
   module Window_config = Window.Window_config
   module Raylib_driver = Luma__driver_raylib.Driver

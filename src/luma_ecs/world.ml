@@ -8,6 +8,7 @@ type t = {
   entity_to_archetype_lookup : (Luma__id.Id.Entity.t, int) Hashtbl.t;
   component_to_archetype_lookup : (Luma__id.Id.Component.t, ArchetypeHashSet.t) Hashtbl.t;
   resources : (Luma__id.Id.Resource.t, Luma__resource.Resource.packed) Hashtbl.t;
+  mutable revision : int;
 }
 
 let create () =
@@ -20,8 +21,10 @@ let create () =
     entity_to_archetype_lookup = Hashtbl.create 16;
     component_to_archetype_lookup = Hashtbl.create 16;
     resources = Hashtbl.create 16;
+    revision = 0;
   }
 
+let entities w = w.entity_to_archetype_lookup |> Hashtbl.to_seq_keys |> List.of_seq
 let resources w = w.resources
 
 let add_resource key res w =
@@ -45,6 +48,7 @@ let add_entity w =
   (* these calls "should" never raise *)
   Archetype.add w.empty_archetype entity [];
   Hashtbl.replace w.entity_to_archetype_lookup entity (Archetype.hash w.empty_archetype);
+  w.revision <- w.revision + 1;
   entity
 
 let get_new_archetype w old_archetype operation =
@@ -104,7 +108,8 @@ let add_component w component entity =
     Archetype.remove_entity old_arch entity;
     Archetype.add new_archetype entity new_components;
     update_component_to_arch w old_arch;
-    update_component_to_arch w new_archetype)
+    update_component_to_arch w new_archetype;
+    w.revision <- w.revision + 1)
 
 let with_component : type a.
     t -> (module Component.S with type t = a) -> a -> Luma__id.Id.Entity.t -> Luma__id.Id.Entity.t =
@@ -128,3 +133,27 @@ let get_component (type a) w (module C : Component.S with type t = a) e =
   match Archetype.query_table arch e C.id with
   | Some p -> Component.unpack_opt (module C) p
   | None -> None
+
+module Introspect = struct
+  let revision w = w.revision
+  let iter_entities f w = Hashtbl.iter (fun e _ -> f e) w.entity_to_archetype_lookup
+  let entities_seq w = Hashtbl.to_seq_keys w.entity_to_archetype_lookup
+  let entity_components w e = Archetype.components (find_archetype w e)
+
+  let get_component_packed w e cid =
+    let arch = find_archetype w e in
+    Archetype.query_table arch e cid
+
+  let iter_entities_with_component f w cid =
+    match Hashtbl.find_opt w.component_to_archetype_lookup cid with
+    | None -> ()
+    | Some arches ->
+        ArchetypeHashSet.iter
+          (fun h ->
+            match Hashtbl.find_opt w.archetypes h with
+            | None -> ()
+            | Some a -> Luma__id.Id.EntitySet.iter f (Archetype.entities a))
+          arches
+
+  let resources_seq w = Hashtbl.to_seq w.resources
+end

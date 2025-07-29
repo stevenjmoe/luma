@@ -9,7 +9,8 @@ module Make
     (Input : Luma__input.Input.S)
     (Time : Luma__time.Time.S)
     (Audio : Luma__audio.Audio.S)
-    (Sprite_plugin : Luma__sprite.Sprite.Sprite_plugin) =
+    (Sprite_plugin : Luma__sprite.Sprite.Sprite_plugin)
+    (Debug : Luma__debug.Debug.S) =
 struct
   module Config = struct
     type t = { window : Window.Window_config.t }
@@ -24,6 +25,7 @@ struct
   let input_plugin = Input.Keyboard.plugin
   let audio_plugin = Audio.plugin
   let sprite_plugin = Sprite_plugin.add_plugin
+  let debug_plugin = Debug.add_plugin
   let default_config () : Config.t = { window = Window.Window_config.default () }
 
   (** [add_default_plugins ?config app] installs the engine’s core plugins (input, audio, window,
