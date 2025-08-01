@@ -58,10 +58,14 @@ module Make (D : Luma__driver.Driver.S) :
     let w = Rect.width src_rect in
     let h = Rect.height src_rect in
 
+    let default = Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create w h) in
     let src_rect =
-      if flip_x then Rect.create ~pos:(Vec2.create (x +. w) y) ~size:(Vec2.create (-.w) h)
-      else if flip_y then Rect.create ~pos:(Vec2.create x (y +. h)) ~size:(Vec2.create w (-.h))
-      else src_rect
+      match (flip_x, flip_y) with
+      | false, false -> default
+      | true, false -> Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create (-.w) h)
+      | false, true -> Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create w (-.h))
+      | true, true ->
+          Rect.create ~pos:(Vec2.create (x +. w) (y +. h)) ~size:(Vec2.create (-.w) (-.h))
     in
     let dest_rec = Rect.create ~pos:position ~size in
     D.Texture.draw_texture texture src_rect dest_rec Vec2.zero 0.0 D.Colour.white

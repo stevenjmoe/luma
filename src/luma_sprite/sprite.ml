@@ -12,6 +12,10 @@ module type S = sig
   val from_image : texture Luma__asset__Assets.handle -> t
   val from_atlas_image : texture Luma__asset__Assets.handle -> Texture_atlas.t -> t
   val frame_size : t -> Luma__math__Vec2.t option
+  val flip_x : t -> bool
+  val flip_y : t -> bool
+  val set_flip_x : t -> bool -> unit
+  val set_flip_y : t -> bool -> unit
 
   module C : Luma__ecs.Component.S with type t = t
 end
@@ -22,6 +26,8 @@ module Make (D : Luma__driver.Driver.S) : S with type texture = D.texture = stru
   type t = {
     mutable image : texture Luma__asset.Assets.handle;
     mutable texture_atlas : Texture_atlas.t option;
+    mutable flip_x : bool;
+    mutable flip_y : bool;
     custom_size : Luma__math.Vec2.t option;
   }
 
@@ -29,11 +35,25 @@ module Make (D : Luma__driver.Driver.S) : S with type texture = D.texture = stru
   let texture_atlas t = t.texture_atlas
   let set_image t image = t.image <- image
   let set_texture_atlas t atlas = t.texture_atlas <- Some atlas
-  let sized image custom_size = { image; texture_atlas = None; custom_size = Some custom_size }
-  let from_image image = { image; texture_atlas = None; custom_size = None }
+  let flip_x t = t.flip_x
+  let flip_y t = t.flip_y
+  let set_flip_x t f = t.flip_x <- f
+  let set_flip_y t f = t.flip_y <- f
+
+  let sized image custom_size =
+    { image; texture_atlas = None; flip_x = false; flip_y = false; custom_size = Some custom_size }
+
+  let from_image image =
+    { image; texture_atlas = None; flip_x = false; flip_y = false; custom_size = None }
 
   let from_atlas_image image texture_atlas =
-    { image; texture_atlas = Some texture_atlas; custom_size = None }
+    {
+      image;
+      texture_atlas = Some texture_atlas;
+      flip_x = false;
+      flip_y = false;
+      custom_size = None;
+    }
 
   let frame_size sprite =
     match sprite.texture_atlas with None -> None | Some atlas -> Texture_atlas.frame_size atlas
@@ -68,6 +88,8 @@ struct
   open Luma__ecs
   open Luma__app
   open Luma__render
+  open Luma__asset
+  open Luma__math
 
   type texture = D.Texture.t
   type queue = Luma__id.Id.Entity.t List.t
@@ -84,21 +106,16 @@ struct
       ~resources:Query.Resource.(Resource (module R) & End)
       "order_sprites"
       (fun w e (queue, _) ->
-        let open Transform in
         let sorted =
           e
           |> List.sort (fun (_, (_, (t1, _))) (_, (_, (t2, _))) ->
-                 compare t1.position.z t2.position.z)
+                 compare t1.Transform.position.z t2.position.z)
           |> List.map (fun (e, (_, _)) -> e)
         in
         let packed = Resource.pack (module R) sorted in
         Luma__ecs.World.set_resource R.type_id packed w)
 
   let render_ordered_sprites () =
-    let open Render in
-    let open Luma__asset in
-    let open Luma__math in
-    let open Luma__transform in
     Luma__ecs.System.make_with_resources
       ~components:Query.Component.(End)
       ~resources:Query.Resource.(Resource (module Luma__asset.Assets.R) & Resource (module R) & End)
@@ -116,9 +133,12 @@ struct
                    in
                    let size = Transform.(Vec2.create transform.scale.x transform.scale.y) in
                    let texture_atlas = Sprite.texture_atlas sprite in
+                   let flip_x = Sprite.flip_x sprite in
+                   let flip_y = Sprite.flip_y sprite in
 
                    match Assets.get (module Texture.A) assets (Sprite.image sprite) with
-                   | Some t -> Renderer.draw_texture t ~position ~size ~texture_atlas ()
+                   | Some t ->
+                       Renderer.draw_texture t ~position ~size ~texture_atlas ~flip_x ~flip_y ()
                    | None -> ())
                | _, _ -> ());
         w)
