@@ -31,24 +31,25 @@ let execute_animations () =
       Query.Component.(Required (module Animation_config.C) & Required (module Sprite.C) & End)
     ~resources:Query.Resource.(Resource (module Assets.R) & Resource (module Time.R) & End)
     "execute_animations"
-    (fun world entities (assets, (time, _)) ->
-      let dt = Time.dt time in
-      entities
-      |> Query.Tuple.iter2 (fun animation_config sprite ->
-             let open Animation_config in
-             let open Texture_atlas in
-             let atlas = Sprite.texture_atlas sprite |> Option.get in
-             animation_config.frame_time_accumulator <-
-               animation_config.frame_time_accumulator +. dt;
+    (fun world entities res ->
+      Query.Tuple.with2 res (fun assets time ->
+          let dt = Time.dt time in
+          entities
+          |> Query.Tuple.iter2 (fun animation_config sprite ->
+                 let open Animation_config in
+                 let open Texture_atlas in
+                 let atlas = Sprite.texture_atlas sprite |> Option.get in
+                 animation_config.frame_time_accumulator <-
+                   animation_config.frame_time_accumulator +. dt;
 
-             if animation_config.frame_time_accumulator >= animation_config.frame_duration then
-               (animation_config.frame_time_accumulator <-
-                  animation_config.frame_time_accumulator -. animation_config.frame_duration;
+                 if animation_config.frame_time_accumulator >= animation_config.frame_duration then
+                   (animation_config.frame_time_accumulator <-
+                      animation_config.frame_time_accumulator -. animation_config.frame_duration;
 
-                Texture_atlas.set_index atlas
-                  ((Texture_atlas.index atlas + 1) mod animation_config.last_index))
-               |> ignore;
-             ());
+                    Texture_atlas.set_index atlas
+                      ((Texture_atlas.index atlas + 1) mod animation_config.last_index))
+                   |> ignore;
+                 ()));
       world)
 
 let input_system () =
@@ -110,7 +111,7 @@ let () =
   create ()
   |> Plugin.add_default_plugins
   |> init_state (module Game_state.S) Game_state.Menu
-  |> on Startup (setup_player ())
   |> while_in (module Game_state.S) Game_state.InGame ~stage:Update ~system:(execute_animations ())
+  |> on Startup (setup_player ())
   |> on Update (input_system ())
   |> run
