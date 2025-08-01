@@ -9,6 +9,17 @@ let default () =
   let offset = Raylib.Vector2.create 0. 0. in
   Raylib.Camera2D.create offset target 0. 1.
 
+let target camera =
+  let target = Raylib.Camera2D.target camera in
+  Vec2.create (Raylib.Vector2.x target) (Raylib.Vector2.y target)
+
+let offset camera =
+  let offset = Raylib.Camera2D.offset camera in
+  Vec2.create (Raylib.Vector2.x offset) (Raylib.Vector2.y offset)
+
+let zoom camera = Raylib.Camera2D.zoom camera
+let rotation camera = Raylib.Camera2D.rotation camera
+
 let set_target camera target =
   let target' = Raylib.Vector2.create (Vec2.x target) (Vec2.y target) in
   Raylib.Camera2D.set_target camera target'

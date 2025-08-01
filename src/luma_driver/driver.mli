@@ -49,6 +49,10 @@ module type S = sig
       camera
 
     val default : unit -> camera
+    val target : camera -> Vec2.t
+    val offset : camera -> Vec2.t
+    val zoom : camera -> float
+    val rotation : camera -> float
     val set_target : camera -> Vec2.t -> unit
     val set_offset : camera -> Vec2.t -> unit
     val set_zoom : camera -> float -> unit
