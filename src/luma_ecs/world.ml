@@ -5,12 +5,17 @@ module ArchetypeHashSet = Set.Make (Int)
 
 let log = Luma__core.Log.sub_log "world"
 
+type entity_metadata = {
+  uuid : Uuidm.t;
+  name : string;
+}
+
 type t = {
   empty_archetype : Archetype.t;
   archetypes : (int, Archetype.t) Hashtbl.t;
   entity_to_archetype_lookup : (Id.Entity.t, int) Hashtbl.t;
-  entity_id_to_entity_guid_lookup : (Id.Entity.t, Uuidm.t) Hashtbl.t;
-  entity_guid_to_entity_id : (Uuidm.t, Id.Entity.t) Hashtbl.t;
+  entity_id_to_metadata_lookup : (Id.Entity.t, entity_metadata) Hashtbl.t;
+  entity_guid_to_entity_id_lookup : (Uuidm.t, Id.Entity.t) Hashtbl.t;
   component_to_archetype_lookup : (Id.Component.t, ArchetypeHashSet.t) Hashtbl.t;
   resources : (Id.Resource.t, Resource.packed) Hashtbl.t;
   mutable revision : int;
@@ -24,8 +29,8 @@ let create () =
     empty_archetype;
     archetypes;
     entity_to_archetype_lookup = Hashtbl.create 16;
-    entity_id_to_entity_guid_lookup = Hashtbl.create 16;
-    entity_guid_to_entity_id = Hashtbl.create 16;
+    entity_id_to_metadata_lookup = Hashtbl.create 16;
+    entity_guid_to_entity_id_lookup = Hashtbl.create 16;
     component_to_archetype_lookup = Hashtbl.create 16;
     resources = Hashtbl.create 16;
     revision = 0;
@@ -49,15 +54,17 @@ let set_resource key res w =
 let has_resource key w = Hashtbl.mem w.resources key
 let get_resource w key = Hashtbl.find_opt w.resources key
 let archetypes w = w.archetypes
+let entity_metadata w e = Hashtbl.find w.entity_id_to_metadata_lookup e
 
 let add_entity ?(name = "") w =
   let entity = Entity.make name in
   (* these calls "should" never raise *)
   let e_id = Entity.id entity in
+  let metadata = { uuid = Entity.uuid entity; name } in
   Archetype.add w.empty_archetype e_id [];
   Hashtbl.replace w.entity_to_archetype_lookup e_id (Archetype.hash w.empty_archetype);
-  Hashtbl.replace w.entity_id_to_entity_guid_lookup e_id (Entity.uuid entity);
-  Hashtbl.replace w.entity_guid_to_entity_id (Entity.uuid entity) e_id;
+  Hashtbl.replace w.entity_id_to_metadata_lookup e_id metadata;
+  Hashtbl.replace w.entity_guid_to_entity_id_lookup (Entity.uuid entity) e_id;
   w.revision <- w.revision + 1;
   e_id
 

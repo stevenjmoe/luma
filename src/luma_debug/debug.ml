@@ -1,4 +1,5 @@
 open Luma__ecs
+open Luma__id
 
 module type S = sig
   val toggle_overlay : unit -> ('a, unit) System.t
@@ -234,7 +235,11 @@ module Make (D : Luma__driver.Driver.S) = struct
           (* Rows: entity id + components (wrapped full names if expanded, compact preview otherwise) *)
           List.fold_left
             (fun y_row e ->
-              let entity_label = Printf.sprintf "%d" (Luma__id.Id.Entity.to_int e) in
+              let entity_metadata = World.entity_metadata world e in
+              let entity_label =
+                if String.length entity_metadata.name = 0 then Id.Entity.to_int e |> string_of_int
+                else entity_metadata.name
+              in
               D.draw_text entity_label
                 (int_of_float x + 8)
                 y_row 16

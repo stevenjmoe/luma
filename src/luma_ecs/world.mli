@@ -1,15 +1,25 @@
+open Luma__id
+open Luma__resource
+
 type t
+
+type entity_metadata = {
+  uuid : Uuidm.t;
+  name : string;
+}
 
 val create : unit -> t
 (** Creates an empty [World.t]. *)
 
-val entities : t -> Luma__id__Id.Entity.t list
+val entities : t -> Id.Entity.t list
 (** [entities world] returns the ids of all entities in the world. *)
 
-val add_entity : ?name:string -> t -> Luma__id.Id.Entity.t
+val add_entity : ?name:string -> t -> Id.Entity.t
 (** [add_entity world] returns the next entity id from [Id.Entity]. *)
 
-val add_component : t -> Component.packed -> Luma__id.Id.Entity.t -> unit
+val entity_metadata : t -> Id.Entity.t -> entity_metadata
+
+val add_component : t -> Component.packed -> Id.Entity.t -> unit
 (** [add_component world packed_component entity] adds a component to the world and ensures that the
     world's Archetypes are kept up to date.
 
@@ -17,8 +27,7 @@ val add_component : t -> Component.packed -> Luma__id.Id.Entity.t -> unit
     @raise Luma__core.Error.Component_not_found *)
 
 val with_component :
-  'a.
-  t -> (module Component.S with type t = 'a) -> 'a -> Luma__id.Id.Entity.t -> Luma__id.Id.Entity.t
+  'a. t -> (module Component.S with type t = 'a) -> 'a -> Id.Entity.t -> Luma__id.Id.Entity.t
 (** [with_component world component_module component entity] provides a convenient way to add
     components to an entity without manually packing them. It automatically packs the component and
     calls [add_component] internally.
@@ -46,56 +55,53 @@ val with_component :
 val archetypes : t -> (int, Archetype.t) Hashtbl.t
 (** Returns world's archetypes. *)
 
-val resources : t -> (Luma__id.Id.Resource.t, Luma__resource.Resource.packed) Hashtbl.t
+val resources : t -> (Id.Resource.t, Resource.packed) Hashtbl.t
 (** Returns the world's resources. *)
 
 (* TODO: This should probably accept the module and the unpacked resource and handle the complexity internally *)
 
-val add_resource : Luma__id.Id.Resource.t -> Luma__resource.Resource.packed -> t -> t
+val add_resource : Luma__id.Id.Resource.t -> Resource.packed -> t -> t
 (** [add_resource id packed world] adds a packed resource to the table of resources using the id as
     key.
 
     {b warning:} fails if a resource with the same [id] has already been added to the world. *)
 
-val set_resource : Luma__id__Id.Resource.t -> Luma__resource__Resource.packed -> t -> t
+val set_resource : Id.Resource.t -> Resource.packed -> t -> t
 (** [set_resource id packed world] adds or replaces a resource by id. *)
 
-val has_resource : Luma__id__Id.Resource.t -> t -> bool
+val has_resource : Id.Resource.t -> t -> bool
 (** [has_resource id world] returns true if a resource with the given id has been added to the
     world. *)
 
-val get_resource : t -> Luma__id.Id.Resource.t -> Luma__resource.Resource.packed option
+val get_resource : t -> Id.Resource.t -> Resource.packed option
 (** Returns [Some packed] if found, otherwise [None] *)
 
 val query :
-  'a.
-  t -> ?filter:Query.Component.Filter.t -> 'a Query.Component.t -> (Luma__id.Id.Entity.t * 'a) list
+  'a. t -> ?filter:Query.Component.Filter.t -> 'a Query.Component.t -> (Id.Entity.t * 'a) list
 (** [query world filter query] evaluates the optional filter and required query on the world's
     archetypes and returns a [(Id.Entity.t * 'a) list] where ['a] is a tuple of components returned
     by the query. *)
 
-val get_component : t -> (module Component.S with type t = 'a) -> Luma__id.Id.Entity.t -> 'a option
+val get_component : t -> (module Component.S with type t = 'a) -> Id.Entity.t -> 'a option
 (** Tries to retrieve the Component. Returns [Some component] if successful, otherwise None. *)
 
 module Introspect : sig
   val revision : t -> int
 
-  val iter_entities : (Luma__id__Id.Entity.t -> unit) -> t -> unit
+  val iter_entities : (Id.Entity.t -> unit) -> t -> unit
   (** [iter_entities f world] applies f to every entity in world. *)
 
-  val entities_seq : t -> Luma__id__Id.Entity.t Seq.t
+  val entities_seq : t -> Id.Entity.t Seq.t
   (** [entities_seq world] returns a sequence of all entities. *)
 
-  val entity_components : t -> Luma__id__Id.Entity.t -> Luma__id__Id.ComponentSet.t
+  val entity_components : t -> Id.Entity.t -> Id.ComponentSet.t
   (** [entity_components world entity] returns the component set of the given entity. *)
 
-  val get_component_packed :
-    t -> Luma__id__Id.Entity.t -> Luma__id__Id.Component.t -> Component.packed option
+  val get_component_packed : t -> Id.Entity.t -> Id.Component.t -> Component.packed option
   (** [get_component_packed world entity component] retrieves the packed component if present. *)
 
-  val iter_entities_with_component :
-    (Luma__id__Id.Entity.t -> unit) -> t -> Luma__id__Id.Component.t -> unit
+  val iter_entities_with_component : (Id.Entity.t -> unit) -> t -> Id.Component.t -> unit
   (** [iter_entities_with_component f world component] applies f to each entity with component. *)
 
-  val resources_seq : t -> (Luma__id__Id.Resource.t * Luma__resource__Resource.packed) Seq.t
+  val resources_seq : t -> (Id.Resource.t * Resource.packed) Seq.t
 end
