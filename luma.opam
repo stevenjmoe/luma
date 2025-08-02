@@ -22,6 +22,8 @@ depends: [
   "raygui"
   "ptime"
   "fmt"
+  "yaml"
+  "uuidm"
   "odoc" {with-doc}
 ]
 build: [

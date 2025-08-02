@@ -27,7 +27,9 @@
    raylib
    raygui
    ptime
-   fmt)
+   fmt
+   yaml
+   uuidm)
  (tags
   ("game engine" "ecs")))
 

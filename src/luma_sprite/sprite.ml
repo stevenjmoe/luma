@@ -90,9 +90,10 @@ struct
   open Luma__render
   open Luma__asset
   open Luma__math
+  open Luma__id
 
   type texture = D.Texture.t
-  type queue = Luma__id.Id.Entity.t List.t
+  type queue = Id.Entity.t List.t
 
   module R = Luma__resource.Resource.Make (struct
     type inner = queue
@@ -120,28 +121,29 @@ struct
       ~components:Query.Component.(End)
       ~resources:Query.Resource.(Resource (module Luma__asset.Assets.R) & Resource (module R) & End)
       "render_ordered_sprites"
-      (fun w _ (assets, (queue, _)) ->
-        queue
-        |> List.iter (fun e ->
-               match
-                 ( World.get_component w (module Sprite.C) e,
-                   World.get_component w (module Transform.C) e )
-               with
-               | Some sprite, Some transform -> (
-                   let position =
-                     Transform.(Vec2.create transform.position.x transform.position.y)
-                   in
-                   let size = Transform.(Vec2.create transform.scale.x transform.scale.y) in
-                   let texture_atlas = Sprite.texture_atlas sprite in
-                   let flip_x = Sprite.flip_x sprite in
-                   let flip_y = Sprite.flip_y sprite in
+      (fun w _ res ->
+        Query.Tuple.with2 res (fun assets queue ->
+            queue
+            |> List.iter (fun (e : Id.Entity.t) ->
+                   match
+                     ( World.get_component w (module Sprite.C) e,
+                       World.get_component w (module Transform.C) e )
+                   with
+                   | Some sprite, Some transform -> (
+                       let position =
+                         Transform.(Vec2.create transform.position.x transform.position.y)
+                       in
+                       let size = Transform.(Vec2.create transform.scale.x transform.scale.y) in
+                       let texture_atlas = Sprite.texture_atlas sprite in
+                       let flip_x = Sprite.flip_x sprite in
+                       let flip_y = Sprite.flip_y sprite in
 
-                   match Assets.get (module Texture.A) assets (Sprite.image sprite) with
-                   | Some t ->
-                       Renderer.draw_texture t ~position ~size ~texture_atlas ~flip_x ~flip_y ()
-                   | None -> ())
-               | _, _ -> ());
-        w)
+                       match Assets.get (module Texture.A) assets (Sprite.image sprite) with
+                       | Some t ->
+                           Renderer.draw_texture t ~position ~size ~texture_atlas ~flip_x ~flip_y ()
+                       | None -> ())
+                   | _, _ -> ());
+            w))
 
   let add_plugin app =
     let packed = Resource.pack (module R) [] in

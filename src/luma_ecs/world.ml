@@ -1,3 +1,6 @@
+open Luma__core
+open Luma__id
+open Luma__resource
 module ArchetypeHashSet = Set.Make (Int)
 
 let log = Luma__core.Log.sub_log "world"
@@ -5,9 +8,11 @@ let log = Luma__core.Log.sub_log "world"
 type t = {
   empty_archetype : Archetype.t;
   archetypes : (int, Archetype.t) Hashtbl.t;
-  entity_to_archetype_lookup : (Luma__id.Id.Entity.t, int) Hashtbl.t;
-  component_to_archetype_lookup : (Luma__id.Id.Component.t, ArchetypeHashSet.t) Hashtbl.t;
-  resources : (Luma__id.Id.Resource.t, Luma__resource.Resource.packed) Hashtbl.t;
+  entity_to_archetype_lookup : (Id.Entity.t, int) Hashtbl.t;
+  entity_id_to_entity_guid_lookup : (Id.Entity.t, Uuidm.t) Hashtbl.t;
+  entity_guid_to_entity_id : (Uuidm.t, Id.Entity.t) Hashtbl.t;
+  component_to_archetype_lookup : (Id.Component.t, ArchetypeHashSet.t) Hashtbl.t;
+  resources : (Id.Resource.t, Resource.packed) Hashtbl.t;
   mutable revision : int;
 }
 
@@ -19,6 +24,8 @@ let create () =
     empty_archetype;
     archetypes;
     entity_to_archetype_lookup = Hashtbl.create 16;
+    entity_id_to_entity_guid_lookup = Hashtbl.create 16;
+    entity_guid_to_entity_id = Hashtbl.create 16;
     component_to_archetype_lookup = Hashtbl.create 16;
     resources = Hashtbl.create 16;
     revision = 0;
@@ -29,7 +36,7 @@ let resources w = w.resources
 
 let add_resource key res w =
   if Hashtbl.mem w.resources key then (
-    let res_pp = Luma__resource.Resource.show res in
+    let res_pp = Resource.show res in
     log.error (fun l -> l "Attempted to add resource %s more than once." res_pp);
     failwith @@ Printf.sprintf "Attempted to add resource %s more than once." res_pp)
   else Hashtbl.add w.resources key res;
@@ -43,13 +50,16 @@ let has_resource key w = Hashtbl.mem w.resources key
 let get_resource w key = Hashtbl.find_opt w.resources key
 let archetypes w = w.archetypes
 
-let add_entity w =
-  let entity = Luma__id.Id.Entity.next () in
+let add_entity ?(name = "") w =
+  let entity = Entity.make name in
   (* these calls "should" never raise *)
-  Archetype.add w.empty_archetype entity [];
-  Hashtbl.replace w.entity_to_archetype_lookup entity (Archetype.hash w.empty_archetype);
+  let e_id = Entity.id entity in
+  Archetype.add w.empty_archetype e_id [];
+  Hashtbl.replace w.entity_to_archetype_lookup e_id (Archetype.hash w.empty_archetype);
+  Hashtbl.replace w.entity_id_to_entity_guid_lookup e_id (Entity.uuid entity);
+  Hashtbl.replace w.entity_guid_to_entity_id (Entity.uuid entity) e_id;
   w.revision <- w.revision + 1;
-  entity
+  e_id
 
 let get_new_archetype w old_archetype operation =
   let hash = Archetype.next_hash old_archetype operation in
@@ -58,8 +68,8 @@ let get_new_archetype w old_archetype operation =
   | None ->
       let component_id, operation =
         match operation with
-        | Add id -> (id, Luma__id.Id.ComponentSet.add)
-        | Remove id -> (id, Luma__id.Id.ComponentSet.remove)
+        | Add id -> (id, Id.ComponentSet.add)
+        | Remove id -> (id, Id.ComponentSet.remove)
       in
       let new_archetype =
         Archetype.create (operation component_id (Archetype.components old_archetype))
@@ -69,11 +79,11 @@ let get_new_archetype w old_archetype operation =
 
 let update_component_to_arch w archetype =
   let operation =
-    if Luma__id.Id.EntitySet.is_empty (Archetype.entities archetype) then ArchetypeHashSet.remove
+    if Id.EntitySet.is_empty (Archetype.entities archetype) then ArchetypeHashSet.remove
     else ArchetypeHashSet.add
   in
   Archetype.components archetype
-  |> Luma__id.Id.ComponentSet.iter (fun cid ->
+  |> Id.ComponentSet.iter (fun cid ->
          let arch_set =
            Option.value
              (Hashtbl.find_opt w.component_to_archetype_lookup cid)
@@ -87,9 +97,7 @@ let find_archetype w entity =
   | Some hash -> Hashtbl.find w.archetypes hash
   | None ->
       raise
-      @@ Luma__core.Error.entity_not_found_exn
-           (Luma__id.Id.Entity.to_int entity)
-           "find_archetype in add_component"
+      @@ Error.entity_not_found_exn (Id.Entity.to_int entity) "find_archetype in add_component"
 
 let add_component w component entity =
   let old_arch = find_archetype w entity in
@@ -103,7 +111,7 @@ let add_component w component entity =
       [ component ]
       @ List.filter_map
           (fun component_id -> Archetype.query_table old_arch entity component_id)
-          (Luma__id.Id.ComponentSet.to_list (Archetype.components new_archetype))
+          (Id.ComponentSet.to_list (Archetype.components new_archetype))
     in
     Archetype.remove_entity old_arch entity;
     Archetype.add new_archetype entity new_components;
@@ -111,19 +119,12 @@ let add_component w component entity =
     update_component_to_arch w new_archetype;
     w.revision <- w.revision + 1)
 
-let with_component : type a.
-    t -> (module Component.S with type t = a) -> a -> Luma__id.Id.Entity.t -> Luma__id.Id.Entity.t =
- fun w (module C) component entity ->
+let with_component (type a) w (module C : Component.S with type t = a) component entity =
   let packed = Component.pack (module C) component in
   add_component w packed entity;
   entity
 
-let query :
-    t ->
-    ?filter:Query.Component.Filter.t ->
-    'a Query.Component.t ->
-    (Luma__id.Id.Entity.t * 'a) list =
- fun w ?(filter = Query.Component.Filter.Any) query ->
+let query w ?(filter = Query.Component.Filter.Any) query =
   let archetypes = w.archetypes |> Hashtbl.to_seq_values |> List.of_seq in
   (* TODO: fail or ...? *)
   Query.Component.evaluate ~filter query archetypes |> Result.value ~default:[]
@@ -152,7 +153,7 @@ module Introspect = struct
           (fun h ->
             match Hashtbl.find_opt w.archetypes h with
             | None -> ()
-            | Some a -> Luma__id.Id.EntitySet.iter f (Archetype.entities a))
+            | Some a -> Id.EntitySet.iter f (Archetype.entities a))
           arches
 
   let resources_seq w = Hashtbl.to_seq w.resources

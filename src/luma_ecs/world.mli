@@ -6,7 +6,7 @@ val create : unit -> t
 val entities : t -> Luma__id__Id.Entity.t list
 (** [entities world] returns the ids of all entities in the world. *)
 
-val add_entity : t -> Luma__id.Id.Entity.t
+val add_entity : ?name:string -> t -> Luma__id.Id.Entity.t
 (** [add_entity world] returns the next entity id from [Id.Entity]. *)
 
 val add_component : t -> Component.packed -> Luma__id.Id.Entity.t -> unit
@@ -74,7 +74,7 @@ val query :
     archetypes and returns a [(Id.Entity.t * 'a) list] where ['a] is a tuple of components returned
     by the query. *)
 
-val get_component : t -> (module Component.S with type t = 'a) -> Luma__id__Id.Entity.t -> 'a option
+val get_component : t -> (module Component.S with type t = 'a) -> Luma__id.Id.Entity.t -> 'a option
 (** Tries to retrieve the Component. Returns [Some component] if successful, otherwise None. *)
 
 module Introspect : sig
