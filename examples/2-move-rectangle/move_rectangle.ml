@@ -47,18 +47,18 @@ let movement_system () =
       Query.Component.(
         Required (module Rectangle.C)
         & Required (module Velocity.C)
-        & Required (module Camera.Component.C)
+        & Required (module Camera.Camera.C)
         & End)
     ~resources:Query.Resource.(Resource (module Time.R) & End)
     "movement_system"
     (fun world entities (time, _) ->
       let open Math in
-      let open Luma.Camera.Component in
+      let open Luma.Camera in
       entities
       |> List.iter (fun (_, (rect, (velocity, (camera, _)))) ->
              Rect.set_x rect (Rect.x rect +. Vec2.x velocity);
              Rect.set_y rect (Rect.y rect +. Vec2.y velocity);
-             Luma.Camera.set_target camera.camera (Vec2.create (Rect.x rect) (Rect.y rect));
+             Luma.Camera.set_target camera.Camera.camera (Vec2.create (Rect.x rect) (Rect.y rect));
              ());
       world)
 
@@ -80,7 +80,6 @@ let setup_rectangle () =
     "setup_rectangle"
     (fun world entities ->
       let open World in
-      let open Luma.Camera in
       let open Math in
       let player_tag = 1 in
       let rect = Rect.create ~pos:(Vec2.create 100. 50.) ~size:(Vec2.create 20. 50.) in
@@ -98,7 +97,7 @@ let setup_rectangle () =
       |> with_component world (module Player_tag.C) player_tag
       |> with_component world (module Rectangle.C) rect
       |> with_component world (module Velocity.C) velocity
-      |> with_component world (module Camera.Component.C) { camera; active = true }
+      |> with_component world (module Camera.Camera.C) { camera; active = true }
       |> ignore;
       world)
 

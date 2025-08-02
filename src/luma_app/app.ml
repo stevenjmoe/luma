@@ -1,4 +1,5 @@
 open Luma__ecs
+open Luma__type_register
 
 type t = {
   world : World.t;
@@ -17,6 +18,10 @@ let scheduler (app : t) = app.scheduler
 let add_plugin plugin app = { app with plugins = plugin :: app.plugins }
 let plugins app = app.plugins
 let clear_plugins app = { app with plugins = [] }
+
+let register_component (type a) name (module C : Component.S with type t = a) app =
+  Type_register.Component_registry.register_component name (module C) app.world;
+  app
 
 let on (type s) stage system app =
   let open Luma__state.State in

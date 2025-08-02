@@ -1,5 +1,6 @@
-module Component = Luma__ecs.Component
 open Luma__math
+open Luma__app
+open Luma__ecs
 
 type t = {
   mutable position : Vec3.t;
@@ -15,3 +16,5 @@ module C = Component.Make (struct
 
   let name = "Transform"
 end)
+
+let add_plugin app = App.register_component C.name (module C) app

@@ -10,6 +10,8 @@
     luma.window 
     luma.input
     luma.sprite
+    luma.type_register
+    luma.transform
     luma.debug)
   (name luma__plugin)
   (preprocess 

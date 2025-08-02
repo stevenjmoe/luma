@@ -1,4 +1,4 @@
 (library
   (public_name luma.resource)
-  (libraries luma.id luma.core raylib fmt)
+  (libraries luma.id luma.core fmt)
   (name luma__resource))

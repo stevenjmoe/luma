@@ -13,7 +13,7 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
 
   let begin_camera_pass () =
     System.make
-      ~components:Query.Component.(Required (module Camera.Component.C) & End)
+      ~components:Query.Component.(Required (module Camera.Camera.C) & End)
       "begin_camera_pass"
       (fun world entities ->
         match List.rev entities with
@@ -32,17 +32,21 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
 
   let add_camera () =
     System.make ~components:End "add_camera" (fun world entities ->
-        (if World.query world Query.Component.(Required (module Camera.Component.C) & End) = [] then
+        (if World.query world Query.Component.(Required (module Camera.Camera.C) & End) = [] then
            let camera = Camera.default () in
-           let c = Camera.Component.{ camera; active = true } in
+           let c = Camera.Camera.{ camera; active = true } in
            world
            |> World.add_entity
-           |> World.with_component world (module Camera.Component.C) c
+           |> World.with_component world (module Camera.Camera.C) c
            |> ignore);
         world)
 
+  let register_component app =
+    App.register_component Camera.Camera.C.name (module Camera.Camera.C) app
+
   let plugin app =
     app
+    |> register_component
     |> App.on PostStartup (add_camera ())
     |> App.on PreRender (begin_camera_pass ())
     |> App.on PostRender (end_camera_pass ())

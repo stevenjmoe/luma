@@ -11,6 +11,7 @@ module type S = sig
   open Luma__resource
   open Luma__id
   open Luma__audio
+  open Luma__type_register
   module Raylib_driver = Luma__driver_raylib.Driver
 
   module App : sig
@@ -20,6 +21,7 @@ module type S = sig
     val world : t -> World.t
     val init_state : (module Luma__state__State.STATE with type t = 'a) -> 'a -> t -> t
     val on : 'a 'b. Scheduler.stage -> (World.t, 'b) System.t -> t -> t
+    val register_component : string -> (module Component.S with type t = 'a) -> t -> t
 
     val while_in :
       (module Luma__state__State.STATE with type t = 's) ->
@@ -151,6 +153,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   module App = struct
     open Luma__app.App
+    open Luma__type_register
 
     type nonrec t = t
 
@@ -164,6 +167,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     let on_enter = on_enter
     let on_exit = on_exit
     let add_plugin = add_plugin
+    let register_component = register_component
     let run app = run (module D) app
   end
 

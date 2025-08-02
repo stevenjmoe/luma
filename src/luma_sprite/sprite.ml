@@ -148,5 +148,6 @@ struct
   let add_plugin app =
     let packed = Resource.pack (module R) [] in
     World.add_resource R.type_id packed (App.world app) |> ignore;
+    App.register_component Sprite.C.name (module Sprite.C) app |> ignore;
     app |> App.on Update @@ order_sprites () |> App.on Render @@ render_ordered_sprites ()
 end

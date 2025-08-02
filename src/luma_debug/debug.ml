@@ -195,7 +195,7 @@ module Make (D : Luma__driver.Driver.S) = struct
           in
           state.page <- page;
 
-          let slice = page_slice ~page ~per_page state.cached_entities in
+          let entity_slice = page_slice ~page ~per_page state.cached_entities in
 
           (* Panel *)
           let title =
@@ -251,7 +251,9 @@ module Make (D : Luma__driver.Driver.S) = struct
                   |> Luma__id.Id.ComponentSet.to_list
                   |> List.map (component_label ~expanded:true world e)
                 in
+
                 let lines = wrap_labels_to_lines ~chars_per_line labels in
+
                 let rec draw_lines y0 = function
                   | [] -> y0
                   | s :: tl ->
@@ -259,17 +261,19 @@ module Make (D : Luma__driver.Driver.S) = struct
                       let y1 = y0 + line_h in
                       if float_of_int y1 < y +. h -. 8. then draw_lines y1 tl else y0
                 in
+
                 let next_y = draw_lines y_row lines in
                 if float_of_int next_y < y +. h -. 8. then next_y else y_row
               else
                 let preview = preview_components chars_per_line world e in
+
                 D.draw_text preview
                   (int_of_float x + 150)
                   y_row 16
                   (D.Colour.rgb ~r:220 ~g:220 ~b:220);
                 let next_y = y_row + line_h in
                 if float_of_int next_y < y +. h -. 8. then next_y else y_row)
-            (y_head + 24) slice
+            (y_head + 24) entity_slice
           |> ignore;
 
           (if not state.full then

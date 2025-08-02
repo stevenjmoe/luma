@@ -4,7 +4,7 @@ open Luma__math
 module type S = sig
   type camera
 
-  module Component : sig
+  module Camera : sig
     type t = {
       camera : camera;
       active : bool;
@@ -29,7 +29,7 @@ module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
   type camera = D.camera
 
   [%%component
-  module Component = struct
+  module Camera = struct
     type t = {
       camera : camera;
       active : bool;

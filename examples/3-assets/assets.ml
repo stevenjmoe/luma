@@ -67,7 +67,7 @@ let setup_player () =
       Assets.add (module Luma.Image.Texture_atlas.A) assets atlas |> ignore;
 
       world
-      |> World.add_entity
+      |> World.add_entity ~name:"player"
       |> World.with_component world (module Sprite.C) sprite
       |> World.with_component world (module Player_tag.C) player_tag
       |> World.with_component world (module Animation_config.C) animation_config
@@ -80,6 +80,7 @@ let () =
   let open Luma.App in
   create ()
   |> Plugin.add_default_plugins
+  |> App.add_plugin Plugin.debug_plugin
   |> on Startup (setup_player ())
   |> on Update (execute_animations ())
   |> run

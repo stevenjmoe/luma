@@ -5,6 +5,7 @@
     luma.ecs
     luma.driver
     luma.state
+    luma.type_register
     ppx_component
     luma.core)
   (preprocess 
