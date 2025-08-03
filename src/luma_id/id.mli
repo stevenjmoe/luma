@@ -31,6 +31,9 @@ module State : S
 (** A module for genrating and managing unique identifiers for different states. There should only
     be one though. *)
 
+module Scene : S
+(** A module for genrating and managing unique identifiers for different scenes. *)
+
 module EntitySet : Set.S with type elt = Entity.t
 module ComponentSet : Set.S with type elt = Component.t
 module ResourceSet : Set.S with type elt = Resource.t

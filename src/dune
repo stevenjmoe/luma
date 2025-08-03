@@ -13,6 +13,7 @@
    luma.ecs
    luma.plugin
    luma.window
+   luma.scene
    luma.sprite
    luma.state
    luma.time

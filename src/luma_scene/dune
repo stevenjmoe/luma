@@ -1,0 +1,4 @@
+(library
+  (public_name luma.scene)
+  (libraries luma.ecs luma.id luma.core uuidm)
+  (name luma__scene))

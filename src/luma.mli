@@ -12,6 +12,7 @@ module type S = sig
   open Luma__id
   open Luma__audio
   open Luma__type_register
+  open Luma__scene
   module Raylib_driver = Luma__driver_raylib.Driver
 
   module App : sig
@@ -106,6 +107,7 @@ module type S = sig
   module Key : module type of Luma__types.Input_types.Key
   module Mouse_button : module type of Luma__types.Input_types.Mouse_button
   module State : module type of Luma__state.State
+  module Scene : module type of Scene
 
   val screen_width : unit -> int
   val screen_height : unit -> int

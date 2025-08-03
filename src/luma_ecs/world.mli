@@ -14,10 +14,12 @@ val create : unit -> t
 val entities : t -> Id.Entity.t list
 (** [entities world] returns the ids of all entities in the world. *)
 
-val add_entity : ?name:string -> t -> Id.Entity.t
-(** [add_entity world] returns the next entity id from [Id.Entity]. *)
+val add_entity : ?name:string -> ?uuid:Uuidm.t option -> t -> Id.Entity.t
+(** [add_entity ?name ?uuid world] returns the next entity id from [Id.Entity]. Fails if the
+    optional uuid is provided and it already exists within the world. *)
 
 val entity_metadata : t -> Id.Entity.t -> entity_metadata
+val has_entity_uuid : t -> Uuidm.t -> bool
 
 val add_component : t -> Component.packed -> Id.Entity.t -> unit
 (** [add_component world packed_component entity] adds a component to the world and ensures that the

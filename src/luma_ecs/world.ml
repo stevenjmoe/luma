@@ -10,6 +10,11 @@ type entity_metadata = {
   name : string;
 }
 
+type component_metadata = {
+  id : Id.Component.t;
+  name : string;
+}
+
 type t = {
   empty_archetype : Archetype.t;
   archetypes : (int, Archetype.t) Hashtbl.t;
@@ -55,18 +60,27 @@ let has_resource key w = Hashtbl.mem w.resources key
 let get_resource w key = Hashtbl.find_opt w.resources key
 let archetypes w = w.archetypes
 let entity_metadata w e = Hashtbl.find w.entity_id_to_metadata_lookup e
+let has_entity_uuid w uuid = Hashtbl.mem w.entity_guid_to_entity_id_lookup uuid
 
-let add_entity ?(name = "") w =
-  let entity = Entity.make name in
-  (* these calls "should" never raise *)
-  let e_id = Entity.id entity in
-  let metadata = { uuid = Entity.uuid entity; name } in
-  Archetype.add w.empty_archetype e_id [];
-  Hashtbl.replace w.entity_to_archetype_lookup e_id (Archetype.hash w.empty_archetype);
-  Hashtbl.replace w.entity_id_to_metadata_lookup e_id metadata;
-  Hashtbl.replace w.entity_guid_to_entity_id_lookup (Entity.uuid entity) e_id;
-  w.revision <- w.revision + 1;
-  e_id
+let add_entity ?(name = "") ?(uuid = None) w =
+  let entity = Entity.make ~uuid name in
+
+  if Option.is_some uuid && Hashtbl.mem w.entity_guid_to_entity_id_lookup (Option.get uuid) then (
+    let message =
+      Printf.sprintf "The uuid %s already exists in the world." (Uuidm.to_string @@ Option.get uuid)
+    in
+    log.error (fun l -> l "%s" message);
+    failwith message)
+  else
+    (* these calls "should" never raise *)
+    let e_id = Entity.id entity in
+    let metadata = { uuid = Entity.uuid entity; name } in
+    Archetype.add w.empty_archetype e_id [];
+    Hashtbl.replace w.entity_to_archetype_lookup e_id (Archetype.hash w.empty_archetype);
+    Hashtbl.replace w.entity_id_to_metadata_lookup e_id metadata;
+    Hashtbl.replace w.entity_guid_to_entity_id_lookup (Entity.uuid entity) e_id;
+    w.revision <- w.revision + 1;
+    e_id
 
 let get_new_archetype w old_archetype operation =
   let hash = Archetype.next_hash old_archetype operation in

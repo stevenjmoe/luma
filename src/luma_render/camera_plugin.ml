@@ -36,7 +36,7 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
            let camera = Camera.default () in
            let c = Camera.Camera.{ camera; active = true } in
            world
-           |> World.add_entity
+           |> World.add_entity ~name:"Camera"
            |> World.with_component world (module Camera.Camera.C) c
            |> ignore);
         world)

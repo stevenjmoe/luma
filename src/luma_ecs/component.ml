@@ -62,5 +62,6 @@ let unpack_opt : type a. (module S with type t = a) -> packed -> a option =
  fun (module C) packed -> match unpack (module C) packed with Ok v -> Some v | Error _ -> None
 
 let id : packed -> Id.Component.t = function Packed ((module C), _) -> C.id
+let name : packed -> string = function Packed ((module C), _) -> C.name
 let pp_packed fmt (Packed ((module C), value)) = Format.fprintf fmt "%a" C.pp value
 let show packed = Print.show_of_pp pp_packed packed

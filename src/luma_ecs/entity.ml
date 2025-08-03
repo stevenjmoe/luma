@@ -6,9 +6,12 @@ type t = {
   name : string;
 }
 
-let make name =
+let make ?(uuid = None) name =
   let id = Id.Entity.next () in
-  let uuid = Uuidm.v4_gen (Random.State.make_self_init ()) () in
+  let uuid =
+    if Option.is_some uuid then Option.get uuid
+    else Uuidm.v4_gen (Random.State.make_self_init ()) ()
+  in
   { id; uuid; name }
 
 let id e = e.id
