@@ -17,4 +17,22 @@ module C = Component.Make (struct
   let name = "Transform"
 end)
 
-let add_plugin app = App.register_component C.name (module C) app
+module Transform_serializer = Luma__serialize.Serialize.Make_json_serializer (struct
+  open Yojson
+
+  type t = C.t
+
+  let vec3 (v : Vec3.t) : Yojson.Safe.t =
+    `Assoc [ ("x", `Float v.x); ("y", `Float v.y); ("z", `Float v.z) ]
+
+  let to_yojson transform =
+    let position = vec3 transform.position in
+    let scale = vec3 transform.scale in
+    `Assoc [ ("position", position); ("scale", scale); ("rotation", `Float transform.rotation) ]
+
+  let of_yojson = function `Assoc [ ("TODO", `String "TODO:") ] | _ -> Error "TODO"
+end)
+
+let add_plugin app =
+  let packed_serializer = Luma__serialize.Serialize.pack_json (module Transform_serializer) in
+  App.register_component C.name (module C) [ packed_serializer ] app

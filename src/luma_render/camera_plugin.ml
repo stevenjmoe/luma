@@ -41,8 +41,29 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
            |> ignore);
         world)
 
+  module Camera_serializer = Luma__serialize.Serialize.Make_json_serializer (struct
+    open Yojson
+    open Camera.Camera
+
+    type t = Camera.Camera.t
+
+    let make_vec2 vec2 =
+      `Assoc [ ("x", `Float (Luma__math.Vec2.x vec2)); ("y", `Float (Luma__math.Vec2.y vec2)) ]
+
+    let to_yojson camera =
+      let target = ("target", make_vec2 @@ Camera.target camera.camera) in
+      let offset = ("offset", make_vec2 @@ Camera.target camera.camera) in
+      let zoom = ("zoom", `Float (Camera.zoom camera.camera)) in
+      let rotation = ("rotation", `Float (Camera.zoom camera.camera)) in
+      let active = ("active", `Bool camera.active) in
+      `Assoc [ target; offset; zoom; rotation; active ]
+
+    let of_yojson = function `Assoc [ ("TODO", `String "TODO") ] | _ -> Error "Invalid"
+  end)
+
   let register_component app =
-    App.register_component Camera.Camera.C.name (module Camera.Camera.C) app
+    let packed_serializer = Luma__serialize.Serialize.pack_json (module Camera_serializer) in
+    App.register_component Camera.Camera.C.name (module Camera.Camera.C) [ packed_serializer ] app
 
   let plugin app =
     app
