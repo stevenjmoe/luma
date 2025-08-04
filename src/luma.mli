@@ -13,6 +13,7 @@ module type S = sig
   open Luma__audio
   open Luma__type_register
   open Luma__scene
+  open Luma__serialize
   module Raylib_driver = Luma__driver_raylib.Driver
 
   module App : sig
@@ -22,7 +23,9 @@ module type S = sig
     val world : t -> World.t
     val init_state : (module Luma__state__State.STATE with type t = 's) -> 's -> t -> t
     val on : 'a 'b. Scheduler.stage -> (World.t, 'b) System.t -> t -> t
-    val register_component : string -> (module Component.S with type t = 'a) -> t -> t
+
+    val register_component :
+      string -> (module Component.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
 
     val while_in :
       (module Luma__state__State.STATE with type t = 's) ->

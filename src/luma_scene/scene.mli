@@ -12,3 +12,5 @@ val inject_into_world : t -> Luma__ecs__World.t -> Luma__ecs__World.t
 
 val inject_into_world_safe : t -> Luma__ecs__World.t -> Luma__ecs__World.t
 (** [inject_into_world_safe scene world] adds [scene] to [world], skipping existing UUIDs. *)
+
+val serialize_json : t -> Luma__ecs.World.t -> (Yojson.Safe.t, string) result

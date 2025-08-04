@@ -29,7 +29,8 @@
    ptime
    fmt
    yaml
-   uuidm)
+   uuidm
+   yojson)
  (tags
   ("game engine" "ecs")))
 

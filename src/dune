@@ -23,6 +23,7 @@
    luma.input
    luma.types
    luma.ui
+   luma.serialize
    ppx_component
    fmt.tty)
  (preprocess 

@@ -64,7 +64,6 @@ let has_entity_uuid w uuid = Hashtbl.mem w.entity_guid_to_entity_id_lookup uuid
 
 let add_entity ?(name = "") ?(uuid = None) w =
   let entity = Entity.make ~uuid name in
-
   if Option.is_some uuid && Hashtbl.mem w.entity_guid_to_entity_id_lookup (Option.get uuid) then (
     let message =
       Printf.sprintf "The uuid %s already exists in the world." (Uuidm.to_string @@ Option.get uuid)

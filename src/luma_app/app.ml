@@ -19,8 +19,8 @@ let add_plugin plugin app = { app with plugins = plugin :: app.plugins }
 let plugins app = app.plugins
 let clear_plugins app = { app with plugins = [] }
 
-let register_component (type a) name (module C : Component.S with type t = a) app =
-  Type_register.Component_registry.register_component name (module C) app.world;
+let register_component (type a b) name (module C : Component.S with type t = a) serializers app =
+  Type_register.Component_registry.register_component name (module C) serializers app.world;
   app
 
 let on (type s) stage system app =
