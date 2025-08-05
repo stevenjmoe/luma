@@ -22,14 +22,12 @@ module Transform_serializer =
   Serialize.Make_serializer
     (Serialize.Json_format)
     (struct
-      open Yojson
-
-      type t = C.t
+      type nonrec t = t
 
       let vec3 (v : Vec3.t) : Yojson.Safe.t =
         `Assoc [ ("x", `Float v.x); ("y", `Float v.y); ("z", `Float v.z) ]
 
-      let to_repr transform =
+      let to_repr transform : Yojson.Safe.t =
         let position = vec3 transform.position in
         let scale = vec3 transform.scale in
         `Assoc
@@ -41,7 +39,8 @@ module Transform_serializer =
                 ] );
           ]
 
-      let of_repr = function `Assoc [ ("TODO", `String "TODO:") ] | _ -> Error "TODO"
+      (*TODO: acual deserialize *)
+      let of_repr repr = Ok (create ())
     end)
 
 let add_plugin app =

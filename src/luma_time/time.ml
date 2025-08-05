@@ -56,9 +56,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
         type t = R.t
 
-        let to_repr r =
-          `Assoc [ (R.name, `Assoc [ ("dt", `Float r.dt); ("elapsed", `Float r.elapsed) ]) ]
-
+        let to_repr r = `Assoc [ (R.name, `Assoc [ ("elapsed", `Float r.elapsed) ]) ]
         let of_repr = function `Assoc [ ("TODO", `String "TODO:") ] | _ -> Error "TODO"
       end)
 

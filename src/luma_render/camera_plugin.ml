@@ -46,7 +46,6 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
     Serialize.Make_serializer
       (Serialize.Json_format)
       (struct
-        open Yojson
         open Camera.Camera
 
         type t = Camera.Camera.t
@@ -62,7 +61,8 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
           let active = ("active", `Bool camera.active) in
           `Assoc [ (C.name, `Assoc [ target; offset; zoom; rotation; active ]) ]
 
-        let of_repr = function `Assoc [ ("TODO", `String "TODO") ] | _ -> Error "Invalid"
+        (*TODO: acual deserialize *)
+        let of_repr repr = Ok { camera = Camera.default (); active = true }
       end)
 
   let register_component app =

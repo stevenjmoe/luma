@@ -8,4 +8,5 @@ open Types
 
 module Json : sig
   val serialize : t -> World.t -> (Yojson.Safe.t, string) result
+  val deserialize : Yojson.Safe.t -> World.t -> (t, string) result
 end
