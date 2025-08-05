@@ -1,7 +1,7 @@
 open Luma__ecs
 open Luma__id
 open Luma__resource
-open Luma__serialize
+open Luma__serialize.Serialize
 
 let log = Luma__core.Log.sub_log "type_register"
 
@@ -10,7 +10,7 @@ module Component_registry = struct
     id : Id.Component.t;
     name : string;
     instance : (module Component.S with type t = 'a);
-    serializers : 'a Serialize.serializer_pack list;
+    serializers : 'a serializer_pack list;
   }
 
   type entry = Component : 'a component_entry -> entry
@@ -20,15 +20,15 @@ module Component_registry = struct
     id_to_entry : (Id.Component.t, entry) Hashtbl.t;
   }
 
-  let normalize_name name = name |> String.trim |> String.lowercase_ascii
-  let create () = { name_to_entry = Hashtbl.create 16; id_to_entry = Hashtbl.create 16 }
-  let get_entry r name = Hashtbl.find_opt r.name_to_entry @@ normalize_name name
-
   module R = Resource.Make (struct
     type inner = t
 
     let name = "component_registry"
   end)
+
+  let create () = { name_to_entry = Hashtbl.create 16; id_to_entry = Hashtbl.create 16 }
+  let normalize_name name = name |> String.trim |> String.lowercase_ascii
+  let get_entry r name = Hashtbl.find_opt r.name_to_entry @@ normalize_name name
 
   (*TODO: proper error handling. But it should panic *)
   let register_component (type a) name (module C : Component.S with type t = a) serializers world =
@@ -56,16 +56,10 @@ module Component_registry = struct
         let registry = Resource.unpack (module R) registry |> Result.get_ok in
         register registry
 
-  open Serialize
-
-  let get_json_serializer : type a b.
+  let get_json_serializer : type a.
       a serializer_pack list ->
       (module Serializable with type t = a and type repr = Yojson.Safe.t) option =
    fun packs ->
-    let rec loop : a serializer_pack list -> _ option = function
-      | [] -> None
-      | Serializer ((module S), Json) :: tl ->
-          Some (module S : Serializable with type t = a and type repr = Yojson.Safe.t)
-    in
-    loop packs
+    let rec find = function [] -> None | Json s :: _ -> Some s in
+    find packs
 end

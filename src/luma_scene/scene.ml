@@ -91,7 +91,7 @@ let serialize_json (type a b) scene world : (Yojson.Safe.t, string) result =
                   [
                     ("uuid", `String (Uuidm.to_string e.uuid));
                     ("name", `String e.name);
-                    ("data", `List components);
+                    ("components", `List components);
                   ])
               scene.entities
           in

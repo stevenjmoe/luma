@@ -148,27 +148,34 @@ struct
                    | _, _ -> ());
             w))
 
-  module Sprite_serializer = Serialize.Make_json_serializer (struct
-    open Yojson
+  module Sprite_serializer =
+    Serialize.Make_serializer
+      (Serialize.Json_format)
+      (struct
+        open Yojson
 
-    type t = Sprite.t
+        type t = Sprite.t
 
-    let vec2 (v : Vec2.t) = `Assoc [ ("x", `Float v.x); ("y", `Float v.y) ]
+        let vec2 (v : Vec2.t) = `Assoc [ ("x", `Float v.x); ("y", `Float v.y) ]
 
-    let to_yojson sprite =
-      let image = ("image", `String "TODO") in
-      let texture_atlas = ("texture_atlas", `String "TODO") in
-      let flip_x = ("flip_x", `Bool (Sprite.flip_x sprite)) in
-      let flip_y = ("flip_y", `Bool (Sprite.flip_y sprite)) in
-      let custom_size =
-        match Sprite.custom_size sprite with
-        | None -> `Null
-        | Some v -> `List [ `Float (Luma__math.Vec2.x v); `Float (Luma__math.Vec2.y v) ]
-      in
-      `Assoc [ image; texture_atlas; flip_x; flip_y; ("custom_size", custom_size) ]
+        let to_repr sprite =
+          let image = ("image", `String "TODO") in
+          let texture_atlas = ("texture_atlas", `String "TODO") in
+          let flip_x = ("flip_x", `Bool (Sprite.flip_x sprite)) in
+          let flip_y = ("flip_y", `Bool (Sprite.flip_y sprite)) in
+          let custom_size =
+            match Sprite.custom_size sprite with
+            | None -> `Null
+            | Some v -> `List [ `Float (Luma__math.Vec2.x v); `Float (Luma__math.Vec2.y v) ]
+          in
+          `Assoc
+            [
+              ( Sprite.C.name,
+                `Assoc [ image; texture_atlas; flip_x; flip_y; ("custom_size", custom_size) ] );
+            ]
 
-    let of_yojson = function `Assoc [] | _ -> Error "TODO"
-  end)
+        let of_repr = function `Assoc [] | _ -> Error "TODO"
+      end)
 
   let add_plugin app =
     let packed = Resource.pack (module R) [] in
