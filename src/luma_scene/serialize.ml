@@ -82,34 +82,6 @@ module Json = struct
         Ok r
     | _ -> Error "todo"
 
-  let parse_string_field key json =
-    match member key json with
-    | `String v -> Ok v
-    | _ -> Error (Printf.sprintf "Expected string field '%s'" key)
-
-  let parse_uuid_field key json =
-    match member key json with
-    | `String v -> (
-        match Uuidm.of_string v with
-        | Some u -> Ok u
-        | None -> Error (Printf.sprintf "Invalid uuid string in field '%s'" key))
-    | _ -> Error (Printf.sprintf "Expected uuid string field '%s'" key)
-
-  let parse_list_field key json =
-    match member key json with
-    | `List l -> Ok l
-    | _ -> Error (Printf.sprintf "Expected list field '%s'" key)
-
-  let extract_single_assoc obj =
-    match obj with
-    | `Assoc [ (name, data) ] -> Ok (name, data)
-    | _ -> Error "Each assoc entry must be a single-field object."
-
-  let parse_assoc_field key json =
-    match Yojson.Safe.Util.member key json with
-    | `Assoc assoc -> Ok assoc
-    | _ -> Error (Printf.sprintf "Expected member '%s' to be a JSON object with named fields" key)
-
   (* Converts a list of results into a result of a list, returning the first error encountered or all successful values. *)
   let rec result_list_seq = function
     | [] -> Ok []
@@ -118,6 +90,7 @@ module Json = struct
 
   let deserialize (scene : Yojson.Safe.t) world =
     let open Yojson.Safe in
+    let open Json_helpers in
     let ( let* ) = Result.bind in
     let* r =
       World.get_resource world Component_registry.R.type_id
@@ -126,18 +99,18 @@ module Json = struct
 
     (* create a new world and copy across the Component registry *)
     let world = World.create () |> World.add_resource Component_registry.R.type_id r in
-    let* name = parse_string_field "name" scene in
-    let* uuid = parse_uuid_field "uuid" scene in
-    let* entities_json = parse_list_field "entities" scene in
-    let* resources_json = parse_list_field "resources" scene in
+    let* name = parse_string "name" scene in
+    let* uuid = parse_uuid "uuid" scene in
+    let* entities_json = parse_list "entities" scene in
+    let* resources_json = parse_list "resources" scene in
 
     let* entities =
       result_list_seq
       @@ List.map
            (fun e ->
-             let* entity_name = parse_string_field "name" e in
-             let* entity_uuid = parse_uuid_field "uuid" e in
-             let* components = parse_list_field "components" e in
+             let* entity_name = parse_string "name" e in
+             let* entity_uuid = parse_uuid "uuid" e in
+             let* components = parse_list "components" e in
 
              let entity = World.add_entity ~name:entity_name ~uuid:(Some entity_uuid) world in
 

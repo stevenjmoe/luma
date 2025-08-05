@@ -22,14 +22,13 @@ module Transform_serializer =
   Serialize.Make_serializer
     (Serialize.Json_format)
     (struct
+      open Json_helpers
+
       type nonrec t = t
 
-      let vec3 (v : Vec3.t) : Yojson.Safe.t =
-        `Assoc [ ("x", `Float v.x); ("y", `Float v.y); ("z", `Float v.z) ]
-
       let to_repr transform : Yojson.Safe.t =
-        let position = vec3 transform.position in
-        let scale = vec3 transform.scale in
+        let position = of_vec3 transform.position in
+        let scale = of_vec3 transform.scale in
         `Assoc
           [
             ( C.name,
@@ -39,8 +38,22 @@ module Transform_serializer =
                 ] );
           ]
 
-      (*TODO: acual deserialize *)
-      let of_repr repr = Ok (create ())
+      let normalize s = s |> String.trim |> String.lowercase_ascii
+
+      let of_repr (repr : Yojson.Safe.t) =
+        let ( let* ) = Result.bind in
+
+        match repr with
+        | `Assoc [ (name, data) ] when normalize name = normalize C.name ->
+            let* position = parse_vec3 "position" data in
+            let* scale = parse_vec3 "scale" data in
+            let* rotation = parse_float "rotation" data in
+
+            Ok (create ~position ~rotation ~scale ())
+        | _ ->
+            Error
+              (Printf.sprintf "Invalid transform json data:\n%s"
+                 (Yojson.Safe.pretty_to_string repr))
     end)
 
 let add_plugin app =
