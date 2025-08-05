@@ -1,16 +1,21 @@
+open Luma__serialize
+open Luma__id
+open Luma__resource
+open Luma__app
+
 type t = {
   mutable open_ : bool;
   mutable filter : string;
   mutable page : int;
   mutable per_page : int;
   mutable cached_rev : int;
-  mutable cached_entities : Luma__id.Id.Entity.t list;
-  mutable x : float; 
+  mutable cached_entities : Id.Entity.t list;
+  mutable x : float;
   mutable y : float;
-  mutable w : float; 
+  mutable w : float;
   mutable h : float;
-  mutable full : bool; 
-  mutable resizing : bool; 
+  mutable full : bool;
+  mutable resizing : bool;
 }
 
 let default () =
@@ -29,7 +34,7 @@ let default () =
     resizing = false;
   }
 
-module R = Luma__resource.Resource.Make (struct
+module R = Resource.Make (struct
   type inner = t
 
   let name = "debug_state"

@@ -2,21 +2,7 @@ open Luma__id
 open Luma__ecs
 open Luma__type_register
 open Luma__resource
-open Luma__serialize
-open Luma__type_register.Type_register
-
-type entity = {
-  uuid : Uuidm.t;
-  name : string;
-  components : Component.packed list;
-}
-
-type t = {
-  id : Id.Scene.t;
-  uuid : Uuidm.t;
-  name : string;
-  entities : entity list;
-}
+open Types
 
 let from_world name world =
   let id = Id.Scene.next () in
@@ -40,7 +26,11 @@ let from_world name world =
         entity :: e_acc)
       [] entities
   in
-  { id; uuid; name; entities }
+
+  let resources =
+    World.Introspect.resources_seq world |> List.of_seq |> List.map (fun (_, packed) -> packed)
+  in
+  { id; uuid; name; entities; resources }
 
 let inject_into_world scene world =
   scene.entities
@@ -64,44 +54,4 @@ let to_world scene =
   let world = World.create () in
   inject_into_world scene world
 
-let serialize_json (type a b) scene world : (Yojson.Safe.t, string) result =
-  match World.get_resource world Component_registry.R.type_id with
-  | None -> Error "todo"
-  | Some r -> (
-      match Resource.unpack (module Component_registry.R) r with
-      | Error _ -> Error "todo"
-      | Ok r ->
-          let entities =
-            List.map
-              (fun (e : entity) ->
-                let components =
-                  e.components
-                  |> List.filter_map (fun c ->
-                         match Component_registry.get_entry r (Component.name c) with
-                         | Some (Component { name; serializers; instance = (module C) }) ->
-                             let unpacked = Component.unpack (module C) c |> Result.get_ok in
-                             let (module Q) =
-                               Type_register.Component_registry.get_json_serializer serializers
-                               |> Option.get
-                             in
-                             Some (Q.serialize unpacked)
-                         | None -> None)
-                in
-                `Assoc
-                  [
-                    ("uuid", `String (Uuidm.to_string e.uuid));
-                    ("name", `String e.name);
-                    ("components", `List components);
-                  ])
-              scene.entities
-          in
-          let r =
-            `Assoc
-              [
-                ("name", `String scene.name);
-                ("uuid", `String (Uuidm.to_string scene.uuid));
-                ("entities", `List entities);
-              ]
-          in
-          Yojson.Safe.pretty_to_channel Out_channel.stdout r;
-          Ok r)
+module Serialize = Serialize

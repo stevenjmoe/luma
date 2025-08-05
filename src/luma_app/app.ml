@@ -1,5 +1,6 @@
 open Luma__ecs
 open Luma__type_register
+open Luma__resource
 
 type t = {
   world : World.t;
@@ -19,8 +20,17 @@ let add_plugin plugin app = { app with plugins = plugin :: app.plugins }
 let plugins app = app.plugins
 let clear_plugins app = { app with plugins = [] }
 
-let register_component (type a b) name (module C : Component.S with type t = a) serializers app =
+let register_component (type a) name (module C : Component.S with type t = a) serializers app =
   Type_register.Component_registry.register_component name (module C) serializers app.world;
+  app
+
+let register_resource
+    (type a)
+    name
+    (module R : Resource.S with type t = a)
+    (serializers : a Luma__serialize.Serialize.serializer_pack list)
+    app =
+  Type_register.Resource_registry.register_resource name (module R) serializers app.world;
   app
 
 let on (type s) stage system app =

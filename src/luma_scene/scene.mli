@@ -1,16 +1,18 @@
-type entity
-type t
+open Luma__id
+open Luma__ecs
+open Luma__resource
+open Types
 
-val from_world : string -> Luma__ecs__World.t -> t
+val from_world : string -> World.t -> t
 (** [from_world name world] creates a scene from the entities and components in [world]. *)
 
-val to_world : t -> Luma__ecs__World.t
+val to_world : t -> World.t
 (** [to_world scene] creates a new world populated with entities and components from [scene]. *)
 
-val inject_into_world : t -> Luma__ecs__World.t -> Luma__ecs__World.t
+val inject_into_world : t -> World.t -> World.t
 (** [inject_into_world scene world] adds [scene] to [world], fails on duplicate entity UUIDs. *)
 
-val inject_into_world_safe : t -> Luma__ecs__World.t -> Luma__ecs__World.t
+val inject_into_world_safe : t -> World.t -> World.t
 (** [inject_into_world_safe scene world] adds [scene] to [world], skipping existing UUIDs. *)
 
-val serialize_json : t -> Luma__ecs.World.t -> (Yojson.Safe.t, string) result
+module Serialize : module type of Serialize

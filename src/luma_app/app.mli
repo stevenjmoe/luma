@@ -1,5 +1,6 @@
 open Luma__ecs
 open Luma__serialize
+open Luma__resource
 
 type t
 
@@ -23,6 +24,12 @@ val register_component :
 (** [register_component name component serializes app] will register component [C] with the given
     name in the application's component registry. The normalised name must be unique across all
     registered components, and will throw if it isn't. Returns the updated [App.t] *)
+
+val register_resource :
+  string -> (module Resource.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
+(** [register_resource name resource serializes app] will register resource [R] with the given name
+    in the application's resource registry. The normalised name must be unique across all registered
+    resources, and will throw if it isn't. Returns the updated [App.t] *)
 
 val init_state : (module Luma__state__State.STATE with type t = 'a) -> 'a -> t -> t
 

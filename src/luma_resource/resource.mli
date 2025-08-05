@@ -23,6 +23,7 @@ val pack : 'a. (module S with type t = 'a) -> 'a -> packed
 val unpack : 'a. (module S with type t = 'a) -> packed -> ('a, Luma__core.Error.error) result
 val unpack_opt : 'a. (module S with type t = 'a) -> packed -> 'a option
 val type_id : packed -> Luma__id.Id.Resource.t
+val name : packed -> string
 
 val pp_packed : Format.formatter -> packed -> unit
 (** Print a packed component using its own pretty-printer. *)

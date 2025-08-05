@@ -27,6 +27,9 @@ module type S = sig
     val register_component :
       string -> (module Component.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
 
+    val register_resource :
+      string -> (module Resource.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
+
     val while_in :
       (module Luma__state__State.STATE with type t = 's) ->
       's ->
