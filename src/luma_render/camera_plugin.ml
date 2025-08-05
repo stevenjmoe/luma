@@ -47,22 +47,34 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
       (Serialize.Json_format)
       (struct
         open Camera.Camera
+        open Json_helpers
 
         type t = Camera.Camera.t
 
-        let make_vec2 vec2 =
-          `Assoc [ ("x", `Float (Luma__math.Vec2.x vec2)); ("y", `Float (Luma__math.Vec2.y vec2)) ]
+        let normalize s = s |> String.trim |> String.lowercase_ascii
 
         let to_repr camera =
-          let target = ("target", make_vec2 @@ Camera.target camera.camera) in
-          let offset = ("offset", make_vec2 @@ Camera.offset camera.camera) in
-          let zoom = ("zoom", `Float (Camera.zoom camera.camera)) in
-          let rotation = ("rotation", `Float (Camera.rotation camera.camera)) in
-          let active = ("active", `Bool camera.active) in
+          let target = of_vec2 "target" @@ Camera.target camera.camera in
+          let offset = of_vec2 "offset" @@ Camera.offset camera.camera in
+          let zoom = of_float "zoom" (Camera.zoom camera.camera) in
+          let rotation = of_float "rotation" (Camera.rotation camera.camera) in
+          let active = of_bool "active" camera.active in
           `Assoc [ (C.name, `Assoc [ target; offset; zoom; rotation; active ]) ]
 
-        (*TODO: acual deserialize *)
-        let of_repr repr = Ok { camera = Camera.default (); active = true }
+        let of_repr repr =
+          let ( let* ) = Result.bind in
+          match repr with
+          | `Assoc [ (name, data) ] when normalize name = normalize C.name ->
+              let* target = parse_vec2 "target" data in
+              let* offset = parse_vec2 "offset" data in
+              let* zoom = parse_float "zoom" data in
+              let* rotation = parse_float "rotation" data in
+              let* active = parse_bool "active" data in
+
+              Ok { camera = Camera.make ~offset ~target ~zoom ~rotation (); active }
+          | _ ->
+              Error
+                (Printf.sprintf "Invalid camera json data:\n%s" (Yojson.Safe.pretty_to_string repr))
       end)
 
   let register_component app =

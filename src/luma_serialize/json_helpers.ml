@@ -32,6 +32,11 @@ let parse_float key json =
   | `Float v -> Ok v
   | _ -> Error (Printf.sprintf "Expected float field '%s'" key)
 
+let parse_bool key json =
+  match member key json with
+  | `Bool v -> Ok v
+  | _ -> Error (Printf.sprintf "Expected bool field '%s'" key)
+
 let parse_uuid key json =
   match member key json with
   | `String v -> (
