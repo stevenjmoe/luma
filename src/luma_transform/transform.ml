@@ -27,16 +27,10 @@ module Transform_serializer =
       type nonrec t = t
 
       let to_repr transform : Yojson.Safe.t =
-        let position = of_vec3 transform.position in
-        let scale = of_vec3 transform.scale in
-        `Assoc
-          [
-            ( C.name,
-              `Assoc
-                [
-                  ("position", position); ("scale", scale); ("rotation", `Float transform.rotation);
-                ] );
-          ]
+        let position = of_vec3 "position" transform.position in
+        let scale = of_vec3 "scale" transform.scale in
+        let rotation = of_float "rotation" transform.rotation in
+        `Assoc [ (C.name, `Assoc [ position; scale; rotation ]) ]
 
       let normalize s = s |> String.trim |> String.lowercase_ascii
 

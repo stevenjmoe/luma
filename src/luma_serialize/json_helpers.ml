@@ -1,12 +1,16 @@
 open Yojson.Safe.Util
 open Luma__math
 
-let of_vec3 (v : Vec3.t) : Yojson.Safe.t =
-  `Assoc [ ("x", `Float v.x); ("y", `Float v.y); ("z", `Float v.z) ]
+let of_vec3 label (v : Vec3.t) =
+  (label, `Assoc [ ("x", `Float v.x); ("y", `Float v.y); ("z", `Float v.z) ])
+
+let of_vec2 label (v : Vec2.t) = (label, `Assoc [ ("x", `Float v.x); ("y", `Float v.y) ])
+let of_float label f = (label, `Float f)
+let of_bool label f = (label, `Bool f)
 
 let parse_vec2 key json =
   match member key json with
-  | `Assoc [ ("x", `Float x); ("y", `Float y);  ] -> Ok (Vec2.create x y )
+  | `Assoc [ ("x", `Float x); ("y", `Float y) ] -> Ok (Vec2.create x y)
   | _ ->
       Yojson.Safe.pretty_to_channel Out_channel.stdout json;
       Error "Expected a vec2"
