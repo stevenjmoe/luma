@@ -45,6 +45,8 @@ module type S = sig
       (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
 
     val add_plugin : (t -> t) -> t -> t
+    val step : t -> t
+    val run_with_driver : t -> (t -> t Lwt.t) -> unit Lwt.t
     val run : t -> unit
   end
 

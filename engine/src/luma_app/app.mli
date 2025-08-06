@@ -79,6 +79,9 @@ val add_plugin : (t -> t) -> t -> t
       let () = App.create () |> App.add_plugin my_plugin |> App.run
     ]} *)
 
+val step : t -> t
+val run_with_driver : t -> (t -> t Lwt.t) -> unit Lwt.t
+
 val run : (module Luma__driver.Driver.S) -> t -> unit
 (** The main entry point to the engine. It sets up global resources, runs [Startup] systems, runs
     the main game loop, and runs all [Update] systems. *)

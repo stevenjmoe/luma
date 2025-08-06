@@ -123,6 +123,35 @@ let check_plugins plugins () =
           "No plugins have been added to the application. Did you forget to call \
            `Luma.Plugin.add_default_plugins`?")
 
+let step app =
+  let s =
+    [
+      Scheduler.PreUpdate;
+      StateTransition;
+      Update;
+      PostUpdate;
+      PreRender;
+      Render;
+      PostRender;
+      Overlay;
+    ]
+  in
+  List.iter
+    (fun s ->
+      Scheduler.run_stage s app.scheduler app.world |> ignore;
+      ())
+    s;
+  app
+
+let run_with_driver app driver =
+  let ( let* ) = Lwt.bind in
+  let rec loop app =
+    let* app = driver app in
+    let app = step app in
+    loop app
+  in
+  loop app
+
 let run (module D : Luma__driver.Driver.S) (app : t) =
   log.info (fun log -> log "Running applictation.");
 
@@ -145,26 +174,16 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
   in
   let app = { app with world } in
 
-  let rec loop (world, scheduler) =
+  let rec loop app =
     if D.Window.should_close () then (
-      world |> Scheduler.run_stage Cleanup scheduler |> ignore;
+      world |> Scheduler.run_stage Cleanup app.scheduler |> ignore;
       D.Window.shutdown ())
     else (
       D.Window.begin_frame ();
 
-      let world =
-        world
-        |> Scheduler.run_stage PreUpdate scheduler
-        |> Scheduler.run_stage StateTransition scheduler
-        |> Scheduler.run_stage Update scheduler
-        |> Scheduler.run_stage PostUpdate scheduler
-        |> Scheduler.run_stage PreRender scheduler
-        |> Scheduler.run_stage Render scheduler
-        |> Scheduler.run_stage PostRender scheduler
-        |> Scheduler.run_stage Overlay scheduler
-      in
+      let app = step app in
 
       D.Window.end_frame ();
-      loop (world, scheduler))
+      loop app)
   in
-  loop (app.world, app.scheduler)
+  loop app
