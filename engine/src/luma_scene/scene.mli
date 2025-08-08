@@ -3,8 +3,8 @@ open Luma__ecs
 open Luma__resource
 open Types
 
-val from_world : string -> World.t -> t
-(** [from_world name world] creates a scene from the entities and components in [world]. *)
+val snapshot_world : string -> World.t -> t
+(** [snapshot_world name world] creates a scene from the entities and components in [world]. *)
 
 val to_world : t -> World.t
 (** [to_world scene] creates a new world populated with entities and components from [scene]. *)

@@ -2,6 +2,12 @@ open Luma__id
 open Luma__ecs
 open Luma__resource
 
+type meta = {
+  version : int;
+  created_at : float;
+  engine_rev : string;
+}
+
 type entity = {
   uuid : Uuidm.t;
   name : string;
@@ -14,4 +20,5 @@ type t = {
   name : string;
   entities : entity list;
   resources : Resource.packed list;
+  version : int;
 }

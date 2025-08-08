@@ -1,6 +1,7 @@
 open Luma__ecs
 open Luma__id
 open Luma__serialize
+open Luma__core
 
 module type S = sig
   val toggle_overlay : unit -> ('a, unit) System.t
@@ -318,7 +319,8 @@ module Make (D : Luma__driver.Driver.S) = struct
                 `Assoc [ open_; filter; page; per_page; cached_rev; cached_entities; x; y; w; h ] );
             ]
 
-        let of_repr = function `Assoc [ ("TODO", `String "TODO:") ] | _ -> Error "TODO"
+        let of_repr = function
+          | `Assoc [ ("TODO", `String "TODO:") ] | _ -> Error (Error.parse_json (Json "TODO"))
       end)
 
   let add_plugin app =

@@ -28,9 +28,11 @@
    raygui
    ptime
    fmt
-   yaml
    uuidm
-   yojson)
+   yojson
+   js_of_ocaml
+   js_of_ocaml-ppx
+   js_of_ocaml-lwt)
  (tags
   ("game engine" "ecs")))
 

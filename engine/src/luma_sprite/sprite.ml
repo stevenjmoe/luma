@@ -1,5 +1,6 @@
 open Luma__image
 open Luma__serialize
+open Luma__core
 
 module type S = sig
   type texture
@@ -104,6 +105,8 @@ struct
     let name = "sprite_render_queue"
   end)
 
+  let log = Luma__core.Log.sub_log "sprite"
+
   let order_sprites () =
     Luma__ecs.System.make_with_resources
       ~components:Query.Component.(Required (module Sprite.C) & Required (module Transform.C) & End)
@@ -174,7 +177,7 @@ struct
                 `Assoc [ image; texture_atlas; flip_x; flip_y; ("custom_size", custom_size) ] );
             ]
 
-        let of_repr = function `Assoc [] | _ -> Error "TODO"
+        let of_repr = function `Assoc [] | _ -> Error (Error.parse_json (Json "TODO"))
       end)
 
   let add_plugin app =

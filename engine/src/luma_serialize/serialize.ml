@@ -1,8 +1,10 @@
+open Luma__core
+
 module type Format = sig
   type repr
 
   val write : out_channel -> repr -> unit
-  val read : in_channel -> (repr, string) result
+  val read : in_channel -> (repr, Error.error) result
 end
 
 module type Serializable = sig
@@ -10,7 +12,7 @@ module type Serializable = sig
   type repr
 
   val serialize : t -> repr
-  val deserialize : repr -> (t, string) result
+  val deserialize : repr -> (t, Error.error) result
 end
 
 type ('t, 'r) serializer = (module Serializable with type t = 't and type repr = 'r)
@@ -33,7 +35,7 @@ module Make_serializer
       type t
 
       val to_repr : t -> F.repr
-      val of_repr : F.repr -> (t, string) result
+      val of_repr : F.repr -> (t, Error.error) result
     end) : Serializable with type t = S.t and type repr = F.repr = struct
   type t = S.t
   type repr = F.repr

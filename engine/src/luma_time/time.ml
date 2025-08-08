@@ -1,5 +1,6 @@
 open Luma__ecs
 open Luma__serialize
+open Luma__core
 
 module type S = sig
   type t
@@ -57,7 +58,9 @@ module Make (D : Luma__driver.Driver.S) : S = struct
         type t = R.t
 
         let to_repr r = `Assoc [ (R.name, `Assoc [ ("elapsed", `Float r.elapsed) ]) ]
-        let of_repr = function `Assoc [ ("TODO", `String "TODO:") ] | _ -> Error "TODO"
+
+        let of_repr = function
+          | `Assoc [ ("TODO", `String "TODO:") ] | _ -> Error (Error.parse_json (Json "TODO"))
       end)
 
   let plugin app =

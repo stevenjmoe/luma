@@ -1,5 +1,6 @@
 open Yojson.Safe.Util
 open Luma__math
+open Luma__core
 
 let of_vec3 label (v : Vec3.t) =
   (label, `Assoc [ ("x", `Float v.x); ("y", `Float v.y); ("z", `Float v.z) ])
@@ -13,49 +14,44 @@ let parse_vec2 key json =
   | `Assoc [ ("x", `Float x); ("y", `Float y) ] -> Ok (Vec2.create x y)
   | _ ->
       Yojson.Safe.pretty_to_channel Out_channel.stdout json;
-      Error "Expected a vec2"
+      Error (Error.parse_json (Vec2 key))
 
 let parse_vec3 key json =
   match member key json with
   | `Assoc [ ("x", `Float x); ("y", `Float y); ("z", `Float z) ] -> Ok (Vec3.create x y z)
   | _ ->
       Yojson.Safe.pretty_to_channel Out_channel.stdout json;
-      Error "Expected a vec3"
+      Error (Error.parse_json (Vec3 key))
 
 let parse_string key json =
-  match member key json with
-  | `String v -> Ok v
-  | _ -> Error (Printf.sprintf "Expected string field '%s'" key)
+  match member key json with `String v -> Ok v | _ -> Error (Error.parse_json (String key))
 
 let parse_float key json =
-  match member key json with
-  | `Float v -> Ok v
-  | _ -> Error (Printf.sprintf "Expected float field '%s'" key)
+  match member key json with `Float v -> Ok v | _ -> Error (Error.parse_json (Float key))
+
+let parse_int key json =
+  match member key json with `Int v -> Ok v | _ -> Error (Error.parse_json (Int key))
 
 let parse_bool key json =
-  match member key json with
-  | `Bool v -> Ok v
-  | _ -> Error (Printf.sprintf "Expected bool field '%s'" key)
+  match member key json with `Bool v -> Ok v | _ -> Error (Error.parse_json (Bool key))
 
 let parse_uuid key json =
   match member key json with
   | `String v -> (
       match Uuidm.of_string v with
       | Some u -> Ok u
-      | None -> Error (Printf.sprintf "Invalid uuid string in field '%s'" key))
-  | _ -> Error (Printf.sprintf "Expected uuid string field '%s'" key)
+      | None -> Error (Error.invalid_uuid { uuid = v }))
+  | _ -> Error (Error.parse_json (Uuid key))
 
 let parse_list key json =
-  match member key json with
-  | `List l -> Ok l
-  | _ -> Error (Printf.sprintf "Expected list field '%s'" key)
+  match member key json with `List l -> Ok l | _ -> Error (Error.parse_json (List key))
 
-let extract_single_assoc obj =
+let parse_single_assoc obj =
   match obj with
   | `Assoc [ (name, data) ] -> Ok (name, data)
-  | _ -> Error "Each assoc entry must be a single-field object."
+  | _ -> Error (Error.parse_json (Assoc ""))
 
 let parse_assoc key json =
   match Yojson.Safe.Util.member key json with
   | `Assoc assoc -> Ok assoc
-  | _ -> Error (Printf.sprintf "Expected member '%s' to be a JSON object with named fields" key)
+  | _ -> Error (Error.parse_json (Assoc key))

@@ -2,6 +2,7 @@ open Luma__id
 open Luma__ecs
 open Luma__resource
 open Luma__serialize
+open Luma__core
 
 val get_json_serializer :
   'a.
@@ -24,7 +25,8 @@ module Component_registry : sig
   }
 
   val create : unit -> t
-  val get_entry : t -> string -> entry option
+  val get_entry_by_name : t -> string -> entry option
+  val get_entry_by_id : t -> Id.Component.t -> entry option
 
   val register_component :
     string ->

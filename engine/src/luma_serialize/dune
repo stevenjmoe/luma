@@ -1,4 +1,4 @@
 (library
   (public_name luma.serialize)
-  (libraries yojson uuidm luma.math)
+  (libraries yojson uuidm luma.math luma.core)
   (name luma__serialize))

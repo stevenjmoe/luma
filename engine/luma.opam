@@ -22,9 +22,11 @@ depends: [
   "raygui"
   "ptime"
   "fmt"
-  "yaml"
   "uuidm"
   "yojson"
+  "js_of_ocaml"
+  "js_of_ocaml-ppx"
+  "js_of_ocaml-lwt"
   "odoc" {with-doc}
 ]
 build: [

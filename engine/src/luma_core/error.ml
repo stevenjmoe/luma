@@ -30,6 +30,26 @@ type system_run = {
 type asset_load = { msg : string }
 type asset_ext_unsupported = { path : string }
 
+type parse_json =
+  | String of string
+  | Float of string
+  | Int of string
+  | Bool of string
+  | Vec2 of string
+  | Vec3 of string
+  | Uuid of string
+  | List of string
+  | Assoc of string
+  | Json of string
+
+type invalid_uuid = { uuid : string }
+
+type type_registration =
+  | Unregistered_component of string
+  | Unregistered_resource of string
+  | Component_json_serializer_not_found of string
+  | Resource_json_serializer_not_found of string
+
 type error =
   [ `Entity_not_found of entity_not_found
   | `Component_not_found of component_not_found
@@ -39,6 +59,9 @@ type error =
   | `System_run of system_run
   | `Asset_load of asset_load
   | `Asset_ext_unsupported of asset_ext_unsupported
+  | `Serialize of parse_json
+  | `Invalid_uuid of invalid_uuid
+  | `Type_registration of type_registration
   ]
 
 let pp fmt (e : error) =
@@ -61,6 +84,26 @@ let pp fmt (e : error) =
   | `Asset_load { msg } -> Format.fprintf fmt "Failed to load asset. Msg: %s" msg
   | `Asset_ext_unsupported { path } ->
       Format.fprintf fmt "Incompatible asset extension. Path: %s" path
+  | `Serialize (String s) -> Format.fprintf fmt "Expected string field '%s'" s
+  | `Serialize (Float s) -> Format.fprintf fmt "Expected float field '%s'" s
+  | `Serialize (Int s) -> Format.fprintf fmt "Expected int field '%s'" s
+  | `Serialize (Bool s) -> Format.fprintf fmt "Expected bool field '%s'" s
+  | `Serialize (Vec2 s) -> Format.fprintf fmt "Expected vec2 field '%s'" s
+  | `Serialize (Vec3 s) -> Format.fprintf fmt "Expected vec3 field '%s'" s
+  | `Serialize (Uuid s) -> Format.fprintf fmt "Expected uuid field '%s'" s
+  | `Serialize (List s) -> Format.fprintf fmt "Expected list field '%s'" s
+  | `Serialize (Json s) -> Format.fprintf fmt "Invalid json input:\n'%s'" s
+  | `Serialize (Assoc s) ->
+      Format.fprintf fmt "Expected member '%s' to be a JSON object with named fields" s
+  | `Invalid_uuid { uuid } -> Format.fprintf fmt "Invalid uuid '%s'" uuid
+  | `Type_registration (Unregistered_component c) ->
+      Format.fprintf fmt "Component '%s' has not been registered." c
+  | `Type_registration (Unregistered_resource r) ->
+      Format.fprintf fmt "Resource '%s' has not been registered." r
+  | `Type_registration (Component_json_serializer_not_found r) ->
+      Format.fprintf fmt "Component '%s' lacks JSON serializer" r
+  | `Type_registration (Resource_json_serializer_not_found r) ->
+      Format.fprintf fmt "Resource '%s' lacks JSON serializer" r
 
 exception Engine_error of error
 
@@ -120,6 +163,25 @@ let asset_ext_unsupported path : error = `Asset_ext_unsupported { path }
 
 (** [asset_ext_unsupported_exn] returns the `Engine_error` exception *)
 let asset_ext_unsupported_exn path = raise_error @@ asset_ext_unsupported path
+
+(** [parse_json field] returns the [`Serialize] error. Field is [parse_json] where the passed in
+    string should be the field name. *)
+let parse_json field : error = `Serialize field
+
+(** [invalid_uuid uuid] returns the [`Invalid_uuid] error. *)
+let invalid_uuid uuid : error = `Invalid_uuid uuid
+
+(** [type_register type] returns the [`Type_registration] error.
+
+    [Unregistered_component of string]: The component hasn't been registered. The string is the name
+    of the component.
+
+    [Unregistered_resource of string]: The resource hasn't been registered. The string is the name
+    of the resource.
+
+    [json_serializer_not_found of string]: A json serializer was not provided when registerting the
+    component or resource. *)
+let type_register t : error = `Type_registration t
 
 let try_with f = try Ok f with Engine_error e -> Error e
 let or_raise = function Ok x -> x | Error e -> raise_error e

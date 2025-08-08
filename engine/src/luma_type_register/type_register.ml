@@ -2,6 +2,7 @@ open Luma__ecs
 open Luma__id
 open Luma__resource
 open Luma__serialize.Serialize
+open Luma__core
 
 let log = Luma__core.Log.sub_log "type_register"
 let normalize_name name = name |> String.trim |> String.lowercase_ascii
@@ -35,7 +36,8 @@ module Component_registry = struct
   end)
 
   let create () = { name_to_entry = Hashtbl.create 16; id_to_entry = Hashtbl.create 16 }
-  let get_entry r name = Hashtbl.find_opt r.name_to_entry @@ normalize_name name
+  let get_entry_by_name r name = Hashtbl.find_opt r.name_to_entry @@ normalize_name name
+  let get_entry_by_id r id = Hashtbl.find_opt r.id_to_entry id
 
   (*TODO: proper error handling. But it should panic *)
   let register_component (type a) name (module C : Component.S with type t = a) serializers world =

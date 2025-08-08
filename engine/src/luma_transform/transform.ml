@@ -2,6 +2,7 @@ open Luma__math
 open Luma__app
 open Luma__ecs
 open Luma__serialize
+open Luma__core
 
 type t = {
   mutable position : Vec3.t;
@@ -44,10 +45,7 @@ module Transform_serializer =
             let* rotation = parse_float "rotation" data in
 
             Ok (create ~position ~rotation ~scale ())
-        | _ ->
-            Error
-              (Printf.sprintf "Invalid transform json data:\n%s"
-                 (Yojson.Safe.pretty_to_string repr))
+        | _ -> Error (Error.parse_json (Json (Yojson.Safe.pretty_to_string repr)))
     end)
 
 let add_plugin app =

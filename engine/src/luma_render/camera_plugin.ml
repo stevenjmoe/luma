@@ -1,6 +1,7 @@
 open Luma__app
 open Luma__ecs
 open Luma__serialize
+open Luma__core
 
 module type S = sig
   type camera
@@ -36,6 +37,7 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
         (if World.query world Query.Component.(Required (module Camera.Camera.C) & End) = [] then
            let camera = Camera.default () in
            let c = Camera.Camera.{ camera; active = true } in
+
            world
            |> World.add_entity ~name:"Camera"
            |> World.with_component world (module Camera.Camera.C) c
@@ -72,9 +74,7 @@ module Make (D : Luma__driver.Driver.S) (Camera : Camera_component.S with type c
               let* active = parse_bool "active" data in
 
               Ok { camera = Camera.make ~offset ~target ~zoom ~rotation (); active }
-          | _ ->
-              Error
-                (Printf.sprintf "Invalid camera json data:\n%s" (Yojson.Safe.pretty_to_string repr))
+          | _ -> Error (Error.parse_json (Json (Yojson.Safe.pretty_to_string repr)))
       end)
 
   let register_component app =

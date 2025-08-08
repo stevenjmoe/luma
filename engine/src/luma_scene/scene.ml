@@ -4,7 +4,7 @@ open Luma__type_register
 open Luma__resource
 open Types
 
-let from_world name world =
+let snapshot_world name world =
   let id = Id.Scene.next () in
   let uuid = Uuidm.v4_gen (Random.State.make_self_init ()) () in
   let entities = World.Introspect.entities_seq world in
@@ -30,7 +30,7 @@ let from_world name world =
   let resources =
     World.Introspect.resources_seq world |> List.of_seq |> List.map (fun (_, packed) -> packed)
   in
-  { id; uuid; name; entities; resources }
+  { id; uuid; name; entities; resources; version = 1 }
 
 let inject_into_world scene world =
   scene.entities

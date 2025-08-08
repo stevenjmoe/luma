@@ -27,32 +27,23 @@ let get (type a) (module A : Asset.S with type t = a) assets (handle : a handle)
   | None -> None
   | Some (record : asset_record) ->
       if record.generation = handle.generation then
-        match Asset.unpack (module A) record.packed with
-        | Ok asset -> Some asset
-        | Error _ -> None
-      else
-        None
+        match Asset.unpack (module A) record.packed with Ok asset -> Some asset | Error _ -> None
+      else None
 
 let get_all (type a) (module A : Asset.S with type t = a) (assets : t) =
   assets
   |> Hashtbl.to_seq
   |> Seq.filter_map (fun (_, (record : asset_record)) ->
          if Luma__id.Id.Asset_type.eq record.type_id A.type_id then
-           match Asset.unpack (module A) record.packed with
-           | Ok v -> Some v
-           | Error _ -> None
-         else
-           None)
+           match Asset.unpack (module A) record.packed with Ok v -> Some v | Error _ -> None
+         else None)
   |> List.of_seq
 
 let unload (assets : t) handle =
   match Hashtbl.find_opt assets handle.id with
   | None -> ()
   | Some record ->
-      if record.generation = handle.generation then
-        Hashtbl.remove assets handle.id
-      else
-        ()
+      if record.generation = handle.generation then Hashtbl.remove assets handle.id else ()
 
 module R = Luma__resource.Resource.Make (struct
   type inner = t
