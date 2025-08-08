@@ -11,7 +11,6 @@ type t = (Luma__id.Id.Asset.t, asset_record) Hashtbl.t
 type 'a handle = {
   id : Luma__id.Id.Asset.t;
   type_id : Luma__id.Id.Asset_type.t;
-  uuid : Uuidm.t;
   generation : int;
 }
 (** A phantom-typed handle referencing a loaded asset of type ['a]. *)

@@ -146,7 +146,6 @@ let with_component (type a) w (module C : Component.S with type t = a) component
 
 let query w ?(filter = Query.Component.Filter.Any) query =
   let archetypes = w.archetypes |> Hashtbl.to_seq_values |> List.of_seq in
-  (* TODO: fail or ...? *)
   Query.Component.evaluate ~filter query archetypes |> Result.value ~default:[]
 
 let get_component (type a) w (module C : Component.S with type t = a) e =

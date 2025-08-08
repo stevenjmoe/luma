@@ -60,8 +60,6 @@ val archetypes : t -> (int, Archetype.t) Hashtbl.t
 val resources : t -> (Id.Resource.t, Resource.packed) Hashtbl.t
 (** Returns the world's resources. *)
 
-(* TODO: This should probably accept the module and the unpacked resource and handle the complexity internally *)
-
 val add_resource : Luma__id.Id.Resource.t -> Resource.packed -> t -> t
 (** [add_resource id packed world] adds a packed resource to the table of resources using the id as
     key.

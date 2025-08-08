@@ -116,13 +116,6 @@ let init_state (type a) state_mod (state : a) app =
   World.add_resource State.State_res.R.type_id packed app.world |> ignore;
   app
 
-let check_plugins plugins () =
-  if List.length plugins = 0 then
-    log.warn (fun log ->
-        log
-          "No plugins have been added to the application. Did you forget to call \
-           `Luma.Plugin.add_default_plugins`?")
-
 let step app =
   let s =
     [
@@ -155,8 +148,6 @@ let run_with_driver app driver =
 let run (module D : Luma__driver.Driver.S) (app : t) =
   log.info (fun log -> log "Running applictation.");
 
-  (* TODO: perform this check in some other way *)
-  (*check_plugins app.plugins ();*)
   let rec apply_plugins app =
     match app.plugins with
     | [] -> app
