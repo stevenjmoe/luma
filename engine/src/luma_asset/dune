@@ -3,7 +3,6 @@
   (name luma__asset)
   (libraries 
     lwt
-    lwt.unix
     luma.app
     luma.resource 
     raylib)

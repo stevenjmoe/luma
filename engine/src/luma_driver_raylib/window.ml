@@ -28,3 +28,4 @@ let end_2d = end_mode_2d
 let clear = clear_background
 let screen_width = get_screen_width
 let screen_height = get_screen_height
+let schedule_next_frame f = f ()

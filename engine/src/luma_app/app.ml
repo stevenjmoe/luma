@@ -180,10 +180,8 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
       D.Window.shutdown ())
     else (
       D.Window.begin_frame ();
-
       let app = step app in
-
       D.Window.end_frame ();
-      loop app)
+      D.Window.schedule_next_frame (fun () -> loop app) |> ignore)
   in
   loop app

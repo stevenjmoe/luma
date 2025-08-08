@@ -37,6 +37,7 @@ module type S = sig
     val clear : colour -> unit
     val screen_width : unit -> int
     val screen_height : unit -> int
+    val schedule_next_frame : (unit -> unit) -> unit
   end
 
   module Camera : sig
