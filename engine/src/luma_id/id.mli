@@ -31,6 +31,8 @@ module State : S
 (** A module for genrating and managing unique identifiers for different states. There should only
     be one though. *)
 
+module Archetype : S
+
 module Scene : S
 (** A module for genrating and managing unique identifiers for different scenes. *)
 

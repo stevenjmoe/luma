@@ -25,13 +25,13 @@ module Json = struct
             e.components
             (* For the time being this just skips components that haven't been registered. *)
             |> List.filter_map (fun c ->
-                   let ( let** ) = Option.bind in
+                   let ( let* ) = Option.bind in
 
-                   let** (Component { name; serializers; instance = (module C) }) =
+                   let* (Component { name; serializers; instance = (module C) }) =
                      Component_registry.get_entry_by_name reg (Component.name c)
                    in
-                   let** unpacked = Component.unpack_opt (module C) c in
-                   let** (module Q) = Type_register.get_json_serializer serializers in
+                   let* unpacked = Component.unpack_opt (module C) c in
+                   let* (module Q) = Type_register.get_json_serializer serializers in
 
                    Some (Q.serialize unpacked))
           in
@@ -58,15 +58,15 @@ module Json = struct
       (* For the time being this just skips resources that haven't been registered. *)
       List.filter_map
         (fun packed ->
-          let ( let** ) = Option.bind in
+          let ( let* ) = Option.bind in
 
           let name = Resource.name packed in
-          let** (Resource { name; serializers; instance = (module R) }) =
+          let* (Resource { name; serializers; instance = (module R) }) =
             Resource_registry.get_entry registry name
           in
 
-          let** unpacked = Resource.unpack (module R) packed |> Result.to_option in
-          let** (module Q) = Type_register.get_json_serializer serializers in
+          let* unpacked = Resource.unpack (module R) packed |> Result.to_option in
+          let* (module Q) = Type_register.get_json_serializer serializers in
 
           Some (Q.serialize unpacked))
         scene.resources
@@ -107,7 +107,6 @@ module Json = struct
       World.get_resource world Component_registry.R.type_id
       |> Option.to_result ~none:(Error.resource_not_found "Component registry missing")
     in
-
     let* reg = Resource.unpack (module Component_registry.R) reg_packed in
 
     (* create a new world and copy across the Component registry *)

@@ -54,7 +54,16 @@ val with_component :
     @raise Luma__core.Error.Entity_not_found if the entity hasn't been added to the game world.
     @raise Luma__core.Error.Component_not_found *)
 
-val archetypes : t -> (int, Archetype.t) Hashtbl.t
+val add_components : t -> Id.Entity.t -> Component.packed list -> unit
+(** [add_components world entity_id packed_components] adds a list of components to the world and
+    associates them with the given entity. *)
+
+val add_entity_with_components :
+  t -> ?name:string -> ?uuid:Uuidm.t option -> Component.packed list -> Id.Entity.t
+(** [add_entity_with_components world ?name ?uuid components] adds an entity with the provided
+    packed components and returns the [entity_id]. *)
+
+val archetypes : t -> (Id.Archetype.t, Archetype.t) Hashtbl.t
 (** Returns world's archetypes. *)
 
 val resources : t -> (Id.Resource.t, Resource.packed) Hashtbl.t

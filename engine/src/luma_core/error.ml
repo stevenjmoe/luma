@@ -5,7 +5,6 @@ type entity_not_found = {
 
 type component_not_found = {
   component_id : int;
-  archetype_hash : int;
   msg : string;
 }
 
@@ -68,9 +67,8 @@ let pp fmt (e : error) =
   match e with
   | `Entity_not_found { id; msg } ->
       Format.fprintf fmt "Entity could not be found. Id: %d. Msg: %s" id msg
-  | `Component_not_found { component_id; archetype_hash; msg } ->
-      Format.fprintf fmt "Component could not be found. Id: %d. Archetype hash: %d. Msg: %s"
-        component_id archetype_hash msg
+  | `Component_not_found { component_id; msg } ->
+      Format.fprintf fmt "Component could not be found. Id: %d. Msg: %s" component_id msg
   | `Resource_not_found { msg } -> Format.fprintf fmt "Resource could not be found. Msg: %s" msg
   | `Unpacked_type_mismatch { expected_type_id; actual_type_id; msg } ->
       Format.fprintf fmt
@@ -116,12 +114,10 @@ let entity_not_found id msg = `Entity_not_found { id; msg }
 let entity_not_found_exn id msg = raise_error @@ entity_not_found id msg
 
 (** [component_not_found component_id archetype_hash msg] returns `Component_not_found` error*)
-let component_not_found component_id hash msg =
-  `Component_not_found { component_id; archetype_hash = hash; msg }
+let component_not_found component_id msg = `Component_not_found { component_id; msg }
 
 (** [component_not_found_exn component_id hash msg] returns Engine_error exception *)
-let component_not_found_exn component_id hash msg =
-  raise_error @@ component_not_found component_id hash msg
+let component_not_found_exn component_id msg = raise_error @@ component_not_found component_id msg
 
 (** [resource_not_found msg] returns `Resource_not_found` exception*)
 let resource_not_found msg : [> `Resource_not_found of resource_not_found ] =

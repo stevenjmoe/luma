@@ -58,8 +58,8 @@ module Component = struct
           | None ->
               raise
               @@ Eval_exn
-                   (Error.component_not_found (Id.Component.to_int C.id) (Archetype.hash arch)
-                      "Could not evaluate query."))
+                   (Error.component_not_found (Id.Component.to_int C.id) "Could not evaluate query.")
+          )
       | Query (Optional (module C), rest) -> (
           match Archetype.query_table arch entity C.id with
           | Some c -> (
