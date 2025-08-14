@@ -1,0 +1,5 @@
+(library
+  (name luma__driver_js)
+  (public_name luma.driver.js) 
+  (libraries luma.driver js_of_ocaml js_of_ocaml-ppx js_of_ocaml-lwt)
+  (preprocess (pps js_of_ocaml-ppx)))
