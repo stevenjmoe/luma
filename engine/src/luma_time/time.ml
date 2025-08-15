@@ -53,14 +53,23 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     Serialize.Make_serializer
       (Serialize.Json_format)
       (struct
-        open Yojson
+        open Json_helpers
 
-        type t = R.t
+        let normalize s = s |> String.trim |> String.lowercase_ascii
 
-        let to_repr r = `Assoc [ (R.name, `Assoc [ ("elapsed", `Float r.elapsed) ]) ]
+        type nonrec t = t
 
-        let of_repr = function
-          | `Assoc [ ("TODO", `String "TODO:") ] | _ -> Error (Error.parse_json (Json "TODO"))
+        let to_repr r : Yojson.Safe.t =
+          `Assoc [ (R.name, `Assoc [ ("elapsed", `Float r.elapsed) ]) ]
+
+        let of_repr repr =
+          let ( let* ) = Result.bind in
+
+          match repr with
+          | `Assoc [ (name, data) ] when normalize name = normalize R.name ->
+              let* elapsed = parse_float "elapsed" data in
+              Ok { dt = 0.0016; elapsed }
+          | _ -> Error (Error.parse_json (Json (Yojson.Safe.pretty_to_string repr)))
       end)
 
   let plugin app =

@@ -295,38 +295,9 @@ module Make (D : Luma__driver.Driver.S) = struct
 
           world))
 
-  module Debug_serializer =
-    Serialize.Make_serializer
-      (Serialize.Json_format)
-      (struct
-        type t = R.t
-
-        let to_repr debug =
-          let entities = List.map (fun e -> `Int (Id.Entity.to_int e)) debug.cached_entities in
-          let open_ = ("open", `Bool debug.open_) in
-          let filter = ("filter", `String debug.filter) in
-          let page = ("page", `Int debug.page) in
-          let per_page = ("per_page", `Int debug.page) in
-          let cached_rev = ("cached_rev", `Int debug.cached_rev) in
-          let cached_entities = ("cached_entities", `List entities) in
-          let x = ("x", `Float debug.x) in
-          let y = ("y", `Float debug.y) in
-          let w = ("w", `Float debug.w) in
-          let h = ("h", `Float debug.h) in
-          `Assoc
-            [
-              ( R.name,
-                `Assoc [ open_; filter; page; per_page; cached_rev; cached_entities; x; y; w; h ] );
-            ]
-
-        let of_repr = function
-          | `Assoc [ ("TODO", `String "TODO:") ] | _ -> Error (Error.parse_json (Json "TODO"))
-      end)
-
   let add_plugin app =
     let open Luma__app in
-    let serializer = Serialize.pack_json (module Debug_serializer) in
-    App.register_resource State.R.name (module State.R) [ serializer ] app
+    app
     |> App.on Startup @@ setup_state ()
     |> App.on PreUpdate @@ toggle_overlay ()
     |> App.on Overlay @@ draw_overlay ()
