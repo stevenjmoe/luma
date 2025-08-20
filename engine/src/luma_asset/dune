@@ -3,8 +3,10 @@
   (name luma__asset)
   (libraries 
     lwt
+    luv
     luma.app
-    luma.resource 
-    raylib)
+    luma.resource
+    luma.driver
+    luma.task_queue)
   (preprocess
     (pps lwt_ppx)))

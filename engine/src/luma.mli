@@ -115,7 +115,7 @@ module type S = sig
   module Key : module type of Luma__types.Input_types.Key
   module Mouse_button : module type of Luma__types.Input_types.Mouse_button
   module State : module type of Luma__state.State
-  module Scene : module type of Scene
+  module Scene : Scene.S
 
   val screen_width : unit -> int
   val screen_height : unit -> int

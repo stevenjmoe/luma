@@ -9,6 +9,7 @@
     luma.asset 
     luma.window 
     luma.input
+    luma.image
     luma.sprite
     luma.type_register
     luma.transform

@@ -1,4 +1,11 @@
 (library
   (public_name luma.scene)
-  (libraries luma.ecs luma.id luma.core luma.serialize luma.type_register uuidm)
+  (libraries 
+    luma.asset 
+    luma.ecs 
+    luma.id 
+    luma.core 
+    luma.serialize 
+    luma.type_register 
+    uuidm)
   (name luma__scene))

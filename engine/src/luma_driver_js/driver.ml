@@ -103,6 +103,15 @@ module Js_driver : Luma__driver.Driver.S = struct
     let set_rotation c r = c.rotation <- r
   end
 
+  module IO = struct
+    type path = string
+
+    let run_io_loop () = ()
+    let read_file path ~k = ()
+    let read_file_blocking path = Bytes.create 0
+    let write_file path bytes = ()
+  end
+
   module Window = struct
     let ensure_canvas () =
       match !canvas_ref with
@@ -212,6 +221,8 @@ module Js_driver : Luma__driver.Driver.S = struct
       let img = Dom_html.createImg Dom_html.document in
       img##.src := Js.string src;
       img
+
+    let load_image_from_memory file_type file_data data_size = failwith "TODO"
   end
 
   module Texture = struct

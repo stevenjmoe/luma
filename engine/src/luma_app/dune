@@ -6,6 +6,7 @@
     luma.driver
     luma.state
     luma.type_register
+    luma.task_queue
     ppx_component
     luma.core)
   (preprocess 

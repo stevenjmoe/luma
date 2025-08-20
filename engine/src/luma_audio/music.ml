@@ -102,7 +102,7 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Audio.Music.t = 
   let plugin app =
     app |> Luma__app.App.on Update (update_music_stream ()) |> Luma__app.App.on Cleanup (cleanup ())
 
-  let () =
+  (*let () =
     Luma__asset.Server.register_loader_hook (fun server ->
         Luma__asset.Server.register_loader server
           {
@@ -110,9 +110,10 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Audio.Music.t = 
             load =
               (fun path ->
                 let stream = D.Audio.Music.load_music_stream path in
-                Ok
+                Ok ());
+            (*Ok
                   (Loaded
-                     ((module A), { stream; state = `Stopped; volume = 1.; pan = 1.0; loop = false })));
+                     ((module A), { stream; state = `Stopped; volume = 1.; pan = 1.0; loop = false })));*)
             type_id = A.type_id;
-          })
+          })*)
 end

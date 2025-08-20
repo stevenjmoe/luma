@@ -115,7 +115,7 @@ module type S = sig
   module Key : module type of Luma__types.Input_types.Key
   module Mouse_button : module type of Luma__types.Input_types.Mouse_button
   module State : module type of Luma__state.State
-  module Scene : module type of Scene
+  module Scene : Scene.S
 
   val screen_width : unit -> int
   val screen_height : unit -> int
@@ -156,6 +156,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   module Plugin =
     Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time) (Audio) (Sprite_plugin)
+      (Image.Texture)
       (Debug_plugin)
 
   module Window_config = Window.Window_config
@@ -241,7 +242,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Key = Luma__types.Input_types.Key
   module Mouse_button = Luma__types.Input_types.Mouse_button
   module State = Luma__state.State
-  module Scene = Luma__scene.Scene
+  module Scene = Luma__scene.Scene.Make (D)
 
   let screen_width = D.Window.screen_width
   let screen_height = D.Window.screen_height

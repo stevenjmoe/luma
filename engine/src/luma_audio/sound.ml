@@ -16,7 +16,7 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Audio.Sound.t = stru
 
   let play_sound = D.Audio.Sound.play_sound
 
-  let () =
+  (*let () =
     Luma__asset.Server.register_loader_hook (fun server ->
         Luma__asset.Server.register_loader server
           {
@@ -24,9 +24,9 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Audio.Sound.t = stru
             load =
               (fun path ->
                 let sound = D.Audio.Sound.load_sound path in
-                Ok (Loaded ((module A), sound)));
+                Ok ());
             type_id = A.type_id;
-          })
+          })*)
 
   (* TODO: unload the asset without a handle? *)
   let cleanup () =

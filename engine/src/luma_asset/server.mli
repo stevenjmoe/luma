@@ -3,7 +3,7 @@ type t
 val create : Assets.t -> t
 (** Create a new asset server that stores loaded assets in the given asset store. *)
 
-val register_loader : t -> Loader.t -> unit
+val register_loader : t -> Loader.loader_packed -> unit
 (** Register a loader directly with the server. *)
 
 val load :

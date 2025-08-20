@@ -1,6 +1,7 @@
 open Luma__ecs
 open Luma__type_register
 open Luma__resource
+open Luma__task_queue
 
 type t = {
   world : World.t;
@@ -170,6 +171,8 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
       world |> Scheduler.run_stage Cleanup app.scheduler |> ignore;
       D.Window.shutdown ())
     else (
+      D.IO.run_io_loop ();
+      Task_queue.Complete.apply ();
       D.Window.begin_frame ();
       let app = step app in
       D.Window.end_frame ();

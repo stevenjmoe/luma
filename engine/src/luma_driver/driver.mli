@@ -1,4 +1,5 @@
 open Luma__math
+open Luma__core
 
 module type S = sig
   type camera
@@ -12,6 +13,15 @@ module type S = sig
   val draw_circle : int -> int -> float -> colour -> unit
   val get_frame_time : unit -> float
   val draw_text : string -> int -> int -> int -> colour -> unit
+
+  module IO : sig
+    type path = string
+
+    val run_io_loop : unit -> unit
+    val read_file : path -> k:((bytes, string) result -> unit) -> unit
+    val read_file_blocking : path -> bytes
+    val write_file : path -> bytes -> unit
+  end
 
   module Window : sig
     val init : width:int -> height:int -> title:string -> unit
@@ -70,6 +80,7 @@ module type S = sig
     type t
 
     val load_image : string -> t
+    val load_image_from_memory : string -> string -> int -> t
   end
 
   module Texture : sig

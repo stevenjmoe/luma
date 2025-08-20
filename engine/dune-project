@@ -19,6 +19,7 @@
    dune
    fmt
    logs
+   luv
    lwt
    lwt_ppx
    ocaml 

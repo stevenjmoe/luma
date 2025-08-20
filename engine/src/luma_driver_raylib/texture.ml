@@ -13,3 +13,4 @@ let draw_texture texture source dest origin rotation tint =
   Raylib.draw_texture_pro texture source dest origin rotation tint
 
 let load_texture_from_image = Raylib.load_texture_from_image
+let load_image_from_memory = Raylib.load_image_from_memory

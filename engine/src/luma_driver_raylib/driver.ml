@@ -26,6 +26,50 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   let draw_text text x y size colour = Raylib.draw_text text x y size colour
   let get_frame_time = Raylib.get_frame_time
 
+  module IO = struct
+    type path = string
+
+    let run_io_loop () = Luv.Loop.run ~mode:`NOWAIT ~loop:(Luv.Loop.default ()) () |> ignore
+
+    let read_file path ~k =
+      let flags = [ `RDONLY ] in
+      Luv.File.open_ path flags (function
+        | Error e -> k (Error (Luv.Error.strerror e))
+        | Ok file ->
+            let buffer = Luv.Buffer.create 65536 in
+            let acc = Stdlib.Buffer.create 65536 in
+
+            let rec loop offset =
+              Luv.File.read file [ buffer ] ~file_offset:offset (function
+                | Error e -> Luv.File.close file (fun _ -> k (Error (Luv.Error.strerror e)))
+                | Ok n ->
+                    let n = Unsigned.Size_t.to_int n in
+                    if n = 0 then
+                      Luv.File.close file (fun _ ->
+                          let s = Stdlib.Buffer.contents acc in
+                          k (Ok (Bytes.unsafe_of_string s)))
+                    else
+                      let chunk = Bytes.sub_string (Luv.Buffer.to_bytes buffer) 0 n in
+                      Stdlib.Buffer.add_string acc chunk;
+                      loop Int64.(add offset (of_int n)))
+            in
+            loop 0L)
+
+    let read_file_blocking path = Core.In_channel.read_all path |> Bytes.of_string
+
+    (* TODO: Error *)
+    let write_file (path : string) (bytes : bytes) : unit =
+      let flags = [ `CREAT; `TRUNC; `WRONLY ] in
+      Luv.File.open_ path flags (function
+        | Error _ -> ()
+        | Ok file ->
+            let s = Bytes.unsafe_to_string bytes in
+            let buf = Luv.Buffer.from_string s in
+            Luv.File.write file [ buf ] ~file_offset:0L (function
+              | Error _ -> Luv.File.close file (fun _ -> ())
+              | Ok _ -> Luv.File.close file (fun _ -> ())))
+  end
+
   module Window = Window
   module Camera = Camera
   module Input = Input
@@ -40,6 +84,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
     type t = Raylib.Image.t
 
     let load_image = Raylib.load_image
+    let load_image_from_memory = Raylib.load_image_from_memory
   end
 
   module Texture = struct

@@ -3,6 +3,7 @@ open Luma__driver
 open Luma__render
 open Luma__type_register
 open Luma__transform
+open Luma__image
 
 module Make
     (D : Luma__driver.Driver.S)
@@ -12,6 +13,7 @@ module Make
     (Time : Luma__time.Time.S)
     (Audio : Luma__audio.Audio.S)
     (Sprite_plugin : Luma__sprite.Sprite.Sprite_plugin)
+    (Texture : Texture.S)
     (Debug : Luma__debug.Debug.S) =
 struct
   module Config = struct
@@ -20,15 +22,16 @@ struct
     let default () : t = { window = Window.Window_config.default () }
   end
 
+  let asset_plugin = Luma__asset.Plugin.plugin
   let window_plugin = Window.plugin
   let time_plugin = Time.plugin
-  let asset_plugin = Luma__asset.Plugin.plugin
   let camera_plugin = Camera_plugin.plugin
   let input_plugin = Input.Keyboard.plugin
   let audio_plugin = Audio.plugin
   let sprite_plugin = Sprite_plugin.add_plugin
   let debug_plugin = Debug.add_plugin
   let transform_plugin = Transform.add_plugin
+  let texture_plugin = Texture.add_plugin
   let default_config () : Config.t = { window = Window.Window_config.default () }
 
   (** [add_default_plugins ?config app] installs the engine’s core plugins (input, audio, window,
@@ -51,6 +54,7 @@ struct
         asset_plugin;
         sprite_plugin;
         transform_plugin;
+        texture_plugin;
       ]
       @ plugins
     in

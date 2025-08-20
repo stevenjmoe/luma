@@ -1,5 +1,10 @@
+type status =
+  | Loading
+  | Ready of Asset.packed
+  | Failed of string
+
 type asset_record = {
-  packed : Asset.packed;
+  mutable status : status;
   generation : int;
   type_id : Luma__id.Id.Asset_type.t;
 }
@@ -18,6 +23,9 @@ type 'a handle = {
 val create : unit -> t
 (** Create a new, empty asset store. *)
 
+val add_pending :
+  (module Asset.S with type t = 'a) -> (Luma__id__Id.Asset.t, asset_record) Hashtbl.t -> 'b handle
+
 val add :
   (module Asset.S with type t = 'a) ->
   (Luma__id__Id.Asset.t, asset_record) Hashtbl.t ->
@@ -33,5 +41,8 @@ val get_all : (module Asset.S with type t = 'a) -> t -> 'a list
 
 val unload : t -> 'a handle -> unit
 (** Unload an asset from the store by handle. *)
+
+val resolve : (module Asset.S with type t = 'a) -> t -> 'a handle -> Asset.packed -> unit
+val fail : t -> 'a handle -> string -> unit
 
 module R : Luma__resource.Resource.S with type t = t
