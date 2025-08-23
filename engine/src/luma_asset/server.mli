@@ -3,13 +3,18 @@ type t
 val create : Assets.t -> t
 (** Create a new asset server that stores loaded assets in the given asset store. *)
 
-val register_loader : t -> Loader.loader_packed -> unit
+val register_loader :
+  t ->
+  (module Loader.LOADER with type ctx = 'c and type t = 't) ->
+  ctx_provider:'c Loader.Context_provider.t ->
+  unit
 (** Register a loader directly with the server. *)
 
 val load :
   (module Asset.S with type t = 'a) ->
   t ->
   string ->
+  Luma__ecs.World.t ->
   ('a Assets.handle, Luma__core.Error.error) result
 (** Load an asset from a path. Automatically dispatches to the appropriate loader based on file
     extension. Returns an asset handle or an error. *)

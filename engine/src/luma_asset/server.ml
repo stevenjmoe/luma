@@ -1,4 +1,5 @@
 open Luma__task_queue.Task_queue
+open Luma__core
 
 type t = {
   assets : Assets.t;
@@ -7,7 +8,12 @@ type t = {
 
 let create assets_store = { assets = assets_store; loaders = [] }
 
-let register_loader server (loader : Loader.loader_packed) =
+let register_loader
+    (type c t)
+    server
+    (module L : Loader.LOADER with type t = t and type ctx = c)
+    ~ctx_provider =
+  let loader = Loader.Packed { l = (module L); cp = ctx_provider } in
   server.loaders <- loader :: server.loaders
 
 let find_loader (type a) (module A : Asset.S with type t = a) server path =
@@ -16,12 +22,13 @@ let find_loader (type a) (module A : Asset.S with type t = a) server path =
 let loader_hooks : (t -> unit) list ref = ref []
 let register_loader_hook hook = loader_hooks := hook :: !loader_hooks
 let run_loader_hooks server = List.iter (fun hook -> hook server) !loader_hooks
+let log = Log.sub_log "asset_server"
 
-let load (type a) (module A : Asset.S with type t = a) server path =
+let load (type a) (module A : Asset.S with type t = a) server path world =
   let open Luv in
   match find_loader (module A) server path with
   | None -> Error (Luma__core.Error.asset_ext_unsupported path)
-  | Some (Packed (module L)) ->
+  | Some (Packed { l = (module L); cp }) ->
       let handle = Assets.add_pending (module A) server.assets in
       L.begin_load path ~k:(fun r ->
           Complete.push
@@ -30,13 +37,27 @@ let load (type a) (module A : Asset.S with type t = a) server path =
                  apply =
                    (fun () ->
                      match r with
-                     | Error msg -> Assets.fail server.assets handle msg
+                     | Error e ->
+                         log.error (fun l -> l "Failed to load asset: %a" Luma__core.Error.pp e);
+                         Assets.fail server.assets handle { path; msg = "Failed to load asset." }
                      | Ok d -> (
-                         match L.finalize path d with
-                         | Ok asset -> Assets.resolve (module A) server.assets handle asset
-                         | Error msg -> Assets.fail server.assets handle msg));
-               });
-          ());
+                         let ctx_res =
+                           match cp with `Static c -> Ok c | `From_world f -> f world
+                         in
+                         match ctx_res with
+                         | Error e ->
+                             log.error (fun l -> l "Failed to load asset: %a" Luma__core.Error.pp e);
+                             Assets.fail server.assets handle
+                               { path; msg = "Invalid context provider." }
+                         | Ok ctx -> (
+                             match L.finalize ctx path d with
+                             | Ok asset -> Assets.resolve (module A) server.assets handle asset
+                             | Error e ->
+                                 log.error (fun l ->
+                                     l "Failed to load asset: %a" Luma__core.Error.pp e);
+                                 Assets.fail server.assets handle
+                                   { path; msg = "Failed to finalize asset load." })));
+               }));
       Ok handle
 
 module R = Luma__resource.Resource.Make (struct

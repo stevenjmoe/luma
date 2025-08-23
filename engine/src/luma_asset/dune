@@ -5,7 +5,6 @@
     lwt
     luv
     luma.app
-    luma.resource
     luma.driver
     luma.task_queue)
   (preprocess

@@ -1,5 +1,6 @@
 module Raylib_driver : Luma__driver.Driver.S = struct
   open Luma__math
+  open Luma__core
 
   type camera = Raylib.Camera2D.t
   type colour = Raylib.Color.t
@@ -34,14 +35,19 @@ module Raylib_driver : Luma__driver.Driver.S = struct
     let read_file path ~k =
       let flags = [ `RDONLY ] in
       Luv.File.open_ path flags (function
-        | Error e -> k (Error (Luv.Error.strerror e))
+        | Error e ->
+            let msg = Luv.Error.strerror e in
+            k (Error (Error.io_read path msg))
         | Ok file ->
             let buffer = Luv.Buffer.create 65536 in
             let acc = Stdlib.Buffer.create 65536 in
 
             let rec loop offset =
               Luv.File.read file [ buffer ] ~file_offset:offset (function
-                | Error e -> Luv.File.close file (fun _ -> k (Error (Luv.Error.strerror e)))
+                | Error e ->
+                    Luv.File.close file (fun _ ->
+                        let msg = Luv.Error.strerror e in
+                        k (Error (Error.io_read path msg)))
                 | Ok n ->
                     let n = Unsigned.Size_t.to_int n in
                     if n = 0 then

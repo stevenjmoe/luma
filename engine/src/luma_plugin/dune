@@ -6,10 +6,10 @@
     luma.driver 
     luma.render 
     luma.time 
-    luma.asset 
     luma.window 
     luma.input
     luma.image
+    luma.scene
     luma.sprite
     luma.type_register
     luma.transform

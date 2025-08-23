@@ -1,18 +1,24 @@
+open Luma__asset
+open Luma__app
+open Luma__core
 open Luma__id
 open Luma__ecs
 open Luma__resource
 open Types
 
-val snapshot_world : string -> World.t -> t
-(** [snapshot_world name world] creates a scene from the entities and components in [world]. *)
+(** Scene operations for snapshotting, injecting, and serializing worlds. *)
+module type S = sig
+  val snapshot_world : string -> World.t -> t
+  val inject_into_world : t -> World.t -> World.t
+  val inject_into_world_safe : t -> World.t -> World.t
+  val to_world : t -> World.t
+  val write : t -> World.t -> unit
+  val read : string -> string
+  val add_plugin : App.t -> App.t
+  val ctx_of_world : World.t -> (Serialize.ctx, Error.error) result
 
-val to_world : t -> World.t
-(** [to_world scene] creates a new world populated with entities and components from [scene]. *)
+  module A : Asset.S
+  module Serialize : module type of Serialize
+end
 
-val inject_into_world : t -> World.t -> World.t
-(** [inject_into_world scene world] adds [scene] to [world], fails on duplicate entity UUIDs. *)
-
-val inject_into_world_safe : t -> World.t -> World.t
-(** [inject_into_world_safe scene world] adds [scene] to [world], skipping existing UUIDs. *)
-
-module Serialize : module type of Serialize
+module Make : functor (D : Luma__driver.Driver.S) -> S

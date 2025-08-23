@@ -49,6 +49,15 @@ type type_registration =
   | Component_json_serializer_not_found of string
   | Resource_json_serializer_not_found of string
 
+type io_error = {
+  path : string;
+  msg : string;
+}
+
+type io =
+  | Io_finalize of io_error
+  | Io_read of io_error
+
 type error =
   [ `Entity_not_found of entity_not_found
   | `Component_not_found of component_not_found
@@ -61,6 +70,7 @@ type error =
   | `Serialize of parse_json
   | `Invalid_uuid of invalid_uuid
   | `Type_registration of type_registration
+  | `Io of io
   ]
 
 let pp fmt (e : error) =
@@ -102,6 +112,10 @@ let pp fmt (e : error) =
       Format.fprintf fmt "Component '%s' lacks JSON serializer" r
   | `Type_registration (Resource_json_serializer_not_found r) ->
       Format.fprintf fmt "Resource '%s' lacks JSON serializer" r
+  | `Io (Io_finalize { path; msg }) ->
+      Format.fprintf fmt "Loading of asset %s could not be finalized. Msg: %s" path msg
+  | `Io (Io_read { path; msg }) ->
+      Format.fprintf fmt "Failed to read asset %s from disk. Msg: %s" path msg
 
 exception Engine_error of error
 
@@ -179,5 +193,7 @@ let invalid_uuid uuid : error = `Invalid_uuid uuid
     component or resource. *)
 let type_register t : error = `Type_registration t
 
+let io_finalize path msg : error = `Io (Io_finalize { path; msg })
+let io_read path msg : error = `Io (Io_read { path; msg })
 let try_with f = try Ok f with Engine_error e -> Error e
 let or_raise = function Ok x -> x | Error e -> raise_error e

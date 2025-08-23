@@ -18,7 +18,7 @@ module type S = sig
     type path = string
 
     val run_io_loop : unit -> unit
-    val read_file : path -> k:((bytes, string) result -> unit) -> unit
+    val read_file : path -> k:((bytes, Error.error) result -> unit) -> unit
     val read_file_blocking : path -> bytes
     val write_file : path -> bytes -> unit
   end

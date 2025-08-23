@@ -8,16 +8,16 @@ open Luma__core
 open Types
 open Yojson.Safe.Util
 
+type ctx = {
+  comps : Component_registry.t;
+  resources : Resource_registry.t;
+  version : int;
+}
+
 module Json = struct
   let log = Log.sub_log "json_serialize"
 
-  let serialize_entities scene world =
-    let ( let* ) = Result.bind in
-    let* reg_packed =
-      World.get_resource world Component_registry.R.type_id
-      |> Option.to_result ~none:(Error.resource_not_found "Component registry not found.")
-    in
-    let* reg = Resource.unpack (module Component_registry.R) reg_packed in
+  let serialize_entities scene component_registry =
     let entities =
       List.map
         (fun (e : entity) ->
@@ -28,7 +28,7 @@ module Json = struct
                    let ( let* ) = Option.bind in
 
                    let* (Component { name; serializers; instance = (module C) }) =
-                     Component_registry.get_entry_by_name reg (Component.name c)
+                     Component_registry.get_entry_by_name component_registry (Component.name c)
                    in
                    let* unpacked = Component.unpack_opt (module C) c in
                    let* (module Q) = Type_register.get_json_serializer serializers in
@@ -46,14 +46,7 @@ module Json = struct
     let r = `List entities in
     Ok r
 
-  let serialize_resources scene world =
-    let ( let* ) = Result.bind in
-    let* packed_registry =
-      World.get_resource world Resource_registry.R.type_id
-      |> Option.to_result ~none:(Error.resource_not_found "Resource registry not found.")
-    in
-    let* registry = Resource.unpack (module Resource_registry.R) packed_registry in
-
+  let serialize_resources (scene : t) registry =
     let resources =
       (* For the time being this just skips resources that haven't been registered. *)
       List.filter_map
@@ -73,9 +66,9 @@ module Json = struct
     in
     Ok resources
 
-  let serialize (type a) scene world =
-    let entities = serialize_entities scene world in
-    let resources = serialize_resources scene world in
+  let serialize (type a) scene (ctx : ctx) =
+    let entities = serialize_entities scene ctx.comps in
+    let resources = serialize_resources scene ctx.resources in
     match (entities, resources) with
     | Ok entities, Ok resources ->
         let r =
@@ -98,28 +91,10 @@ module Json = struct
     | Ok x :: xs -> result_list_seq xs |> Result.map (fun rest -> x :: rest)
     | Error e :: _ -> Error e
 
-  let deserialize (scene : Yojson.Safe.t) world =
+  let deserialize (scene : Yojson.Safe.t) (ctx : ctx) =
     let open Yojson.Safe in
     let open Json_helpers in
     let ( let* ) = Result.bind in
-    let* comp_reg_packed =
-      World.get_resource world Component_registry.R.type_id
-      |> Option.to_result ~none:(Error.resource_not_found "Component registry missing")
-    in
-    let* component_reg = Resource.unpack (module Component_registry.R) comp_reg_packed in
-
-    let* res_reg_packed =
-      World.get_resource world Resource_registry.R.type_id
-      |> Option.to_result ~none:(Error.resource_not_found "Resource registry missing")
-    in
-    let* resource_reg = Resource.unpack (module Resource_registry.R) res_reg_packed in
-
-    (* create a new world and copy across the registries *)
-    let world =
-      World.create ()
-      |> World.add_resource Component_registry.R.type_id comp_reg_packed
-      |> World.add_resource Resource_registry.R.type_id res_reg_packed
-    in
 
     let* name = parse_string "name" scene in
     let* uuid = parse_uuid "uuid" scene in
@@ -134,7 +109,7 @@ module Json = struct
              let* resource_name, resource_data = parse_single_assoc resource_json in
 
              let* (Resource { instance = (module R); serializers }) =
-               Resource_registry.get_entry resource_reg resource_name
+               Resource_registry.get_entry ctx.resources resource_name
                |> Option.to_result ~none:(Error.type_register (Unregistered_resource resource_name))
              in
 
@@ -146,7 +121,6 @@ module Json = struct
 
              let* repr = S.deserialize resource_json in
              let packed = Resource.pack (module R) repr in
-             World.add_resource R.type_id packed world |> ignore;
              Ok packed)
            resources_json
     in
@@ -159,8 +133,6 @@ module Json = struct
              let* entity_uuid = parse_uuid "uuid" e in
              let* components = parse_list "components" e in
 
-             let entity = World.add_entity ~name:entity_name ~uuid:(Some entity_uuid) world in
-
              let* components =
                result_list_seq
                @@ List.map
@@ -168,7 +140,7 @@ module Json = struct
                       let* component_name, component_data = parse_single_assoc component_json in
 
                       let* (Component { instance = (module C); serializers }) =
-                        Component_registry.get_entry_by_name component_reg component_name
+                        Component_registry.get_entry_by_name ctx.comps component_name
                         |> Option.to_result
                              ~none:(Error.type_register (Unregistered_component component_name))
                       in
@@ -183,7 +155,6 @@ module Json = struct
 
                       let* repr = S.deserialize component_json in
                       let packed = Component.pack (module C) repr in
-                      World.add_component world packed entity;
                       Ok packed)
                     components
              in

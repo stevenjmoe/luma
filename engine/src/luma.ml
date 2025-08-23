@@ -153,10 +153,12 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module S = Luma__sprite.Sprite.Make (D)
   module Sprite_plugin = Luma__sprite.Sprite.Sprite_plugin (D) (Image.Texture) (R) (S)
   module Debug_plugin = Luma__debug.Debug.Make (D)
+  module Scene = Luma__scene.Scene.Make (D)
 
   module Plugin =
     Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time) (Audio) (Sprite_plugin)
       (Image.Texture)
+      (Scene)
       (Debug_plugin)
 
   module Window_config = Window.Window_config
@@ -242,7 +244,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Key = Luma__types.Input_types.Key
   module Mouse_button = Luma__types.Input_types.Mouse_button
   module State = Luma__state.State
-  module Scene = Luma__scene.Scene.Make (D)
 
   let screen_width = D.Window.screen_width
   let screen_height = D.Window.screen_height

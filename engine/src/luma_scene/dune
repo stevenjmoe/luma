@@ -1,6 +1,7 @@
 (library
   (public_name luma.scene)
   (libraries 
+    luma.app
     luma.asset 
     luma.ecs 
     luma.id 

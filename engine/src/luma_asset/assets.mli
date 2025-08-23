@@ -1,7 +1,12 @@
+type failed = {
+  path : string;
+  msg : string;
+}
+
 type status =
   | Loading
   | Ready of Asset.packed
-  | Failed of string
+  | Failed of failed
 
 type asset_record = {
   mutable status : status;
@@ -43,6 +48,6 @@ val unload : t -> 'a handle -> unit
 (** Unload an asset from the store by handle. *)
 
 val resolve : (module Asset.S with type t = 'a) -> t -> 'a handle -> Asset.packed -> unit
-val fail : t -> 'a handle -> string -> unit
+val fail : t -> 'a handle -> failed -> unit
 
 module R : Luma__resource.Resource.S with type t = t

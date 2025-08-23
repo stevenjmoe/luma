@@ -1,7 +1,12 @@
+type failed = {
+  path : string;
+  msg : string;
+}
+
 type status =
   | Loading
   | Ready of Asset.packed
-  | Failed of string
+  | Failed of failed
 
 type asset_record = {
   mutable status : status;
@@ -44,9 +49,9 @@ let resolve
       r.status <- Ready asset
   | _ -> ()
 
-let fail (assets : t) (h : _ handle) (msg : string) : unit =
+let fail (assets : t) (h : _ handle) (failed : failed) : unit =
   match Hashtbl.find_opt assets h.id with
-  | Some r when r.generation = h.generation -> r.status <- Failed msg
+  | Some r when r.generation = h.generation -> r.status <- Failed failed
   | _ -> ()
 
 let get (type a) (module A : Asset.S with type t = a) assets (handle : a handle) =
