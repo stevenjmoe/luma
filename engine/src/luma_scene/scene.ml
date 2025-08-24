@@ -18,7 +18,7 @@ module type S = sig
   val add_plugin : App.t -> App.t
   val ctx_of_world : World.t -> (Serialize.ctx, Error.error) result
 
-  module A : Asset.S
+  module A : Asset.S with type t = Types.t
   module Serialize : module type of Serialize
 end
 
@@ -53,28 +53,6 @@ module Make (D : Driver.S) : S = struct
     in
     { id; uuid; name; entities; resources; version = 1 }
 
-  let inject_into_world scene world =
-    scene.entities
-    |> List.iter (fun (e : entity) ->
-           let entity = World.add_entity ~name:e.name ~uuid:(Some e.uuid) world in
-           e.components |> List.iter (fun c -> World.add_component world c entity);
-           ());
-    world
-
-  let inject_into_world_safe scene world =
-    scene.entities
-    |> List.iter (fun (e : entity) ->
-           if World.has_entity_uuid world e.uuid then ()
-           else
-             let entity = World.add_entity ~name:e.name ~uuid:(Some e.uuid) world in
-             e.components |> List.iter (fun c -> World.add_component world c entity);
-             ());
-    world
-
-  let to_world scene =
-    let world = World.create () in
-    inject_into_world scene world
-
   let ctx_of_world world =
     match
       ( World.get_resource world Type_register.Component_registry.R.type_id,
@@ -89,6 +67,28 @@ module Make (D : Driver.S) : S = struct
         | None, _ -> Error (Error.resource_not_found "Component_registry")
         | _, None -> Error (Error.resource_not_found "Resource_registry"))
     | _ -> Error (Error.resource_not_found "registries")
+
+  let inject_into_world_safe scene world =
+    scene.entities
+    |> List.iter (fun (e : entity) ->
+           if World.has_entity_uuid world e.uuid then ()
+           else
+             let entity = World.add_entity ~name:e.name ~uuid:(Some e.uuid) world in
+             e.components |> List.iter (fun c -> World.add_component world c entity);
+             ());
+    world
+
+  let inject_into_world scene world =
+    scene.entities
+    |> List.iter (fun (e : entity) ->
+           let entity = World.add_entity ~name:e.name ~uuid:(Some e.uuid) world in
+           e.components |> List.iter (fun c -> World.add_component world c entity);
+           ());
+    world
+
+  let to_world scene =
+    let world = World.create () in
+    inject_into_world scene world
 
   (* TODO: *)
   let write scene world =

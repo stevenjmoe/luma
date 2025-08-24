@@ -158,7 +158,7 @@ module Json = struct
                       Ok packed)
                     components
              in
-             Ok { uuid; name = entity_name; components })
+             Ok { uuid = entity_uuid; name = entity_name; components })
            entities_json
     in
     let id = Id.Scene.next () in

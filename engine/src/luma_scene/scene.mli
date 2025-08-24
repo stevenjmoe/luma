@@ -17,7 +17,7 @@ module type S = sig
   val add_plugin : App.t -> App.t
   val ctx_of_world : World.t -> (Serialize.ctx, Error.error) result
 
-  module A : Asset.S
+  module A : Asset.S with type t = Types.t
   module Serialize : module type of Serialize
 end
 
