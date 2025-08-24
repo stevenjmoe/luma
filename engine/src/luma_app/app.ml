@@ -9,6 +9,8 @@ type t = {
   plugins : (t -> t) list;
 }
 
+type placement = Scheduler.placement
+
 let log = Luma__core.Log.sub_log "app"
 
 let create () =
@@ -37,8 +39,15 @@ let register_resource
 let on (type s) stage system app =
   let open Luma__state.State in
   let open Luma__resource in
+  let uuid = System.uuid system in
   Scheduler.add_system app.scheduler stage
-    (Scheduler.System { sys = system; run_if = (fun _ -> true) });
+    (Scheduler.System { uuid; sys = system; run_if = (fun _ -> true) });
+  app
+
+let once (type s) stage system ?(placement = Scheduler.At) ?(run_if = fun _ -> true) app =
+  let uuid = System.uuid system in
+  let system = Scheduler.System { uuid; sys = system; run_if } in
+  Scheduler.add_in_placement app.scheduler stage run_if placement system;
   app
 
 let while_in
@@ -65,7 +74,8 @@ let while_in
             log.error (fun l -> l "State resource has wrong type");
             invalid_arg "on: wrong type in State_res resource.")
   in
-  Scheduler.add_system app.scheduler stage (Scheduler.System { sys = system; run_if });
+  let uuid = System.uuid system in
+  Scheduler.add_system app.scheduler stage (Scheduler.System { uuid; sys = system; run_if });
   app
 
 let on_
@@ -85,7 +95,9 @@ let on_
         | None -> false)
     | None -> false
   in
-  Scheduler.add_system app.scheduler StateTransition (Scheduler.System { sys = system; run_if });
+  let uuid = System.uuid system in
+  Scheduler.add_system app.scheduler StateTransition
+    (Scheduler.System { uuid; sys = system; run_if });
   app
 
 let on_enter

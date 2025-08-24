@@ -1,4 +1,5 @@
 type ('w, 'a) without_resources = {
+  uuid : Uuidm.t;
   name : string;
   filter : Query.Component.Filter.t;
   components_query : 'a Query.Component.t;
@@ -7,6 +8,7 @@ type ('w, 'a) without_resources = {
 (** [without_resources] represents a system that does not require access to any resources. *)
 
 type ('w, 'a, 'b) with_resources = {
+  uuid : Uuidm.t;
   name : string;
   filter : Query.Component.Filter.t;
   components_query : 'a Query.Component.t;
@@ -43,3 +45,4 @@ val make_with_resources :
 (** Makes a system with resource represented by type ['b]. *)
 
 val name : ('w, 'a) t -> string
+val uuid : ('a, 'b) t -> Uuidm.t

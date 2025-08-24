@@ -18,11 +18,20 @@ module type S = sig
 
   module App : sig
     type t
+    type placement = App.placement
 
     val create : unit -> t
     val world : t -> World.t
     val init_state : (module Luma__state__State.STATE with type t = 'a) -> 'a -> t -> t
     val on : 'a 'b. Scheduler.stage -> (World.t, 'b) System.t -> t -> t
+
+    val once :
+      Scheduler.stage ->
+      (World.t, 'b) System.t ->
+      ?placement:placement ->
+      ?run_if:(World.t -> bool) ->
+      t ->
+      t
 
     val register_component :
       string -> (module Component.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
@@ -169,6 +178,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     open Luma__type_register
 
     type nonrec t = t
+    type nonrec placement = placement
 
     let world = world
     let step = step
@@ -178,6 +188,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     let scheduler = scheduler
     let init_state = init_state
     let on = on
+    let once = once
     let while_in = while_in
     let on_enter = on_enter
     let on_exit = on_exit

@@ -1,6 +1,7 @@
 open Luma__id
 
 type ('w, 'a) without_resources = {
+  uuid : Uuidm.t;
   name : string;
   filter : Query.Component.Filter.t;
   components_query : 'a Query.Component.t;
@@ -8,6 +9,7 @@ type ('w, 'a) without_resources = {
 }
 
 type ('w, 'a, 'b) with_resources = {
+  uuid : Uuidm.t;
   name : string;
   filter : Query.Component.Filter.t;
   components_query : 'a Query.Component.t;
@@ -24,7 +26,8 @@ let make
     ~(components : 'a Query.Component.t)
     name
     (run_fn : 'w -> (Id.Entity.t * 'a) list -> 'w) =
-  WithoutResources { name; filter; components_query = components; run = run_fn }
+  let uuid = Uuidm.v4_gen (Random.State.make_self_init ()) () in
+  WithoutResources { uuid; name; filter; components_query = components; run = run_fn }
 
 let make_with_resources
     ?(filter = Query.Component.Filter.Any)
@@ -32,8 +35,12 @@ let make_with_resources
     ~(resources : 'b Query.Resource.t)
     name
     (run_fn : 'w -> (Id.Entity.t * 'a) list -> 'b -> 'w) =
+  let uuid = Uuidm.v4_gen (Random.State.make_self_init ()) () in
   WithResources
-    { name; filter; components_query = components; resources_query = resources; run = run_fn }
+    { uuid; name; filter; components_query = components; resources_query = resources; run = run_fn }
 
-let name (system : _ t) =
+let name system =
   match system with WithResources sys -> sys.name | WithoutResources sys -> sys.name
+
+let uuid system =
+  match system with WithResources sys -> sys.uuid | WithoutResources sys -> sys.uuid
