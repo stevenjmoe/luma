@@ -23,7 +23,7 @@ module type S = sig
     val create : unit -> t
     val world : t -> World.t
     val init_state : (module Luma__state__State.STATE with type t = 'a) -> 'a -> t -> t
-    val on : 'a 'b. Scheduler.stage -> (World.t, 'b) System.t -> t -> t
+    val on : 'a. Scheduler.stage -> (World.t, 'a) System.t -> ?run_if:(World.t -> bool) -> t -> t
 
     val once :
       Scheduler.stage ->

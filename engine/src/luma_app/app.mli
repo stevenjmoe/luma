@@ -38,7 +38,7 @@ val init_state : (module STATE with type t = 'a) -> 'a -> t -> t
     systems are run. See [while_in], [on_enter], and [on_exit] for details on running systems using
     state. *)
 
-val on : 'a. Scheduler.stage -> (World.t, 'a) System.t -> t -> t
+val on : 'a. Scheduler.stage -> (World.t, 'a) System.t -> ?run_if:(World.t -> bool) -> t -> t
 (** Registers a system to run during the specified scheduler stage. *)
 
 val once :

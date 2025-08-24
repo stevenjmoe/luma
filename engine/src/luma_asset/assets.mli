@@ -44,6 +44,8 @@ val get : (module Asset.S with type t = 'a) -> t -> 'a handle -> 'a option
 val get_all : (module Asset.S with type t = 'a) -> t -> 'a list
 (** Retrieve all assets of where the record's [type_id] matches the provided [Asset] [type_id]. *)
 
+val is_loaded : t -> _ handle -> bool
+
 val unload : t -> 'a handle -> unit
 (** Unload an asset from the store by handle. *)
 

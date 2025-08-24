@@ -2,12 +2,13 @@ open Luma__ecs
 open Luma__id
 open Luma__serialize
 open Luma__core
+open Luma__app
 
 module type S = sig
   val toggle_overlay : unit -> ('a, unit) System.t
   val draw_overlay : unit -> (World.t, unit) System.t
   val setup_state : unit -> (World.t, unit) System.t
-  val add_plugin : Luma__app__App.t -> Luma__app__App.t
+  val add_plugin : App.t -> App.t
 end
 
 let rec take_n n items =

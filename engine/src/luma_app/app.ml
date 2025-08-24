@@ -36,12 +36,11 @@ let register_resource
   Type_register.Resource_registry.register_resource name (module R) serializers app.world;
   app
 
-let on (type s) stage system app =
+let on (type s) stage system ?(run_if = fun _ -> true) app =
   let open Luma__state.State in
   let open Luma__resource in
   let uuid = System.uuid system in
-  Scheduler.add_system app.scheduler stage
-    (Scheduler.System { uuid; sys = system; run_if = (fun _ -> true) });
+  Scheduler.add_system app.scheduler stage (Scheduler.System { uuid; sys = system; run_if });
   app
 
 let once (type s) stage system ?(placement = Scheduler.At) ?(run_if = fun _ -> true) app =

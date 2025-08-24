@@ -38,7 +38,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
           D.Input.Keyboard.begin_frame ();
           world)
 
-    let plugin = App.on Scheduler.PreUpdate (begin_frame ())
+    let plugin app = App.on Scheduler.PreUpdate (begin_frame ()) app
   end
 
   module Mouse = struct

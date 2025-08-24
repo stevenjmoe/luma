@@ -1,6 +1,7 @@
 open Luma__ecs
 open Luma__serialize
 open Luma__core
+open Luma__app
 
 module type S = sig
   type t
@@ -11,7 +12,7 @@ module type S = sig
   module R : Luma__resource.Resource.S with type t = t
 
   val update_time : unit -> (World.t, unit) System.t
-  val plugin : Luma__app__App.t -> Luma__app__App.t
+  val plugin : App.t -> App.t
 end
 
 module Make (D : Luma__driver.Driver.S) : S = struct

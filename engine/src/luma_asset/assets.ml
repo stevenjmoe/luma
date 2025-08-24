@@ -76,6 +76,9 @@ let get_all (type a) (module A : Asset.S with type t = a) (assets : t) =
          else None)
   |> List.of_seq
 
+let is_loaded assets handle =
+  match Hashtbl.find_opt assets handle.id with Some { status = Ready _; _ } -> true | _ -> false
+
 let unload (assets : t) handle =
   match Hashtbl.find_opt assets handle.id with
   | None -> ()
