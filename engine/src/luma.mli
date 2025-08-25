@@ -2,7 +2,6 @@ module type S = sig
   open Luma__app
   open Luma__ecs
   open Luma__asset
-  open Luma__render
   open Luma__image
   open Luma__sprite
   open Luma__transform
@@ -14,7 +13,12 @@ module type S = sig
   open Luma__type_register
   open Luma__scene
   open Luma__serialize
+  open Luma__state
+  open Luma__window
+  open Luma__input
+  open Luma__ui
   module Raylib_driver = Luma__driver_raylib.Driver
+  module Types = Luma__types
 
   module App : sig
     type t
@@ -22,7 +26,7 @@ module type S = sig
 
     val create : unit -> t
     val world : t -> World.t
-    val init_state : (module Luma__state__State.STATE with type t = 's) -> 's -> t -> t
+    val init_state : (module State.STATE with type t = 's) -> 's -> t -> t
     val on : 'a. Scheduler.stage -> (World.t, 'a) System.t -> ?run_if:(World.t -> bool) -> t -> t
 
     val once :
@@ -40,19 +44,15 @@ module type S = sig
       string -> (module Resource.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
 
     val while_in :
-      (module Luma__state__State.STATE with type t = 's) ->
+      (module State.STATE with type t = 's) ->
       's ->
       stage:Scheduler.stage ->
       system:(World.t, 'a) System.t ->
       t ->
       t
 
-    val on_enter :
-      (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
-
-    val on_exit :
-      (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
-
+    val on_enter : (module State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
+    val on_exit : (module State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
     val add_plugin : (t -> t) -> t -> t
     val step : t -> t
     val run_with_driver : t -> (t -> t Lwt.t) -> unit Lwt.t
@@ -63,9 +63,11 @@ module type S = sig
   type texture
   type sound
 
-  module Window_config : Luma__window.Window.Window_config with type colour = colour
-  module Input : Luma__input.Input.S
-  module Ui : Luma__ui.Ui.S
+  val draw_text : string -> int -> int -> int -> colour -> unit
+
+  module Window_config : Window.Window_config with type colour = colour
+  module Input : Input.S
+  module Ui : Ui.S
 
   module Plugin : sig
     module Config : sig
@@ -101,7 +103,7 @@ module type S = sig
     val white : t
   end
 
-  module Camera : Camera_component.S
+  module Camera : Luma__render.Component.S
   module Asset : module type of Asset
   module Assets : module type of Assets
   module Asset_server : module type of Server
@@ -118,11 +120,14 @@ module type S = sig
   module Math : module type of Luma__math
   module Texture_atlas : module type of Texture_atlas
   module Texture_atlas_layout : module type of Texture_atlas_layout
-  module Renderer : Render.Renderer with type texture = texture and type colour = colour
+
+  module Renderer :
+    Luma__render.Render.Renderer with type texture = texture and type colour = colour
+
   module Sprite_plugin : Sprite.Sprite_plugin with type texture = texture
   module Sprite : Sprite.S with type texture = texture
   module Key : module type of Luma__types.Input_types.Key
-  module Mouse_button : module type of Luma__types.Input_types.Mouse_button
+  module Mouse_button : module type of Types.Input_types.Mouse_button
   module State : module type of Luma__state.State
   module Scene : Scene.S
 

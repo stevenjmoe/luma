@@ -2,7 +2,6 @@ module type S = sig
   open Luma__app
   open Luma__ecs
   open Luma__asset
-  open Luma__render
   open Luma__image
   open Luma__sprite
   open Luma__transform
@@ -14,7 +13,14 @@ module type S = sig
   open Luma__type_register
   open Luma__scene
   open Luma__serialize
+  open Luma__window
+  open Luma__input
+  open Luma__ui
+  open Luma__debug
+  open Luma__plugin
+  open Luma__core
   module Raylib_driver = Luma__driver_raylib.Driver
+  module Types = Luma__types
 
   module App : sig
     type t
@@ -63,6 +69,8 @@ module type S = sig
   type texture
   type sound
 
+  val draw_text : string -> int -> int -> int -> colour -> unit
+
   module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Input : Luma__input.Input.S
   module Ui : Luma__ui.Ui.S
@@ -101,7 +109,7 @@ module type S = sig
     val white : t
   end
 
-  module Camera : Camera_component.S
+  module Camera : Luma__render.Component.S
   module Asset : module type of Asset
   module Assets : module type of Assets
   module Asset_server : module type of Server
@@ -118,7 +126,10 @@ module type S = sig
   module Math : module type of Luma__math
   module Texture_atlas : module type of Texture_atlas
   module Texture_atlas_layout : module type of Texture_atlas_layout
-  module Renderer : Render.Renderer with type texture = texture and type colour = colour
+
+  module Renderer :
+    Luma__render.Render.Renderer with type texture = texture and type colour = colour
+
   module Sprite_plugin : Sprite.Sprite_plugin with type texture = texture
   module Sprite : Sprite.S with type texture = texture
   module Key : module type of Luma__types.Input_types.Key
@@ -141,10 +152,37 @@ module type S = sig
 end
 
 module Make (D : Luma__driver.Driver.S) : S = struct
+  open Luma__app
+  open Luma__ecs
+  open Luma__asset
+  module Render = Luma__render
+  open Luma__image
+  open Luma__sprite
+  open Luma__transform
+  open Luma__time
+  open Luma__math
+  open Luma__resource
+  open Luma__id
+  open Luma__audio
+  open Luma__type_register
+  open Luma__scene
+  open Luma__serialize
+  open Luma__window
+  open Luma__input
+  open Luma__ui
+  open Luma__debug
+  open Luma__plugin
+  open Luma__core
+  open Luma__state
+  module Raylib_driver = Luma__driver_raylib.Driver
+  module Types = Luma__types
+
+  let draw_text = D.draw_text
+
   module Image = struct
-    module Texture = Luma__image.Texture.Make (D)
-    module Texture_atlas = Luma__image.Texture_atlas
-    module Texture_atlas_layout = Luma__image.Texture_atlas_layout
+    module Texture = Texture.Make (D)
+    module Texture_atlas = Texture_atlas
+    module Texture_atlas_layout = Texture_atlas_layout
   end
 
   module R = Luma__render.Render.Make (D)
@@ -152,29 +190,27 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   type texture = Image.Texture.t
 
   (* core driver dependent modules *)
-  module Window = Luma__window.Window.Make (D)
-  module Camera_component = Luma__render.Camera_component.Make (D)
-  module Camera_plugin = Luma__render.Camera_plugin.Make (D) (Camera_component)
-  module Input = Luma__input.Input.Make (D)
-  module Ui = Luma__ui.Ui.Make (D)
-  module Time = Luma__time.Time.Make (D)
-  module Audio = Luma__audio.Audio.Make (D)
-  module S = Luma__sprite.Sprite.Make (D)
-  module Sprite_plugin = Luma__sprite.Sprite.Sprite_plugin (D) (Image.Texture) (R) (S)
-  module Debug_plugin = Luma__debug.Debug.Make (D)
-  module Scene = Luma__scene.Scene.Make (D)
+  module Window = Window.Make (D)
+  module Camera_component = Render.Component.Make (D)
+  module Camera_plugin = Render.Plugin.Make (D) (Camera_component)
+  module Input = Input.Make (D)
+  module Ui = Ui.Make (D)
+  module Time = Time.Make (D)
+  module Audio = Audio.Make (D)
+  module S = Sprite.Make (D)
+  module Sprite_plugin = Sprite.Sprite_plugin (D) (Image.Texture) (R) (S)
+  module Debug_plugin = Debug.Make (D)
+  module Scene = Scene.Make (D)
 
   module Plugin =
-    Luma__plugin.Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time) (Audio) (Sprite_plugin)
-      (Image.Texture)
+    Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time) (Audio) (Sprite_plugin) (Image.Texture)
       (Scene)
       (Debug_plugin)
 
   module Window_config = Window.Window_config
-  module Raylib_driver = Luma__driver_raylib.Driver
 
   module App = struct
-    open Luma__app.App
+    open App
     open Luma__type_register
 
     type nonrec t = t
@@ -209,10 +245,10 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   end
 
   (* logging *)
-  let default_log = Luma__core.Log.sub_log (Logs.Src.name Logs.default)
+  let default_log = Log.sub_log (Logs.Src.name Logs.default)
 
   module Log = struct
-    let log = Luma__core.Log.app_log
+    let log = Log.app_log
     let error = default_log.error
     let warn = default_log.warn
     let debug = default_log.debug
@@ -235,29 +271,29 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     include D.Colour
   end
 
-  module Archetype = Luma__ecs.Archetype
-  module Asset = Luma__asset.Asset
-  module Assets = Luma__asset.Assets
-  module Asset_server = Luma__asset.Server
-  module Asset_loader = Luma__asset.Loader
+  module Archetype = Archetype
+  module Asset = Asset
+  module Assets = Assets
+  module Asset_server = Server
+  module Asset_loader = Loader
   module Camera = Camera_component
-  module Component = Luma__ecs.Component
-  module Id = Luma__id.Id
-  module Query = Luma__ecs.Query
-  module Resource = Luma__resource.Resource
-  module Scheduler = Luma__ecs.Scheduler
-  module System = Luma__ecs.System
-  module Transform = Luma__transform.Transform
-  module World = Luma__ecs.World
+  module Component = Component
+  module Id = Id
+  module Query = Query
+  module Resource = Resource
+  module Scheduler = Scheduler
+  module System = System
+  module Transform = Transform
+  module World = World
   module Math = Luma__math
-  module Texture_atlas = Luma__image.Texture_atlas
-  module Texture_atlas_layout = Luma__image.Texture_atlas_layout
-  module Key = Luma__types.Input_types.Key
-  module Mouse_button = Luma__types.Input_types.Mouse_button
-  module State = Luma__state.State
+  module Texture_atlas = Texture_atlas
+  module Texture_atlas_layout = Texture_atlas_layout
+  module Key = Types.Input_types.Key
+  module Mouse_button = Types.Input_types.Mouse_button
+  module State = State
 
   let screen_width = D.Window.screen_width
   let screen_height = D.Window.screen_height
 
-  module Error = Luma__core.Error
+  module Error = Error
 end
