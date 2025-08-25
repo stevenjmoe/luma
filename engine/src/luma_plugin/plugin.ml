@@ -1,6 +1,5 @@
 open Luma__app.App
 open Luma__driver
-open Luma__render
 open Luma__type_register
 open Luma__transform
 open Luma__image
@@ -9,7 +8,7 @@ open Luma__scene
 module Make
     (D : Luma__driver.Driver.S)
     (Window : Luma__window.Window.S)
-    (Camera_plugin : Camera_plugin.S)
+    (Camera_plugin : Luma__render.Render.Camera.Plugin.S)
     (Input : Luma__input.Input.S)
     (Time : Luma__time.Time.S)
     (Audio : Luma__audio.Audio.S)

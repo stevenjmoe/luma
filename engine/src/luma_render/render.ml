@@ -70,3 +70,8 @@ module Make (D : Luma__driver.Driver.S) :
     let dest_rec = Rect.create ~pos:position ~size in
     D.Texture.draw_texture texture src_rect dest_rec Vec2.zero 0.0 D.Colour.white
 end
+
+module Camera = struct
+  include Camera_component
+  module Plugin = Camera_plugin
+end

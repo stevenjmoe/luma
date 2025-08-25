@@ -103,7 +103,7 @@ module type S = sig
     val white : t
   end
 
-  module Camera : Luma__render.Component.S
+  module Camera : Luma__render.Render.Camera.S
   module Asset : module type of Asset
   module Assets : module type of Assets
   module Asset_server : module type of Server

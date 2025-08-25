@@ -109,7 +109,7 @@ module type S = sig
     val white : t
   end
 
-  module Camera : Luma__render.Component.S
+  module Camera : Luma__render.Render.Camera.S
   module Asset : module type of Asset
   module Assets : module type of Assets
   module Asset_server : module type of Server
@@ -191,8 +191,8 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   (* core driver dependent modules *)
   module Window = Window.Make (D)
-  module Camera_component = Render.Component.Make (D)
-  module Camera_plugin = Render.Plugin.Make (D) (Camera_component)
+  module Camera_component = Render.Render.Camera.Make (D)
+  module Camera_plugin = Render.Render.Camera.Plugin.Make (D) (Camera_component)
   module Input = Input.Make (D)
   module Ui = Ui.Make (D)
   module Time = Time.Make (D)
