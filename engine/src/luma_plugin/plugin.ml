@@ -8,7 +8,7 @@ open Luma__scene
 module Make
     (D : Luma__driver.Driver.S)
     (Window : Luma__window.Window.S)
-    (Camera_plugin : Luma__render.Render.Camera.Plugin.S)
+    (Camera : Luma__render.Render.Camera.S)
     (Input : Luma__input.Input.S)
     (Time : Luma__time.Time.S)
     (Audio : Luma__audio.Audio.S)
@@ -26,7 +26,7 @@ struct
   let asset_plugin = Luma__asset.Plugin.plugin
   let window_plugin = Window.plugin
   let time_plugin = Time.plugin
-  let camera_plugin = Camera_plugin.plugin
+  let camera_plugin = Camera.plugin
   let input_plugin = Input.Keyboard.plugin
   let audio_plugin = Audio.plugin
   let sprite_plugin = Sprite_plugin.add_plugin

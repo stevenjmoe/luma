@@ -21,7 +21,4 @@ end
 module Make : functor (D : Luma__driver.Driver.S) ->
   Renderer with type texture = D.texture and type colour = D.colour
 
-module Camera : sig
-  include module type of Camera_component
-  module Plugin : module type of Camera_plugin
-end
+module Camera : module type of Camera

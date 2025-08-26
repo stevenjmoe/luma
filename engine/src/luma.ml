@@ -191,8 +191,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   (* core driver dependent modules *)
   module Window = Window.Make (D)
-  module Camera_component = Render.Render.Camera.Make (D)
-  module Camera_plugin = Render.Render.Camera.Plugin.Make (D) (Camera_component)
+  module Camera = Render.Render.Camera.Make (D)
   module Input = Input.Make (D)
   module Ui = Ui.Make (D)
   module Time = Time.Make (D)
@@ -203,8 +202,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Scene = Scene.Make (D)
 
   module Plugin =
-    Plugin.Make (D) (Window) (Camera_plugin) (Input) (Time) (Audio) (Sprite_plugin) (Image.Texture)
-      (Scene)
+    Plugin.Make (D) (Window) (Camera) (Input) (Time) (Audio) (Sprite_plugin) (Image.Texture) (Scene)
       (Debug_plugin)
 
   module Window_config = Window.Window_config
@@ -276,7 +274,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Assets = Assets
   module Asset_server = Server
   module Asset_loader = Loader
-  module Camera = Camera_component
   module Component = Component
   module Id = Id
   module Query = Query
