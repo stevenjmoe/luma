@@ -54,38 +54,40 @@ module Js_driver : Luma__driver.Driver.S = struct
         let dy = (y -. Vec2.y c.target) *. c.zoom in
         (dx +. Vec2.x c.offset, dy +. Vec2.y c.offset)
 
-  let draw_rect (rect : Rect.t) (colour : colour) =
-    with_ctx @@ fun ctx ->
-    let x, y, w, h = rect_xywh rect in
-    ctx##.fillStyle := Js.string (css_rgba colour);
-    ctx##fillRect x y w h
+  module Draw = struct
+    let draw_rect (rect : Rect.t) (colour : colour) =
+      with_ctx @@ fun ctx ->
+      let x, y, w, h = rect_xywh rect in
+      ctx##.fillStyle := Js.string (css_rgba colour);
+      ctx##fillRect x y w h
 
-  let draw_rect_lines (rect : Rect.t) (line : float) (colour : colour) =
-    let line = Js.number_of_float line in
-    with_ctx @@ fun ctx ->
-    let x, y, w, h = rect_xywh rect in
-    ctx##.strokeStyle := Js.string (css_rgba colour);
-    ctx##.lineWidth := line;
-    ctx##strokeRect x y w h
+    let draw_rect_lines (rect : Rect.t) (line : float) (colour : colour) =
+      let line = Js.number_of_float line in
+      with_ctx @@ fun ctx ->
+      let x, y, w, h = rect_xywh rect in
+      ctx##.strokeStyle := Js.string (css_rgba colour);
+      ctx##.lineWidth := line;
+      ctx##strokeRect x y w h
 
-  let draw_circle center_x center_y radius colour =
-    with_ctx @@ fun ctx ->
-    let center_x = Int32.of_int center_x |> Js.int32 in
-    let center_y = Int32.of_int center_y |> Js.int32 in
-    let radius = Js.number_of_float radius in
+    let draw_circle center_x center_y radius colour =
+      with_ctx @@ fun ctx ->
+      let center_x = Int32.of_int center_x |> Js.int32 in
+      let center_y = Int32.of_int center_y |> Js.int32 in
+      let radius = Js.number_of_float radius in
 
-    ctx##beginPath;
-    ctx##arc center_x center_y radius (Js.number_of_float 0.)
-      (Js.number_of_float (2. *. Float.pi))
-      Js._false;
-    ctx##.fillStyle := Js.string (css_rgba colour);
-    ctx##fill
+      ctx##beginPath;
+      ctx##arc center_x center_y radius (Js.number_of_float 0.)
+        (Js.number_of_float (2. *. Float.pi))
+        Js._false;
+      ctx##.fillStyle := Js.string (css_rgba colour);
+      ctx##fill
 
-  let draw_text text x y size colour =
-    with_ctx @@ fun ctx ->
-    ctx##.fillStyle := Js.string (css_rgba colour);
-    ctx##.font := Js.string (Printf.sprintf "%dpx sans-serif" size);
-    ctx##fillText (Js.string text) (Js.number_of_float @@ float x) (Js.number_of_float @@ float y)
+    let draw_text text x y size colour =
+      with_ctx @@ fun ctx ->
+      ctx##.fillStyle := Js.string (css_rgba colour);
+      ctx##.font := Js.string (Printf.sprintf "%dpx sans-serif" size);
+      ctx##fillText (Js.string text) (Js.number_of_float @@ float x) (Js.number_of_float @@ float y)
+  end
 
   module Camera = struct
     let make ~offset ~target ~rotation ~zoom () = { offset; target; rotation; zoom }
@@ -205,6 +207,9 @@ module Js_driver : Luma__driver.Driver.S = struct
       ()
 
     let end_2d () = cur_cam := None
+    let with_2d _ _ = ()
+    let set_viewport_scissor _ _ _ _ = ()
+    let reset_scissor () = ()
   end
 
   module Colour = struct

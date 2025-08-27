@@ -63,21 +63,26 @@ module type S = sig
   type texture
   type sound
 
-  val draw_text : string -> int -> int -> int -> colour -> unit
+  module Draw : sig
+    val draw_text : string -> int -> int -> int -> colour -> unit
+  end
 
   module Window_config : Window.Window_config with type colour = colour
+  module Camera_config : module type of Luma__render.Render.Camera_config
   module Input : Input.S
   module Ui : Ui.S
 
   module Plugin : sig
     module Config : sig
-      type t = { window : Window_config.t }
+      type t = {
+        window : Window_config.t;
+        camera : Luma__render.Render.Camera_config.t;
+      }
 
       val default : unit -> t
     end
 
     val add_default_plugins : ?config:Config.t -> App.t -> App.t
-    val camera_plugin : App.t -> App.t
     val window_plugin : ?config:Window_config.t -> App.t -> App.t
     val asset_plugin : App.t -> App.t
     val time_plugin : App.t -> App.t
@@ -103,7 +108,7 @@ module type S = sig
     val white : t
   end
 
-  module Camera : Luma__render.Render.Camera.S
+  module Camera : Luma__render.Camera.S
   module Asset : module type of Asset
   module Assets : module type of Assets
   module Asset_server : module type of Server

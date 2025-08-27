@@ -205,8 +205,8 @@ module Make (D : Luma__driver.Driver.S) = struct
             Printf.sprintf "Entities (%d)  page %d/%d" total (page + 1)
               (if pages <= 0 then 1 else pages)
           in
-          D.draw_rect rect (D.Colour.rgb ~r:32 ~g:32 ~b:32);
-          D.draw_text title
+          D.Draw.draw_rect rect (D.Colour.rgb ~r:32 ~g:32 ~b:32);
+          D.Draw.draw_text title
             (int_of_float x + 8)
             (int_of_float y + 6)
             18
@@ -214,8 +214,11 @@ module Make (D : Luma__driver.Driver.S) = struct
 
           (* Headings *)
           let y_head = int_of_float y + 34 in
-          D.draw_text "entity" (int_of_float x + 8) y_head 16 (D.Colour.rgb ~r:160 ~g:160 ~b:160);
-          D.draw_text "components"
+          D.Draw.draw_text "entity"
+            (int_of_float x + 8)
+            y_head 16
+            (D.Colour.rgb ~r:160 ~g:160 ~b:160);
+          D.Draw.draw_text "components"
             (int_of_float x + 150)
             y_head 16
             (D.Colour.rgb ~r:160 ~g:160 ~b:160);
@@ -225,7 +228,7 @@ module Make (D : Luma__driver.Driver.S) = struct
               ~pos:(Luma__math.Vec2.create (x +. 8.) (float_of_int (y_head + 18)))
               ~size:(Luma__math.Vec2.create (w -. 16.) 1.)
           in
-          D.draw_rect div_rect (D.Colour.rgb ~r:96 ~g:96 ~b:96);
+          D.Draw.draw_rect div_rect (D.Colour.rgb ~r:96 ~g:96 ~b:96);
 
           let chars_per_line =
             let avail = w -. 170. in
@@ -243,7 +246,7 @@ module Make (D : Luma__driver.Driver.S) = struct
                 if String.length entity_metadata.name = 0 then Id.Entity.to_int e |> string_of_int
                 else entity_metadata.name
               in
-              D.draw_text entity_label
+              D.Draw.draw_text entity_label
                 (int_of_float x + 8)
                 y_row 16
                 (D.Colour.rgb ~r:220 ~g:220 ~b:220);
@@ -260,7 +263,10 @@ module Make (D : Luma__driver.Driver.S) = struct
                 let rec draw_lines y0 = function
                   | [] -> y0
                   | s :: tl ->
-                      D.draw_text s (int_of_float x + 150) y0 16 (D.Colour.rgb ~r:220 ~g:220 ~b:220);
+                      D.Draw.draw_text s
+                        (int_of_float x + 150)
+                        y0 16
+                        (D.Colour.rgb ~r:220 ~g:220 ~b:220);
                       let y1 = y0 + line_h in
                       if float_of_int y1 < y +. h -. 8. then draw_lines y1 tl else y0
                 in
@@ -270,7 +276,7 @@ module Make (D : Luma__driver.Driver.S) = struct
               else
                 let preview = preview_components chars_per_line world e in
 
-                D.draw_text preview
+                D.Draw.draw_text preview
                   (int_of_float x + 150)
                   y_row 16
                   (D.Colour.rgb ~r:220 ~g:220 ~b:220);
@@ -286,7 +292,7 @@ module Make (D : Luma__driver.Driver.S) = struct
                  ~pos:(Luma__math.Vec2.create (x +. w -. hs) (y +. h -. hs))
                  ~size:(Luma__math.Vec2.create hs hs)
              in
-             D.draw_rect handle_rect (D.Colour.rgb ~r:80 ~g:80 ~b:80));
+             D.Draw.draw_rect handle_rect (D.Colour.rgb ~r:80 ~g:80 ~b:80));
 
           (* Page controls *)
           if D.Input.Keyboard.is_key_pressed Luma__types.Input_types.Key.Page_up then

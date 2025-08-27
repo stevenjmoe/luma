@@ -25,6 +25,14 @@ let begin_frame = begin_drawing
 let end_frame = end_drawing
 let begin_2d = begin_mode_2d
 let end_2d = end_mode_2d
+
+let with_2d cam f =
+  begin_2d cam;
+  ignore (f ());
+  end_2d ()
+
+let set_viewport_scissor = begin_scissor_mode
+let reset_scissor = end_scissor_mode
 let clear = clear_background
 let screen_width = get_screen_width
 let screen_height = get_screen_height

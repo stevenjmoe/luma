@@ -6,6 +6,7 @@
     luma.driver
     luma.image 
     luma.math 
+    luma.resource
     ppx_component)
   (name luma__render)
   (preprocess 

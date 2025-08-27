@@ -8,11 +8,14 @@ module type S = sig
   type sound
   type music
 
-  val draw_rect : Rect.t -> colour -> unit
-  val draw_rect_lines : Rect.t -> float -> colour -> unit
-  val draw_circle : int -> int -> float -> colour -> unit
   val get_frame_time : unit -> float
-  val draw_text : string -> int -> int -> int -> colour -> unit
+
+  module Draw : sig
+    val draw_rect : Rect.t -> colour -> unit
+    val draw_rect_lines : Rect.t -> float -> colour -> unit
+    val draw_circle : int -> int -> float -> colour -> unit
+    val draw_text : string -> int -> int -> int -> colour -> unit
+  end
 
   module IO : sig
     type path = string
@@ -44,6 +47,9 @@ module type S = sig
     val end_frame : unit -> unit
     val begin_2d : camera -> unit
     val end_2d : unit -> unit
+    val with_2d : camera -> (unit -> unit) -> unit
+    val set_viewport_scissor : int -> int -> int -> int -> unit
+    val reset_scissor : unit -> unit
     val clear : colour -> unit
     val screen_width : unit -> int
     val screen_height : unit -> int

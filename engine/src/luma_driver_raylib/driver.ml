@@ -8,24 +8,27 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   type sound = Raylib.Sound.t
   type music = Raylib.Music.t
 
-  let draw_rect rect colour =
-    Raylib.draw_rectangle
-      (Int.of_float (Rect.x rect))
-      (Int.of_float (Rect.y rect))
-      (Int.of_float (Rect.width rect))
-      (Int.of_float (Rect.height rect))
-      colour
-
-  let draw_rect_lines rect line colour =
-    Raylib.draw_rectangle_lines_ex
-      (Raylib.Rectangle.create (Rect.x rect) (Rect.y rect) (Rect.width rect) (Rect.height rect))
-      line colour
-
-  let draw_circle center_x center_y radius colour =
-    Raylib.draw_circle center_x center_y radius colour
-
-  let draw_text text x y size colour = Raylib.draw_text text x y size colour
   let get_frame_time = Raylib.get_frame_time
+
+  module Draw = struct
+    let draw_text text x y size colour = Raylib.draw_text text x y size colour
+
+    let draw_circle center_x center_y radius colour =
+      Raylib.draw_circle center_x center_y radius colour
+
+    let draw_rect rect colour =
+      Raylib.draw_rectangle
+        (Int.of_float (Rect.x rect))
+        (Int.of_float (Rect.y rect))
+        (Int.of_float (Rect.width rect))
+        (Int.of_float (Rect.height rect))
+        colour
+
+    let draw_rect_lines rect line colour =
+      Raylib.draw_rectangle_lines_ex
+        (Raylib.Rectangle.create (Rect.x rect) (Rect.y rect) (Rect.width rect) (Rect.height rect))
+        line colour
+  end
 
   module IO = struct
     type path = string

@@ -69,21 +69,26 @@ module type S = sig
   type texture
   type sound
 
-  val draw_text : string -> int -> int -> int -> colour -> unit
+  module Draw : sig
+    val draw_text : string -> int -> int -> int -> colour -> unit
+  end
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
+  module Camera_config : module type of Luma__render.Render.Camera_config
   module Input : Luma__input.Input.S
   module Ui : Luma__ui.Ui.S
 
   module Plugin : sig
     module Config : sig
-      type t = { window : Window_config.t }
+      type t = {
+        window : Window_config.t;
+        camera : Luma__render.Render.Camera_config.t;
+      }
 
       val default : unit -> t
     end
 
     val add_default_plugins : ?config:Config.t -> App.t -> App.t
-    val camera_plugin : App.t -> App.t
     val window_plugin : ?config:Window_config.t -> App.t -> App.t
     val asset_plugin : App.t -> App.t
     val time_plugin : App.t -> App.t
@@ -109,7 +114,7 @@ module type S = sig
     val white : t
   end
 
-  module Camera : Luma__render.Render.Camera.S
+  module Camera : Luma__render.Camera.S
   module Asset : module type of Asset
   module Assets : module type of Assets
   module Asset_server : module type of Server
@@ -177,21 +182,24 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Raylib_driver = Luma__driver_raylib.Driver
   module Types = Luma__types
 
-  let draw_text = D.draw_text
-
   module Image = struct
     module Texture = Texture.Make (D)
     module Texture_atlas = Texture_atlas
     module Texture_atlas_layout = Texture_atlas_layout
   end
 
+  module Camera_config = Luma__render.Render.Camera_config
   module R = Luma__render.Render.Make (D)
 
   type texture = Image.Texture.t
 
+  module Draw = struct
+    let draw_text = D.Draw.draw_text
+  end
+
   (* core driver dependent modules *)
   module Window = Window.Make (D)
-  module Camera = Render.Render.Camera.Make (D)
+  module Camera = R.Camera
   module Input = Input.Make (D)
   module Ui = Ui.Make (D)
   module Time = Time.Make (D)
@@ -201,8 +209,19 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Debug_plugin = Debug.Make (D)
   module Scene = Scene.Make (D)
 
+  type colour = D.colour
+  type sound = Audio.Sound.t
+
+  module Renderer = struct
+    include R
+
+    type nonrec texture = texture
+    type nonrec colour = colour
+  end
+
   module Plugin =
-    Plugin.Make (D) (Window) (Camera) (Input) (Time) (Audio) (Sprite_plugin) (Image.Texture) (Scene)
+    Plugin.Make (D) (Window) (Renderer) (Input) (Time) (Audio) (Sprite_plugin) (Image.Texture)
+      (Scene)
       (Debug_plugin)
 
   module Window_config = Window.Window_config
@@ -230,16 +249,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     let register_component = register_component
     let register_resource = register_resource
     let run app = run (module D) app
-  end
-
-  type colour = D.colour
-  type sound = Audio.Sound.t
-
-  module Renderer = struct
-    include R
-
-    type nonrec texture = texture
-    type nonrec colour = colour
   end
 
   (* logging *)
