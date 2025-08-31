@@ -142,7 +142,7 @@ module Js_driver : Luma__driver.Driver.S = struct
           ctx_ref := Some ctx;
           ctx
 
-    let init ~width ~height ~title:_ =
+    let init ~width ~height ~title:_ ~resizable =
       let c = ensure_canvas () in
       c##.width := width;
       c##.height := height;
@@ -496,7 +496,7 @@ module Js_driver : Luma__driver.Driver.S = struct
         match !canvas_ref with
         | Some c -> c
         | None -> (
-            let _ = Window.init ~width:800 ~height:600 ~title:"" in
+            let _ = Window.init ~width:800 ~height:600 ~title:"" ~resizable:false in
             match !canvas_ref with Some c -> c | None -> assert false)
       in
       Dom_html.addEventListener canvas Dom_html.Event.mousedown

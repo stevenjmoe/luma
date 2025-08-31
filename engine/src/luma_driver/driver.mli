@@ -27,7 +27,7 @@ module type S = sig
   end
 
   module Window : sig
-    val init : width:int -> height:int -> title:string -> unit
+    val init : width:int -> height:int -> title:string -> resizable:bool -> unit
     val shutdown : unit -> unit
     val should_close : unit -> bool
     val close : unit -> unit

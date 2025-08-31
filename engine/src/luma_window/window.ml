@@ -10,11 +10,12 @@ module type Window_config = sig
     width : int;
     colour : colour option;
     title : string option;
+    resizable : bool;
   }
 
   val default : unit -> t
 
-  val create : int -> int -> colour option -> string option -> t
+  val create : int -> int -> colour option -> string option -> bool -> t
   (** [create width height colour title] *)
 end
 
@@ -37,14 +38,16 @@ module Make (D : Driver.S) : S with type colour = D.colour = struct
       width : int;
       colour : colour option;
       title : string option;
+      resizable : bool;
     }
 
-    let default () = { width = 1920; height = 1080; colour = Some D.Colour.white; title = None }
+    let default () =
+      { width = 1920; height = 1080; colour = Some D.Colour.white; title = None; resizable = false }
 
-    let create width height colour title =
+    let create width height colour title resizable =
       let colour = Option.value colour ~default:D.Colour.white in
       let title = Option.value title ~default:"" in
-      { width; height; colour = Some colour; title = Some title }
+      { width; height; colour = Some colour; title = Some title; resizable }
   end
 
   let clear_window (config : Window_config.t) =
@@ -56,7 +59,8 @@ module Make (D : Driver.S) : S with type colour = D.colour = struct
   let init (config : Window_config.t) =
     System.make ~components:End "init" (fun world _ ->
         D.Window.init ~width:config.width ~height:config.height
-          ~title:(Option.value config.title ~default:"");
+          ~title:(Option.value config.title ~default:"")
+          ~resizable:config.resizable;
         world)
 
   let plugin ?(config : Window_config.t = Window_config.default ()) app =
