@@ -2,4 +2,4 @@
   (name luma__driver_raylib)
   (public_name luma.driver.raylib) 
   (modules camera driver input texture window)
-  (libraries core raylib raygui luma.driver luma.math luma.types luv))
+  (libraries raylib raygui luma.driver luma.math luma.types luv))

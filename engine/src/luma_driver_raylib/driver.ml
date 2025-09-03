@@ -17,12 +17,11 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       Raylib.draw_circle center_x center_y radius colour
 
     let draw_rect rect colour =
-      Raylib.draw_rectangle
-        (Int.of_float (Rect.x rect))
-        (Int.of_float (Rect.y rect))
-        (Int.of_float (Rect.width rect))
-        (Int.of_float (Rect.height rect))
-        colour
+      let rectangle =
+        Raylib.Rectangle.create (Rect.x rect) (Rect.y rect) (Rect.width rect) (Rect.height rect)
+      in
+      let origin = Raylib.Vector2.zero () in
+      Raylib.draw_rectangle_pro rectangle origin 0. colour
 
     let draw_rect_lines rect line colour =
       Raylib.draw_rectangle_lines_ex
@@ -64,7 +63,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
             in
             loop 0L)
 
-    let read_file_blocking path = Core.In_channel.read_all path |> Bytes.of_string
+    let read_file_blocking path = Bytes.of_string ""
 
     (* TODO: Error *)
     let write_file (path : string) (bytes : bytes) : unit =
