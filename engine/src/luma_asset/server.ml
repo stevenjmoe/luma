@@ -25,7 +25,6 @@ let run_loader_hooks server = List.iter (fun hook -> hook server) !loader_hooks
 let log = Log.sub_log "asset_server"
 
 let load (type a) (module A : Asset.S with type t = a) server path world =
-  let open Luv in
   match find_loader (module A) server path with
   | None -> Error (Luma__core.Error.asset_ext_unsupported path)
   | Some (Packed { l = (module L); cp }) ->

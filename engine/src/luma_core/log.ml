@@ -52,14 +52,11 @@ let reporter ~now () =
     let src =
       let width = 20 in
       let s = Logs.Src.name src in
-      if s = Logs.Src.name Logs.default then
-        String.make width ' '
+      if s = Logs.Src.name Logs.default then String.make width ' '
       else
         let length = String.length s in
-        if length > width then
-          String.sub s (length - width) width
-        else
-          String.make (width - length) ' ' ^ s
+        if length > width then String.sub s (length - width) width
+        else String.make (width - length) ' ' ^ s
     in
 
     msgf @@ fun ?header:_ ?tags:_ fmt ->

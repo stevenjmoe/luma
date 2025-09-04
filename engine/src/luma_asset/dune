@@ -3,7 +3,6 @@
   (name luma__asset)
   (libraries 
     lwt
-    luv
     luma.app
     luma.driver
     luma.task_queue)

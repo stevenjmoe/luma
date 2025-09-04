@@ -10,7 +10,7 @@ bug-reports: "https://github.com/stevenjmoe/luma/issues"
 depends: [
   "alcotest" {with-test}
   "containers"
-  "dune" {>= "3.17"}
+  "dune" {>= "3.19"}
   "fmt"
   "logs"
   "luv"
@@ -45,3 +45,4 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/stevenjmoe/luma.git"
+x-maintenance-intent: ["(latest)"]
