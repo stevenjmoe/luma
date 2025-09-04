@@ -20,23 +20,24 @@ type 'a handle = {
   id : Luma__id.Id.Asset.t;
   type_id : Luma__id.Id.Asset_type.t;
   generation : int;
+  path : string option;
 }
 
 let create () = Hashtbl.create 16
 
-let add_pending (type a) (module A : Asset.S with type t = a) assets =
+let add_pending (type a) (module A : Asset.S with type t = a) ?path assets =
   let id = Luma__id.Id.Asset.next () in
   let record = { status = Loading; generation = 1; type_id = A.type_id } in
   Hashtbl.replace assets id record;
-  { id; type_id = A.type_id; generation = 1 }
+  { id; type_id = A.type_id; generation = 1; path }
 
-let add (type a) (module A : Asset.S with type t = a) assets asset =
+let add (type a) (module A : Asset.S with type t = a) ?path assets asset =
   let id = Luma__id.Id.Asset.next () in
   let generation = 1 in
   let packed = Asset.pack (module A) asset in
   let record = { status = Ready packed; generation; type_id = A.type_id } in
   Hashtbl.replace assets id record;
-  { id; type_id = A.type_id; generation }
+  { id; type_id = A.type_id; generation; path }
 
 let resolve
     (type a)

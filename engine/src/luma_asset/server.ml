@@ -28,7 +28,7 @@ let load (type a) (module A : Asset.S with type t = a) server path world =
   match find_loader (module A) server path with
   | None -> Error (Luma__core.Error.asset_ext_unsupported path)
   | Some (Packed { l = (module L); cp }) ->
-      let handle = Assets.add_pending (module A) server.assets in
+      let handle = Assets.add_pending (module A) server.assets ~path in
       L.begin_load path ~k:(fun r ->
           Complete.push
             (Complete.Pack

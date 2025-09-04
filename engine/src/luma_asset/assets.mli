@@ -1,3 +1,5 @@
+open Luma__id
+
 type failed = {
   path : string;
   msg : string;
@@ -11,17 +13,18 @@ type status =
 type asset_record = {
   mutable status : status;
   generation : int;
-  type_id : Luma__id.Id.Asset_type.t;
+  type_id : Id.Asset_type.t;
 }
 (** Represents a single stored asset instance. *)
 
-type t = (Luma__id.Id.Asset.t, asset_record) Hashtbl.t
+type t = (Id.Asset.t, asset_record) Hashtbl.t
 (** The central store for all loaded assets, keyed by an asset ID. *)
 
 type 'a handle = {
-  id : Luma__id.Id.Asset.t;
-  type_id : Luma__id.Id.Asset_type.t;
+  id : Id.Asset.t;
+  type_id : Id.Asset_type.t;
   generation : int;
+  path : string option;
 }
 (** A phantom-typed handle referencing a loaded asset of type ['a]. *)
 
@@ -29,11 +32,15 @@ val create : unit -> t
 (** Create a new, empty asset store. *)
 
 val add_pending :
-  (module Asset.S with type t = 'a) -> (Luma__id__Id.Asset.t, asset_record) Hashtbl.t -> 'b handle
+  (module Asset.S with type t = 'a) ->
+  ?path:string ->
+  (Id.Asset.t, asset_record) Hashtbl.t ->
+  'b handle
 
 val add :
   (module Asset.S with type t = 'a) ->
-  (Luma__id__Id.Asset.t, asset_record) Hashtbl.t ->
+  ?path:string ->
+  (Id.Asset.t, asset_record) Hashtbl.t ->
   'a ->
   'b handle
 (** Add a typed asset to the store, returning a typed handle. *)
