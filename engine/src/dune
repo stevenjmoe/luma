@@ -9,7 +9,6 @@
    luma.asset
    luma.audio
    luma.driver
-   luma.driver.raylib
    luma.ecs
    luma.plugin
    luma.window

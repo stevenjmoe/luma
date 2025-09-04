@@ -19,7 +19,6 @@ module type S = sig
   open Luma__debug
   open Luma__plugin
   open Luma__core
-  module Raylib_driver = Luma__driver_raylib.Driver
   module Types = Luma__types
 
   module App : sig
@@ -179,7 +178,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   open Luma__plugin
   open Luma__core
   open Luma__state
-  module Raylib_driver = Luma__driver_raylib.Driver
   module Types = Luma__types
 
   module Image = struct

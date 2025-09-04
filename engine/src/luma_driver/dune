@@ -1,5 +1,5 @@
 (library 
-  (public_name luma.driver)
   (name luma__driver)
+  (public_name luma.driver)
   (libraries luma.math luma.types luma.core)
   (modules_without_implementation driver))

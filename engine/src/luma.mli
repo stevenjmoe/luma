@@ -17,7 +17,6 @@ module type S = sig
   open Luma__window
   open Luma__input
   open Luma__ui
-  module Raylib_driver = Luma__driver_raylib.Driver
   module Types = Luma__types
 
   module App : sig
