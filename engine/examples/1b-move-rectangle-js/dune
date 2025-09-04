@@ -1,0 +1,11 @@
+(executable
+  (name move_rectangle)
+  (modes js)
+  (libraries
+    luma 
+    luma.driver.js
+    js_of_ocaml
+    js_of_ocaml-ppx
+    ppx_optcomp)
+  (preprocess
+    (pps ppx_component)))

@@ -1,5 +1,5 @@
 (executable
   (name assets)
-  (libraries luma)
+  (libraries luma luma.driver.raylib)
   (preprocess
     (pps ppx_component)))

@@ -1,5 +1,5 @@
 (executable
   (name move_rectangle)
-  (libraries luma)
+  (libraries luma luma.driver.raylib)
   (preprocess
     (pps ppx_component)))

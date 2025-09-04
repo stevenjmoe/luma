@@ -1,8 +1,19 @@
-module Driver = Luma__driver_raylib.Driver
+module Driver = Luma_driver_raylib.Driver
 module Luma = Luma.Make (Driver)
 open Luma
 module Velocity = [%component: Raylib.Vector2.t]
 module Player_tag = [%component: int]
+
+module Game_state = struct
+  type t =
+    | InGame
+    | Menu
+    | Paused
+
+  module S = Luma.State.Make (struct
+    type inner = t
+  end)
+end
 
 [%%component
 module Animation_config = struct
@@ -20,23 +31,42 @@ let execute_animations () =
       Query.Component.(Required (module Animation_config.C) & Required (module Sprite.C) & End)
     ~resources:Query.Resource.(Resource (module Assets.R) & Resource (module Time.R) & End)
     "execute_animations"
-    (fun world entities (assets, (time, _)) ->
-      let dt = Time.dt time in
-      entities
-      |> Query.Tuple.iter2 (fun animation_config sprite ->
-             let open Animation_config in
-             let atlas = Sprite.texture_atlas sprite |> Option.get in
-             animation_config.frame_time_accumulator <-
-               animation_config.frame_time_accumulator +. dt;
+    (fun world entities res ->
+      Query.Tuple.with2 res (fun assets time ->
+          let dt = Time.dt time in
+          entities
+          |> Query.Tuple.iter2 (fun animation_config sprite ->
+                 let open Animation_config in
+                 let open Texture_atlas in
+                 let atlas = Sprite.texture_atlas sprite |> Option.get in
+                 animation_config.frame_time_accumulator <-
+                   animation_config.frame_time_accumulator +. dt;
 
-             if animation_config.frame_time_accumulator >= animation_config.frame_duration then (
-               animation_config.frame_time_accumulator <-
-                 animation_config.frame_time_accumulator -. animation_config.frame_duration;
+                 if animation_config.frame_time_accumulator >= animation_config.frame_duration then
+                   (animation_config.frame_time_accumulator <-
+                      animation_config.frame_time_accumulator -. animation_config.frame_duration;
 
-               Texture_atlas.set_index atlas
-                 ((Texture_atlas.index atlas + 1) mod animation_config.last_index));
-             ());
+                    Texture_atlas.set_index atlas
+                      ((Texture_atlas.index atlas + 1) mod animation_config.last_index))
+                   |> ignore;
+                 ()));
       world)
+
+let input_system () =
+  System.make_with_resources
+    ~components:Query.Component.(End)
+    ~resources:
+      Query.Resource.(Resource (module Assets.R) & Resource (module Luma.State.State_res.R) & End)
+    "input_system"
+    (fun world entities (assets, (state, _)) ->
+      match state with
+      | { current = Some current_state; previous = _; next = _ } ->
+          if Luma.Input.Keyboard.is_key_pressed @@ Luma.Key.Space then
+            if State.is (module Game_state.S) Game_state.InGame current_state then
+              State.queue_state (module Game_state.S) Game_state.Menu world |> ignore
+            else State.queue_state (module Game_state.S) Game_state.InGame world |> ignore;
+          world
+      | _ -> world)
 
 let setup_player () =
   System.make_with_resources ~components:End
@@ -46,7 +76,7 @@ let setup_player () =
       let texture =
         Asset_server.load
           (module Image.Texture.A)
-          asset_server "examples/3-assets/assets/Player Idle 48x48.png"
+          asset_server "examples/3-assets/assets/Player Idle 48x48.png" world
         |> Result.get_ok
       in
       let layout = Luma.Image.Texture_atlas_layout.from_grid (Luma.Math.Vec2.create 48. 48.) 10 1 in
@@ -67,7 +97,7 @@ let setup_player () =
       Assets.add (module Luma.Image.Texture_atlas.A) assets atlas |> ignore;
 
       world
-      |> World.add_entity ~name:"player"
+      |> World.add_entity
       |> World.with_component world (module Sprite.C) sprite
       |> World.with_component world (module Player_tag.C) player_tag
       |> World.with_component world (module Animation_config.C) animation_config
@@ -80,7 +110,8 @@ let () =
   let open Luma.App in
   create ()
   |> Plugin.add_default_plugins
-  |> App.add_plugin Plugin.debug_plugin
+  |> init_state (module Game_state.S) Game_state.Menu
+  |> while_in (module Game_state.S) Game_state.InGame ~stage:Update ~system:(execute_animations ())
   |> on Startup (setup_player ())
-  |> on Update (execute_animations ())
+  |> on Update (input_system ())
   |> run
