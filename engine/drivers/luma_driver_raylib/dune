@@ -1,5 +1,5 @@
 (library
-  (name luma__driver_raylib)
+  (name luma_driver_raylib)
   (public_name luma.driver.raylib) 
   (modules driver camera input texture window)
   (libraries luma.driver raylib raygui luma.math luma.types luv))
