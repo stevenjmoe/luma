@@ -1,7 +1,16 @@
 module Make (L : Luma.S) = struct
-  module Loader = Loader.Make (L)
   include Types
   open L
+
+  module Tilemap_asset = L.Asset.Make (struct
+    type inner = t
+  end)
+
+  module Tileset_asset = L.Asset.Make (struct
+    type inner = tileset
+  end)
+
+  module Loader = Loader.Make (L) (Tilemap_asset) (Tileset_asset)
 
   let orientation t = t.orientation
   let render_order t = t.render_order

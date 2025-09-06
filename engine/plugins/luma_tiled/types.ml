@@ -25,23 +25,30 @@ type grid = {
   width : int;
 }
 
-type tile = {
-  id : int;
+type position = {
   x : int;
   y : int;
+}
+
+type tile = {
+  id : int;
   image_path : string;
   image_size : size;
   size : size;
+  position : position;
 }
 
 type tileset = {
-  name : string;
-  grid : grid;
-  margin : int;
-  spacing : int;
-  size : size;
-  count : int;
+  class_ : string option;
   columns : int;
+  grid : grid option;
+  image : string option;
+  image_size : size option;
+  margin : int;
+  name : string;
+  spacing : int;
+  tile_count : int;
+  tile_size : size;
   tiles : tile array;
 }
 

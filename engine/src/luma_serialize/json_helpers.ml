@@ -12,25 +12,33 @@ let of_bool label f = (label, `Bool f)
 let parse_vec2 key json =
   match member key json with
   | `Assoc [ ("x", `Float x); ("y", `Float y) ] -> Ok (Vec2.create x y)
-  | _ ->
-      Yojson.Safe.pretty_to_channel Out_channel.stdout json;
-      Error (Error.parse_json (Vec2 key))
+  | _ -> Error (Error.parse_json (Vec2 key))
 
 let parse_vec3 key json =
   match member key json with
   | `Assoc [ ("x", `Float x); ("y", `Float y); ("z", `Float z) ] -> Ok (Vec3.create x y z)
-  | _ ->
-      Yojson.Safe.pretty_to_channel Out_channel.stdout json;
-      Error (Error.parse_json (Vec3 key))
+  | _ -> Error (Error.parse_json (Vec3 key))
 
 let parse_string key json =
   match member key json with `String v -> Ok v | _ -> Error (Error.parse_json (String key))
+
+let parse_string_opt key json =
+  match member key json with
+  | `String v -> Ok (Some v)
+  | `Null -> Ok None
+  | _ -> Error (Error.parse_json (String key))
 
 let parse_float key json =
   match member key json with `Float v -> Ok v | _ -> Error (Error.parse_json (Float key))
 
 let parse_int key json =
   match member key json with `Int v -> Ok v | _ -> Error (Error.parse_json (Int key))
+
+let parse_int_opt key json =
+  match member key json with
+  | `Int v -> Ok (Some v)
+  | `Null -> Ok None
+  | _ -> Error (Error.parse_json (Int key))
 
 let parse_bool key json =
   match member key json with `Bool v -> Ok v | _ -> Error (Error.parse_json (Bool key))

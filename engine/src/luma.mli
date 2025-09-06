@@ -134,6 +134,7 @@ module type S = sig
   module Mouse_button : module type of Types.Input_types.Mouse_button
   module State : module type of Luma__state.State
   module Scene : Scene.S
+  module IO : module type of Luma__driver.Driver.IO
 
   val screen_width : unit -> int
   val screen_height : unit -> int
