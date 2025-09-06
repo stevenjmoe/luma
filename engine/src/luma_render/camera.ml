@@ -32,6 +32,8 @@ module type S = sig
   val order : t -> int
   val active : t -> bool
   val camera : t -> camera
+  val get_screen_to_world_2d : Vec2.t -> t -> Vec2.t
+  val get_world_to_screen_2d : Vec2.t -> t -> Vec2.t
   val set_target : t -> Vec2.t -> unit
   val set_offset : t -> Vec2.t -> unit
   val set_zoom : t -> float -> unit
@@ -70,6 +72,13 @@ module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
   let order c = c.order
   let active c = c.active
   let camera c = c.camera
+
+  let get_screen_to_world_2d position camera =
+    D.Camera.get_screen_to_world_2d position camera.camera
+
+  let get_world_to_screen_2d position camera =
+    D.Camera.get_world_to_screen_2d position camera.camera
+
   let set_target c target = D.Camera.set_target c.camera target
   let set_offset c offset = D.Camera.set_offset c.camera offset
   let set_zoom c zoom = D.Camera.set_zoom c.camera zoom

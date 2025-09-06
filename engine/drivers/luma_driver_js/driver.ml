@@ -103,6 +103,8 @@ module Js_driver : Luma__driver.Driver.S = struct
     let set_offset c v = c.offset <- v
     let set_zoom c z = c.zoom <- z
     let set_rotation c r = c.rotation <- r
+    let get_world_to_screen_2d _ _ = failwith ""
+    let get_screen_to_world_2d _ _ = failwith ""
   end
 
   module IO = struct

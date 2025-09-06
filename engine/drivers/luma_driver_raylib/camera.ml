@@ -30,3 +30,13 @@ let set_offset camera offset =
 
 let set_rotation camera rotation = Raylib.Camera2D.set_rotation camera rotation
 let set_zoom camera rotation = Raylib.Camera2D.set_zoom camera rotation
+
+let get_world_to_screen_2d position camera =
+  let position' = Raylib.Vector2.create (Vec2.x position) (Vec2.y position) in
+  let r = Raylib.get_world_to_screen_2d position' camera in
+  Vec2.create (Raylib.Vector2.x r) (Raylib.Vector2.y r)
+
+let get_screen_to_world_2d position camera =
+  let position' = Raylib.Vector2.create (Vec2.x position) (Vec2.y position) in
+  let r = Raylib.get_screen_to_world_2d position' camera in
+  Vec2.create (Raylib.Vector2.x r) (Raylib.Vector2.y r)

@@ -74,6 +74,8 @@ module type S = sig
     val set_offset : camera -> Vec2.t -> unit
     val set_zoom : camera -> float -> unit
     val set_rotation : camera -> float -> unit
+    val get_world_to_screen_2d : Vec2.t -> camera -> Vec2.t
+    val get_screen_to_world_2d : Vec2.t -> camera -> Vec2.t
   end
 
   module Colour : sig
