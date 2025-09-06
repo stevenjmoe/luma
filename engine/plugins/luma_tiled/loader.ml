@@ -234,13 +234,13 @@ struct
                       | `String s -> Ok s
                       | _ -> fail "tile.image missing"
                     in
-                    let* iw =
+                    let* image_width =
                       match field "imagewidth" t with
                       | `Int i -> Ok i
                       | `Float f -> Ok (int_of_float f)
                       | _ -> fail "tile.imagewidth missing"
                     in
-                    let* ih =
+                    let* image_height =
                       match field "imageheight" t with
                       | `Int i -> Ok i
                       | `Float f -> Ok (int_of_float f)
@@ -260,33 +260,54 @@ struct
                       | `Null -> Ok 0
                       | _ -> fail "tile.y invalid"
                     in
-                    Ok ((image_path, iw, ih, id, x, y) :: acc))
+                    let* tile_width =
+                      match field "w" t with
+                      | `Int i -> Ok i
+                      | `Float f -> Ok (int_of_float f)
+                      | `Null -> Ok 0
+                      | _ -> fail "tile.width invalid"
+                    in
+                    let* tile_height =
+                      match field "h" t with
+                      | `Int i -> Ok i
+                      | `Float f -> Ok (int_of_float f)
+                      | `Null -> Ok 0
+                      | _ -> fail "tile.height invalid"
+                    in
+                    Ok
+                      ((image_path, image_width, image_height, id, x, y, tile_width, tile_height)
+                      :: acc))
                   tiles_list (Ok [])
               in
               (* same image for all tiles *)
               let* shared_path, image_w, image_h =
                 match parsed with
                 | [] -> fail "empty tiles[]"
-                | (p, iw, ih, _, _, _) :: rest ->
-                    if List.for_all (fun (p', _, _, _, _, _) -> String.equal p p') rest then
-                      Ok (p, iw, ih)
+                | (p, iw, ih, _, _, _, tile_width, tile_height) :: rest ->
+                    if
+                      List.for_all
+                        (fun (p', _, _, _, _, _, tile_width, tile_height) -> String.equal p p')
+                        rest
+                    then Ok (p, iw, ih)
                     else fail "tiles reference different image files"
               in
               let bounds_ok =
                 List.for_all
-                  (fun (_p, iw, ih, _id, x, y) ->
-                    x >= 0 && y >= 0 && x + tile_w <= iw && y + tile_h <= ih)
+                  (fun (_p, iw, ih, _id, x, y, tile_width, tile_height) ->
+                    x >= 0 && y >= 0 && x + tile_width <= iw && y + tile_height <= ih)
                   parsed
               in
               let* () = if bounds_ok then Ok () else fail "one or more tiles out of atlas bounds" in
 
               let image_size = { w = image_w; h = image_h } in
               let parsed =
-                List.sort (fun (_, _, _, id1, _, _) (_, _, _, id2, _, _) -> compare id1 id2) parsed
+                List.sort
+                  (fun (_, _, _, id1, _, _, _, _) (_, _, _, id2, _, _, _, _) -> compare id1 id2)
+                  parsed
               in
               let tiles =
                 parsed
-                |> List.map (fun (_p, _iw, _ih, id, x, y) ->
+                |> List.map (fun (_p, _iw, _ih, id, x, y, _tile_width, _tile_height) ->
                        {
                          id;
                          image_path = shared_path;
