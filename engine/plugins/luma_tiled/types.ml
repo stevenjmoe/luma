@@ -19,11 +19,30 @@ type tile_layer = {
   size : size;
 }
 
+type grid = {
+  height : int;
+  orientation : orientation;
+  width : int;
+}
+
+type tile = {
+  id : int;
+  x : int;
+  y : int;
+  image_path : string;
+  image_size : size;
+  size : size;
+}
+
 type tileset = {
   name : string;
+  grid : grid;
+  margin : int;
+  spacing : int;
   size : size;
   count : int;
   columns : int;
+  tiles : tile array;
 }
 
 type map_size =
