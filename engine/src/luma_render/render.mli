@@ -24,6 +24,7 @@ module type Renderer = sig
     ?flip_x:bool ->
     ?flip_y:bool ->
     ?texture_atlas:Texture_atlas.t option ->
+    ?src:Luma__math.Rect.t option ->
     unit ->
     unit
 
@@ -65,6 +66,7 @@ module type Renderer = sig
     size:Vec2.t ->
     ?layers:int64 ->
     ?texture_atlas:Texture_atlas.t ->
+    ?src:Luma__math.Rect.t ->
     ?flip_x:bool ->
     ?flip_y:bool ->
     Queue.item list ref ->

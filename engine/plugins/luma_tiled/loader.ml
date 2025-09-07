@@ -5,6 +5,8 @@ module Make
 struct
   include Types
 
+  type x = int
+
   (* json helpers *)
   let field name = function
     | `Assoc kv -> ( match List.assoc_opt name kv with Some v -> v | None -> `Null)
@@ -14,65 +16,6 @@ struct
     | "orthogonal" -> Ok Orthogonal
     | "isometric" -> Ok Isometric
     | s -> Error (L.Error.parse_json (String s))
-
-  module Tilemap_loader :
-    L.Asset_loader.LOADER with type t = t and type decode = bytes and type ctx = unit = struct
-    type nonrec t = t
-    type decode = bytes
-    type ctx = unit
-
-    module A = Tilemap_asset
-
-    let type_id = A.type_id
-    let exts = [ ".tmj" ]
-
-    let begin_load path ~k =
-      L.IO.read_file path ~k:(function Ok bytes -> k (Ok bytes) | Error e -> k (Error e))
-
-    let finalize ctx path bytes =
-      let open Luma__serialize.Json_helpers in
-      let ( let* ) = Result.bind in
-      try
-        let json = Yojson.Safe.from_string (Bytes.unsafe_to_string bytes) in
-        match field "type" json with
-        | `String "map" ->
-            let* tile_w = parse_int "tilewidth" json in
-            let* tile_h = parse_int "tileheight" json in
-            let orientation =
-              match field "orientation" json with
-              | `String "orthogonal" -> Orthogonal
-              | `String "isometric" -> Isometric
-              | `String s -> failwith ("unsupported orientation: " ^ s)
-              | _ -> failwith "orientation missing"
-            in
-            let render_order =
-              match field "renderorder" json with
-              | `String "right-down" -> Right_down
-              | `String "right-up" -> Right_up
-              | `String "left-down" -> Left_down
-              | `String "left-up" -> Left_up
-              | _ -> Right_down
-            in
-            let* map_size =
-              match field "infinite" json with
-              | `Int 1 -> Ok Infinite
-              | _ ->
-                  let* cols = parse_int "width" json in
-                  let* rows = parse_int "height" json in
-                  Ok (Fixed { rows; columns = cols })
-            in
-            let r =
-              L.Asset.pack
-                (module A)
-                { orientation; render_order; tile_size = { w = tile_w; h = tile_h }; map_size }
-            in
-            Ok r
-        | `String other ->
-            Error
-              (L.Error.io_finalize path (Printf.sprintf "expected Tiled type=map, got %s" other))
-        | _ -> Error (L.Error.io_finalize path "missing top-level \"type\"")
-      with _ -> Error (L.Error.io_finalize path "invalid json")
-  end
 
   module Tileset_loader :
     L.Asset_loader.LOADER with type t = tileset and type decode = bytes and type ctx = unit = struct
@@ -213,7 +156,7 @@ struct
               Ok (L.Asset.pack (module A) r)
           (* shared image with per-tile rects *)
           | _ ->
-              let* tiles_list =
+              let* tiles =
                 match field "tiles" j with
                 | `List l when l <> [] -> Ok l
                 | _ -> fail "no top-level image and no tiles[]; unsupported tileset shape"
@@ -229,23 +172,27 @@ struct
                       | `Float f -> Ok (int_of_float f)
                       | _ -> fail "tile.id missing"
                     in
+
                     let* image_path =
                       match field "image" t with
                       | `String s -> Ok s
                       | _ -> fail "tile.image missing"
                     in
+
                     let* image_width =
                       match field "imagewidth" t with
                       | `Int i -> Ok i
                       | `Float f -> Ok (int_of_float f)
                       | _ -> fail "tile.imagewidth missing"
                     in
+
                     let* image_height =
                       match field "imageheight" t with
                       | `Int i -> Ok i
                       | `Float f -> Ok (int_of_float f)
                       | _ -> fail "tile.imageheight missing"
                     in
+
                     let* x =
                       match field "x" t with
                       | `Int i -> Ok i
@@ -253,6 +200,7 @@ struct
                       | `Null -> Ok 0
                       | _ -> fail "tile.x invalid"
                     in
+
                     let* y =
                       match field "y" t with
                       | `Int i -> Ok i
@@ -260,6 +208,7 @@ struct
                       | `Null -> Ok 0
                       | _ -> fail "tile.y invalid"
                     in
+
                     let* tile_width =
                       match field "w" t with
                       | `Int i -> Ok i
@@ -267,6 +216,7 @@ struct
                       | `Null -> Ok 0
                       | _ -> fail "tile.width invalid"
                     in
+
                     let* tile_height =
                       match field "h" t with
                       | `Int i -> Ok i
@@ -274,10 +224,11 @@ struct
                       | `Null -> Ok 0
                       | _ -> fail "tile.height invalid"
                     in
+
                     Ok
                       ((image_path, image_width, image_height, id, x, y, tile_width, tile_height)
                       :: acc))
-                  tiles_list (Ok [])
+                  tiles (Ok [])
               in
               (* same image for all tiles *)
               let* shared_path, image_w, image_h =
@@ -339,5 +290,110 @@ struct
                 }
               in
               Ok (L.Asset.pack (module A) r))
+  end
+
+  module Tilemap_loader :
+    L.Asset_loader.LOADER with type t = t and type decode = bytes and type ctx = unit = struct
+    type nonrec t = t
+    type decode = bytes
+    type ctx = unit
+
+    module A = Tilemap_asset
+
+    let type_id = A.type_id
+    let exts = [ ".tmj" ]
+
+    let begin_load path ~k =
+      L.IO.read_file path ~k:(function Ok bytes -> k (Ok bytes) | Error e -> k (Error e))
+
+    let finalize ctx path bytes =
+      let open Luma__serialize.Json_helpers in
+      let ( let* ) = Result.bind in
+      try
+        let json = Yojson.Safe.from_string (Bytes.unsafe_to_string bytes) in
+        match field "type" json with
+        | `String "map" ->
+            let* tile_w = parse_int "tilewidth" json in
+            let* tile_h = parse_int "tileheight" json in
+            let* background_colour = parse_string_opt "backgroundcolor" json in
+            let* class_ = parse_string_opt "class" json in
+            let* compression_level = parse_int_opt "compressionlevel" json in
+            let* infinite = parse_bool "infinite" json in
+            let* next_layer_id = parse_int "nextlayerid" json in
+            let* next_object_id = parse_int "nextobjectid" json in
+            (* TODO: let* parallax_origin_x = parse_float_opt "parallaxoriginx" json in
+            let* parallax_origin_y = parse_float_opt "parallaxoriginy" json in*)
+            let* tiled_version = parse_string "tiledversion" json in
+
+            let orientation =
+              match field "orientation" json with
+              | `String "orthogonal" -> Orthogonal
+              | `String "isometric" -> Isometric
+              | `String s -> failwith ("unsupported orientation: " ^ s)
+              | _ -> failwith "orientation missing"
+            in
+
+            let render_order =
+              match field "renderorder" json with
+              | `String "right-down" -> Right_down
+              | `String "right-up" -> Right_up
+              | `String "left-down" -> Left_down
+              | `String "left-up" -> Left_up
+              | _ -> Right_down
+            in
+
+            let* map_size =
+              match field "infinite" json with
+              | `Int 1 -> Ok Infinite
+              | _ ->
+                  let* cols = parse_int "width" json in
+                  let* rows = parse_int "height" json in
+                  Ok (Fixed { rows; columns = cols })
+            in
+
+            let* tilesets =
+              match field "tilesets" json with
+              | `List l when l <> [] ->
+                  let ( let* ) = Option.bind in
+                  Ok
+                    ((List.filter_map (fun a ->
+                          match a with
+                          | `Assoc _ as v ->
+                              let* first_gid = parse_int "firstgid" v |> Result.to_option in
+                              let* source = parse_string "source" v |> Result.to_option in
+                              Some { first_gid; source }
+                          | _ -> failwith ""))
+                       l)
+              | _ -> failwith "TODO"
+            in
+
+            let path = Filename.dirname path ^ "/" in
+            Ok
+              (L.Asset.pack
+                 (module A)
+                 {
+                   background_colour;
+                   class_;
+                   compression_level;
+                   infinite;
+                   layers = [];
+                   next_layer_id;
+                   next_object_id;
+                   orientation;
+                   (*parallax_origin_x;
+                   parallax_origin_y;*)
+                   properties = [];
+                   render_order;
+                   tiled_version;
+                   tile_size = { w = tile_w; h = tile_h };
+                   map_size;
+                   tilesets;
+                   path;
+                 })
+        | `String other ->
+            Error
+              (L.Error.io_finalize path (Printf.sprintf "expected Tiled type=map, got %s" other))
+        | _ -> Error (L.Error.io_finalize path "missing top-level \"type\"")
+      with _ -> Error (L.Error.io_finalize path "invalid json")
   end
 end

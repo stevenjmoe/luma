@@ -31,6 +31,12 @@ let parse_string_opt key json =
 let parse_float key json =
   match member key json with `Float v -> Ok v | _ -> Error (Error.parse_json (Float key))
 
+let parse_float_opt key json =
+  match member key json with
+  | `Float v -> Ok (Some v)
+  | `Null -> Ok None
+  | _ -> Error (Error.parse_json (Float key))
+
 let parse_int key json =
   match member key json with `Int v -> Ok v | _ -> Error (Error.parse_json (Int key))
 

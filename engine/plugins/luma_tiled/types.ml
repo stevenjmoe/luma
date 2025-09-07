@@ -59,9 +59,27 @@ type map_size =
     }
   | Infinite
 
+type tileset_outer = {
+  first_gid : int;
+  source : string;
+}
+
 type t = {
+  background_colour : string option;
+  class_ : string option;
+  compression_level : int option;
+  infinite : bool;
+  layers : string list; (*TODO*)
+  next_layer_id : int;
+  next_object_id : int;
   orientation : orientation;
+  (*TODO: parallax_origin_x : float option;
+  parallax_origin_y : float option;*)
+  properties : string list; (* TODO *)
   render_order : render_order;
+  tiled_version : string;
   tile_size : size;
   map_size : map_size;
+  tilesets : tileset_outer list;
+  path : string;
 }
