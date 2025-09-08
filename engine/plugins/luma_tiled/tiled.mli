@@ -1,12 +1,10 @@
 module Make (L : Luma.S) : sig
-  module Tilemap_asset : L.Asset.S with type t = Types.t
-  module Tileset_asset : L.Asset.S with type t = Types.tileset
+  type t
+  type tilemap
 
-  module Tilemap : sig
-    type t
+  module R : L.Resource.S with type t = t
 
-    val add : L.World.t -> string -> Luma__math.Vec2.t -> float -> int -> t option
-  end
-
+  val add : L.World.t -> string -> Luma__math.Vec2.t -> float -> int -> t -> tilemap option
+  val loaded : L.World.t -> L.Assets.handle -> bool
   val plugin : L.App.t -> L.App.t
 end
