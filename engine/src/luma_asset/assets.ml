@@ -12,11 +12,14 @@ type asset_record = {
   mutable status : status;
   generation : int;
   type_id : Luma__id.Id.Asset_type.t;
+  path : string option;
 }
 
 type t = (Luma__id.Id.Asset.t, asset_record) Hashtbl.t
 
-type 'a handle = {
+(* TODO: There is no type safety when retrieving handles. You can pass any handle to the get 
+   function regardless of the module provided. *)
+type handle = {
   id : Luma__id.Id.Asset.t;
   type_id : Luma__id.Id.Asset_type.t;
   generation : int;
@@ -27,7 +30,7 @@ let create () = Hashtbl.create 16
 
 let add_pending (type a) (module A : Asset.S with type t = a) ?path assets =
   let id = Luma__id.Id.Asset.next () in
-  let record = { status = Loading; generation = 1; type_id = A.type_id } in
+  let record = { status = Loading; generation = 1; type_id = A.type_id; path } in
   Hashtbl.replace assets id record;
   { id; type_id = A.type_id; generation = 1; path }
 
@@ -35,7 +38,7 @@ let add (type a) (module A : Asset.S with type t = a) ?path assets asset =
   let id = Luma__id.Id.Asset.next () in
   let generation = 1 in
   let packed = Asset.pack (module A) asset in
-  let record = { status = Ready packed; generation; type_id = A.type_id } in
+  let record = { status = Ready packed; generation; type_id = A.type_id; path } in
   Hashtbl.replace assets id record;
   { id; type_id = A.type_id; generation; path }
 
@@ -43,19 +46,19 @@ let resolve
     (type a)
     (module A : Asset.S with type t = a)
     (assets : t)
-    (h : a handle)
+    (h : handle)
     (asset : Asset.packed) : unit =
   match Hashtbl.find_opt assets h.id with
   | Some r when r.generation = h.generation && Luma__id.Id.Asset_type.eq r.type_id A.type_id ->
       r.status <- Ready asset
   | _ -> ()
 
-let fail (assets : t) (h : _ handle) (failed : failed) : unit =
+let fail (assets : t) (h : handle) (failed : failed) : unit =
   match Hashtbl.find_opt assets h.id with
   | Some r when r.generation = h.generation -> r.status <- Failed failed
   | _ -> ()
 
-let get (type a) (module A : Asset.S with type t = a) assets (handle : a handle) =
+let get (type a) (module A : Asset.S with type t = a) assets (handle : handle) =
   match Hashtbl.find_opt assets handle.id with
   | None -> None
   | Some (record : asset_record) when record.generation = handle.generation -> (
@@ -76,6 +79,8 @@ let get_all (type a) (module A : Asset.S with type t = a) (assets : t) =
            | _ -> None
          else None)
   |> List.of_seq
+
+let exists assets handle = Hashtbl.find_opt assets handle.id |> Option.is_some
 
 let is_loaded assets handle =
   match Hashtbl.find_opt assets handle.id with Some { status = Ready _; _ } -> true | _ -> false

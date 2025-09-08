@@ -15,7 +15,7 @@ val load :
   t ->
   string ->
   Luma__ecs.World.t ->
-  ('a Assets.handle, Luma__core.Error.error) result
+  (Assets.handle, Luma__core.Error.error) result
 (** Load an asset from a path. Automatically dispatches to the appropriate loader based on file
     extension. Returns an asset handle or an error. *)
 

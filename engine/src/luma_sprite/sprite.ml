@@ -6,13 +6,13 @@ module type S = sig
   type texture
   type t
 
-  val image : t -> texture Luma__asset__Assets.handle
+  val image : t -> Luma__asset__Assets.handle
   val texture_atlas : t -> Texture_atlas.t option
-  val set_image : t -> texture Luma__asset__Assets.handle -> unit
+  val set_image : t -> Luma__asset__Assets.handle -> unit
   val set_texture_atlas : t -> Texture_atlas.t -> unit
-  val sized : texture Luma__asset__Assets.handle -> Luma__math__Vec2.t -> t
-  val from_image : texture Luma__asset__Assets.handle -> t
-  val from_atlas_image : texture Luma__asset__Assets.handle -> Texture_atlas.t -> t
+  val sized : Luma__asset__Assets.handle -> Luma__math__Vec2.t -> t
+  val from_image : Luma__asset__Assets.handle -> t
+  val from_atlas_image : Luma__asset__Assets.handle -> Texture_atlas.t -> t
   val frame_size : t -> Luma__math__Vec2.t option
   val flip_x : t -> bool
   val flip_y : t -> bool
@@ -27,7 +27,7 @@ module Make (D : Luma__driver.Driver.S) : S with type texture = D.texture = stru
   type texture = D.Texture.t
 
   type t = {
-    mutable image : texture Luma__asset.Assets.handle;
+    mutable image : Luma__asset.Assets.handle;
     mutable texture_atlas : Texture_atlas.t option;
     mutable flip_x : bool;
     mutable flip_y : bool;
