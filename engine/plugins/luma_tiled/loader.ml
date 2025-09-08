@@ -308,7 +308,9 @@ struct
 
     let finalize ctx path bytes =
       let open Luma__serialize.Json_helpers in
+      let pretty_to_string = Yojson.Safe.pretty_to_string in
       let ( let* ) = Result.bind in
+
       try
         let json = Yojson.Safe.from_string (Bytes.unsafe_to_string bytes) in
         match field "type" json with
@@ -321,8 +323,8 @@ struct
             let* infinite = parse_bool "infinite" json in
             let* next_layer_id = parse_int "nextlayerid" json in
             let* next_object_id = parse_int "nextobjectid" json in
-            (* TODO: let* parallax_origin_x = parse_float_opt "parallaxoriginx" json in
-            let* parallax_origin_y = parse_float_opt "parallaxoriginy" json in*)
+            let* parallax_origin_x = parse_float_opt "parallaxoriginx" json in
+            let* parallax_origin_y = parse_float_opt "parallaxoriginy" json in
             let* tiled_version = parse_string "tiledversion" json in
 
             let* orientation =
@@ -349,6 +351,143 @@ struct
                   let* cols = parse_int "width" json in
                   let* rows = parse_int "height" json in
                   Ok (Fixed { rows; columns = cols })
+            in
+
+            let rec parse_layer layer =
+              let* id = parse_int "id" layer in
+              let* name = parse_string "name" layer in
+              let* class_ = parse_string_opt "class" layer in
+              let* opacity = parse_float_opt "opacity" layer in
+              let opacity = Option.value ~default:1. opacity in
+              let* visible = parse_bool "visible" layer in
+              let* offset_x = parse_float_opt "offsetx" layer in
+              let offset_x = Option.value ~default:0. offset_x in
+              let* offset_y = parse_float_opt "offsety" layer in
+              let offset_y = Option.value ~default:0. offset_y in
+              let* parallax_x = parse_float_opt "parallaxx" layer in
+              let parallax_x = Option.value ~default:0. parallax_x in
+              let* parallax_y = parse_float_opt "parallaxx" layer in
+              let parallax_y = Option.value ~default:0. parallax_y in
+              let properties = match field "properties" layer with `List xs -> xs | _ -> [] in
+              let* start_x = parse_int_opt "startx" layer in
+              let* start_y = parse_int_opt "starty" layer in
+              let* tint_colour = parse_string_opt "tintcolor" layer in
+              let* x = parse_int "x" layer in
+              let* y = parse_int "y" layer in
+              let common =
+                {
+                  class_;
+                  id;
+                  name;
+                  opacity;
+                  visible;
+                  offset_x;
+                  offset_y;
+                  parallax_x;
+                  parallax_y;
+                  properties;
+                  start_x;
+                  start_y;
+                  tint_colour;
+                  x;
+                  y;
+                }
+              in
+              match field "type" layer with
+              | `String "tilelayer" ->
+                  let* w = parse_int "width" layer in
+                  let* h = parse_int "height" layer in
+                  let size = { w; h } in
+                  let* encoding =
+                    match field "encoding" layer with
+                    | `String "csv" -> Ok Csv
+                    | `String "base64" -> Ok Base64
+                    | `Null -> Ok Csv
+                    | v -> fail path ("tilelayer.encoding invalid: " ^ pretty_to_string v)
+                  in
+
+                  let* compression =
+                    match field "compression" layer with
+                    | `String "zlib" -> Ok Zlib
+                    | `String "gzip" -> Ok Gzip
+                    | `String "zstd" -> Ok Zstd
+                    | `Null -> Ok None
+                    | v -> fail path ("tilelayer.compression invalid: " ^ pretty_to_string v)
+                  in
+
+                  let* data =
+                    match field "data" layer with
+                    | `String s -> Ok (String_ s)
+                    | `List xs ->
+                        let* rev =
+                          List.fold_left
+                            (fun acc d ->
+                              match acc with
+                              | Error _ as e -> e
+                              | Ok acc_list -> (
+                                  match Yojson.Safe.Util.to_int_option d with
+                                  | Some i -> Ok (i :: acc_list)
+                                  | None -> fail path "tilelayer.data must be a list of ints"))
+                            (Ok []) xs
+                        in
+                        Ok (Array_ (List.rev rev))
+                    | v ->
+                        fail path
+                          ("tilelayer.data expected string or array, got: " ^ pretty_to_string v)
+                  in
+                  (* TODO: chunks *)
+                  Ok { common; payload = Tile { size; encoding; compression; data; chunks = None } }
+              | `String "objectgroup" ->
+                  let* draw_order = parse_string_opt "draworder" layer in
+                  let draw_order = Option.value ~default:"topdown" draw_order in
+                  let objects = match field "objects" layer with `List xs -> xs | _ -> [] in
+                  Ok { common; payload = Object_group { draw_order; objects } }
+              | `String "imagelayer" ->
+                  let* image = parse_string "image" layer in
+                  let* iw = parse_int "width" layer in
+                  let* ih = parse_int "height" layer in
+                  let size = { w = iw; h = ih } in
+                  let* repeat_x = parse_bool "repeatx" layer in
+                  let* repeat_y = parse_bool "repeaty" layer in
+                  Ok { common; payload = Image { image; size; repeat_x; repeat_y } }
+              | `String "group" ->
+                  let* layers =
+                    match field "layers" layer with
+                    | `List xs ->
+                        let* rev =
+                          List.fold_left
+                            (fun acc j ->
+                              match acc with
+                              | Error _ as e -> e
+                              | Ok rs ->
+                                  let* r = parse_layer j in
+                                  Ok (r :: rs))
+                            (Ok []) xs
+                        in
+                        Ok (List.rev rev)
+                    | v -> fail path ("group.layers expected list, got: " ^ pretty_to_string v)
+                  in
+                  Ok { common; payload = Group { layers } }
+              | `String other -> fail path ("unsupported layer.type: " ^ other)
+              | v -> fail path ("layer.type expected string, got: " ^ pretty_to_string v)
+            in
+            let* layers =
+              match field "layers" json with
+              | `List l ->
+                  let* rev =
+                    List.fold_left
+                      (fun acc j ->
+                        match acc with
+                        | Error _ as e -> e
+                        | Ok xs ->
+                            let* layer = parse_layer j in
+                            Ok (layer :: xs))
+                      (Ok []) l
+                  in
+                  Ok (List.rev rev)
+              | j ->
+                  fail path
+                    ("map.layers expected a list of layers. Got:\n" ^ Yojson.Safe.pretty_to_string j)
             in
 
             let* tilesets =
@@ -380,12 +519,12 @@ struct
                    class_;
                    compression_level;
                    infinite;
-                   layers = [];
+                   layers;
                    next_layer_id;
                    next_object_id;
                    orientation;
-                   (*parallax_origin_x;
-                   parallax_origin_y;*)
+                   parallax_origin_x;
+                   parallax_origin_y;
                    properties = [];
                    render_order;
                    tiled_version;
