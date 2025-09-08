@@ -13,12 +13,6 @@ type size = {
   h : int;
 }
 
-type tile_layer = {
-  id : int;
-  name : string;
-  size : size;
-}
-
 type grid = {
   height : int;
   orientation : orientation;
@@ -64,17 +58,95 @@ type tileset_outer = {
   source : string;
 }
 
+type compression =
+  | Zlib
+  | Gzip
+  | Zstd
+  | None
+
+type layer_data =
+  | Array_ of int list
+  | String_ of string
+
+type draw_order =
+  | Topdown
+  | Index
+
+type encoding =
+  | Csv
+  | Base64
+
+type chunk = {
+  start_x : int;
+  start_y : int;
+  size : size;
+  data : layer_data;
+}
+
+type property = (* TODO *) Yojson.Safe.t
+
+type layer_common = {
+  class_ : string option;
+  id : int;
+  name : string;
+  opacity : float;
+  visible : bool;
+  offset_x : float;
+  offset_y : float;
+  parallax_x : float;
+  parallax_y : float;
+  properties : property list; (* TODO: proper typed props *)
+  start_x : int option;
+  start_y : int option;
+  tint_colour : string option; (* hex *)
+  x : int;
+  y : int;
+}
+
+type tile_layer = {
+  size : size;
+  encoding : encoding;
+  compression : compression;
+  data : layer_data;
+  chunks : chunk list option;
+}
+
+type object_group = {
+  draw_order : string;
+  objects : Yojson.Safe.t list; (* TODO: type this *)
+}
+
+type image_layer = {
+  image : string;
+  size : size;
+  repeat_x : bool;
+  repeat_y : bool;
+}
+
+type group = { layers : layer list }
+
+and layer_payload =
+  | Tile of tile_layer
+  | Object_group of object_group
+  | Image of image_layer
+  | Group of group
+
+and layer = {
+  common : layer_common;
+  payload : layer_payload;
+}
+
 type t = {
   background_colour : string option;
   class_ : string option;
   compression_level : int option;
   infinite : bool;
-  layers : string list; (*TODO*)
+  layers : layer list;
   next_layer_id : int;
   next_object_id : int;
   orientation : orientation;
-  (*TODO: parallax_origin_x : float option;
-  parallax_origin_y : float option;*)
+  parallax_origin_x : float option;
+  parallax_origin_y : float option;
   properties : string list; (* TODO *)
   render_order : render_order;
   tiled_version : string;

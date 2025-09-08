@@ -29,11 +29,15 @@ let parse_string_opt key json =
   | _ -> Error (Error.parse_json (String key))
 
 let parse_float key json =
-  match member key json with `Float v -> Ok v | _ -> Error (Error.parse_json (Float key))
+  match member key json with
+  | `Float v -> Ok v
+  | `Int v -> Ok (float_of_int v)
+  | _ -> Error (Error.parse_json (Float key))
 
 let parse_float_opt key json =
   match member key json with
   | `Float v -> Ok (Some v)
+  | `Int v -> Ok (Some (float_of_int v))
   | `Null -> Ok None
   | _ -> Error (Error.parse_json (Float key))
 
