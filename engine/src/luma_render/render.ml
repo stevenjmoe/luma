@@ -104,40 +104,27 @@ module Make (D : Luma__driver.Driver.S) :
       ?(texture_atlas = None)
       ?(src = None)
       () =
-    let create_rect texture =
+    let full_texture () =
       Rect.create ~pos:(Vec2.create 0. 0.)
-        ~size:
-          (Vec2.create
-             (D.Texture.width texture |> Float.of_int)
-             (D.Texture.height texture |> Float.of_int))
+        ~size:(Vec2.create (float @@ D.Texture.width texture) (float @@ D.Texture.height texture))
     in
-    let src_rect =
-      match src with
-      | Some r -> r
-      | None -> (
-          match texture_atlas with
-          | None -> create_rect texture
-          | Some atlas -> (
-              match Texture_atlas.get_frame atlas with
-              | None -> create_rect texture
-              | Some frame -> frame))
-    in
-    let x = Rect.x src_rect in
-    let y = Rect.y src_rect in
-    let w = Rect.width src_rect in
-    let h = Rect.height src_rect in
 
-    let default = Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create w h) in
+    (* Get with dimensions of the full texture if src is not provided *)
+    let src = match src with Some s -> s | None -> full_texture () in
+
+    let x = Rect.x src and y = Rect.y src in
+    let w = Rect.width src and h = Rect.height src in
+
     let src_rect =
       match (flip_x, flip_y) with
-      | false, false -> default
+      | false, false -> src
       | true, false -> Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create (-.w) h)
       | false, true -> Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create w (-.h))
       | true, true ->
           Rect.create ~pos:(Vec2.create (x +. w) (y +. h)) ~size:(Vec2.create (-.w) (-.h))
     in
-    let dest_rec = Rect.create ~pos:position ~size in
-    D.Texture.draw_texture texture src_rect dest_rec Vec2.zero 0.0 D.Colour.white
+    let dst = Rect.create ~pos:position ~size in
+    D.Texture.draw_texture texture src_rect dst Vec2.zero 0.0 D.Colour.white
 
   module Queue = struct
     open Luma__math

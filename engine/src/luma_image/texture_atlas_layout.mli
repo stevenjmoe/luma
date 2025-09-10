@@ -21,9 +21,6 @@ val textures : t -> (Rect.t, Containers.Vector.rw) Containers.Vector.t
     where each texture is located. Each rectangle defines the [min] and [max] coordinates of a
     texture within the atlas. *)
 
-val frame_size : t -> Vec2.t option
-(** [frame_size t] returns the size of an individual frame. *)
-
 val last_index : t -> int option
 (** [last_index t] returns [None] if the vector is empty, otherwise the index of the last inserted
     texture. *)

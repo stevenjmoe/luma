@@ -4,29 +4,24 @@ open Containers
 type t = {
   size : Vec2.t;
   textures : (Rect.t, Vector.rw) Vector.t;
-  frame_size : Vec2.t option;
   mutable last_index : int option;
 }
 
-let empty () =
-  { size = Vec2.zero; textures = Vector.create (); frame_size = None; last_index = None }
-
+let empty () = { size = Vec2.zero; textures = Vector.create (); last_index = None }
 let size t = t.size
 let textures t = t.textures
-let frame_size t = t.frame_size
 let last_index t = t.last_index
 
 let from_grid ?(padding = Vec2.zero) ?(offset = Vec2.zero) tile_size columns rows =
   let open Vec2.Infix in
   let sprites = Vector.create () in
-  let foi = Float.of_int in
 
   for y = 0 to rows - 1 do
     for x = 0 to columns - 1 do
       let pos =
-        (tile_size *.. Vec2.create (foi x) (foi y))
+        (tile_size *.. Vec2.create (float x) (float y))
         +.. offset
-        +.. (padding *.. Vec2.create (foi x) (foi y))
+        +.. (padding *.. Vec2.create (float x) (float y))
       in
       Vector.push sprites (Rect.create ~pos ~size:tile_size)
     done
@@ -34,10 +29,9 @@ let from_grid ?(padding = Vec2.zero) ?(offset = Vec2.zero) tile_size columns row
 
   {
     size =
-      (tile_size *.. Vec2.create (foi columns) (foi rows))
-      +.. (padding *.. Vec2.create (foi (columns - 1)) (foi (rows - 1)));
+      (tile_size *.. Vec2.create (float columns) (float rows))
+      +.. (padding *.. Vec2.create (float (columns - 1)) (float (rows - 1)));
     textures = sprites;
-    frame_size = Some tile_size;
     last_index = (if rows * columns = 0 then None else Some ((rows * columns) - 1));
   }
 

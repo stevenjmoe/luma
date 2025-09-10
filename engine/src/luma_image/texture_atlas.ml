@@ -15,6 +15,5 @@ type t = A.t
 
 let from_layout layout = { layout; index = 0 }
 let get_frame t = Texture_atlas_layout.get_frame t.layout t.index
-let frame_size t = Texture_atlas_layout.frame_size t.layout
 let set_index atlas index = atlas.index <- index
 let index atlas = atlas.index

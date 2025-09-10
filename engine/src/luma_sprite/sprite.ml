@@ -1,6 +1,7 @@
 open Luma__image
 open Luma__serialize
 open Luma__core
+open Luma__math
 
 module type S = sig
   type texture
@@ -13,7 +14,6 @@ module type S = sig
   val sized : Luma__asset__Assets.handle -> Luma__math__Vec2.t -> t
   val from_image : Luma__asset__Assets.handle -> t
   val from_atlas_image : Luma__asset__Assets.handle -> Texture_atlas.t -> t
-  val frame_size : t -> Luma__math__Vec2.t option
   val flip_x : t -> bool
   val flip_y : t -> bool
   val custom_size : t -> Luma__math__Vec2.t option
@@ -58,9 +58,6 @@ module Make (D : Luma__driver.Driver.S) : S with type texture = D.texture = stru
       flip_y = false;
       custom_size = None;
     }
-
-  let frame_size sprite =
-    match sprite.texture_atlas with None -> None | Some atlas -> Texture_atlas.frame_size atlas
 
   module C = Luma__ecs.Component.Make (struct
     type inner = t
@@ -117,19 +114,32 @@ struct
         Query.Tuple.iter2
           (fun sprite transform ->
             match Assets.get (module Texture.A) assets (Sprite.image sprite) with
+            | None -> ()
             | Some tex ->
-                let size = Transform.(Vec2.create transform.scale.x transform.scale.y) in
+                let open Transform in
                 let texture_atlas = Sprite.texture_atlas sprite in
+                let texture_width = D.Texture.width tex |> float
+                and texture_height = D.Texture.height tex |> float in
+
+                let src =
+                  match Sprite.texture_atlas sprite with
+                  | Some ta -> Texture_atlas.get_frame ta
+                  | None -> None
+                in
+
+                let size =
+                  match src with
+                  | Some r -> Vec2.create (Rect.width r) (Rect.height r)
+                  | None -> Vec2.create texture_width texture_height
+                in
+
                 let flip_x = Sprite.flip_x sprite in
                 let flip_y = Sprite.flip_y sprite in
                 let z = int_of_float transform.position.z in
                 let position = Vec2.create transform.position.x transform.position.y in
-                Renderer.push_texture ~z ~tex ~position ~size ?texture_atlas ~flip_x ~flip_y queue
-                  ();
-                ()
-            | None ->
-                ();
-                ())
+
+                Renderer.push_texture ~z ~tex ~position ~size ?texture_atlas ~flip_x ~flip_y ?src
+                  queue ())
           entities;
         world)
 
