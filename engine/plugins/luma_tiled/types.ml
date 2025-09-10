@@ -58,12 +58,6 @@ type tileset_outer = {
   source : string;
 }
 
-type compression =
-  | Zlib
-  | Gzip
-  | Zstd
-  | None
-
 type layer_data =
   | Array_ of int list
   | String_ of string
@@ -103,12 +97,32 @@ type layer_common = {
   y : int;
 }
 
+type compression =
+  | Zlib
+  | Gzip
+  | Zstd
+  | None
+
 type tile_layer = {
   size : size;
   encoding : encoding;
   compression : compression;
   data : layer_data;
   chunks : chunk list option;
+}
+
+type tileset_object = {
+  elipse : bool;
+  gid : int;
+  height : int;
+  id : int;
+  name : string;
+  rotation : int;
+  type_ : string option;
+  visible : bool;
+  width : int;
+  x : float;
+  y : float;
 }
 
 type object_group = {
@@ -134,24 +148,4 @@ and layer_payload =
 and layer = {
   common : layer_common;
   payload : layer_payload;
-}
-
-type t = {
-  background_colour : string option;
-  class_ : string option;
-  compression_level : int option;
-  infinite : bool;
-  layers : layer list;
-  next_layer_id : int;
-  next_object_id : int;
-  orientation : orientation;
-  parallax_origin_x : float option;
-  parallax_origin_y : float option;
-  properties : string list; (* TODO *)
-  render_order : render_order;
-  tiled_version : string;
-  tile_size : size;
-  map_size : map_size;
-  tilesets : tileset_outer list;
-  path : string;
 }

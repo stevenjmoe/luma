@@ -1,6 +1,6 @@
 module Make
     (L : Luma.S)
-    (Tilemap_asset : L.Asset.S with type t = Types.t)
+    (Tilemap_asset : L.Asset.S with type t = Tilemap.t)
     (Tileset_asset : L.Asset.S with type t = Types.tileset) =
 struct
   include Types
@@ -293,8 +293,9 @@ struct
   end
 
   module Tilemap_loader :
-    L.Asset_loader.LOADER with type t = t and type decode = bytes and type ctx = unit = struct
-    type nonrec t = t
+    L.Asset_loader.LOADER with type t = Tilemap.t and type decode = bytes and type ctx = unit =
+  struct
+    type nonrec t = Tilemap.t
     type decode = bytes
     type ctx = unit
 
@@ -515,28 +516,13 @@ struct
             in
 
             let path = Filename.dirname path ^ "/" in
-            Ok
-              (L.Asset.pack
-                 (module A)
-                 {
-                   background_colour;
-                   class_;
-                   compression_level;
-                   infinite;
-                   layers;
-                   next_layer_id;
-                   next_object_id;
-                   orientation;
-                   parallax_origin_x;
-                   parallax_origin_y;
-                   properties = [];
-                   render_order;
-                   tiled_version;
-                   tile_size = { w = tile_w; h = tile_h };
-                   map_size;
-                   tilesets;
-                   path;
-                 })
+            let tilemap =
+              Tilemap.create ~background_colour ~class_ ?compression_level ?parallax_origin_x
+                ?parallax_origin_y ~properties:[] ~render_order ~infinite ~layers ~next_layer_id
+                ~next_object_id ~orientation ~tiled_version ~tile_size:{ w = tile_w; h = tile_h }
+                ~map_size ~tilesets ~path ()
+            in
+            Ok (L.Asset.pack (module A) tilemap)
         | `String other ->
             Error
               (L.Error.io_finalize path (Printf.sprintf "expected Tiled type=map, got %s" other))

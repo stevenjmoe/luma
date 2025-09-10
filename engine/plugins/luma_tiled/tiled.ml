@@ -6,7 +6,7 @@ module Make (L : Luma.S) = struct
 
   (* Internal assets. Public facing API should only see the final Tilemap type and the resource. *)
   module Tilemap_asset = Asset.Make (struct
-    type inner = t
+    type inner = Tilemap.t
   end)
 
   module Tileset_asset = Asset.Make (struct
@@ -94,9 +94,6 @@ module Make (L : Luma.S) = struct
                   | Some tilemap -> ( match tilemap.phase with Ready _ -> true | _ -> false)
                   | None -> false))
 
-  let orientation t = t.orientation
-  let render_order t = t.render_order
-
   (* private functions *)
   let register_map_loader () =
     System.make_with_resources ~components:End
@@ -139,12 +136,12 @@ module Make (L : Luma.S) = struct
                                 Asset_server.load
                                   (module Tileset_asset)
                                   server
-                                  (Filename.concat tilemap_asset.path ts.source)
+                                  (Filename.concat (Tilemap.path tilemap_asset) ts.source)
                                   w
                               with
                               | Ok handle -> Ok handle
                               | Error e -> Error e)
-                            tilemap_asset.tilesets
+                            (Tilemap.tilesets tilemap_asset)
                         in
 
                         (* Split the successful results from the failed. If all are successful, move to the next phase.
@@ -192,7 +189,9 @@ module Make (L : Luma.S) = struct
                                      (Error.parse_json
                                         (String "Tiled: collection tilesets not supported yet"))
                                | Some rel_path ->
-                                   let path = Filename.concat tilemap_asset.path rel_path in
+                                   let path =
+                                     Filename.concat (Tilemap.path tilemap_asset) rel_path
+                                   in
                                    Asset_server.load (module Image.Texture.A) server path w)
                       in
                       match List.partition (function Ok _ -> true | _ -> false) tex_handles with
@@ -212,7 +211,7 @@ module Make (L : Luma.S) = struct
                                     errs)))
                 | Loading_textures { ts; tex } ->
                     let all_tex_ready = List.for_all (fun th -> Assets.is_loaded assets th) tex in
-                    if all_tex_ready then (
+                    if all_tex_ready then
                       let desc =
                         Assets.get (module Tilemap_asset) assets tilemap.map |> Option.get
                       in
@@ -257,7 +256,7 @@ module Make (L : Luma.S) = struct
 
                       let spans =
                         (* use last_local_id, not tile_count-1, to cover sparse ids *)
-                        desc.tilesets
+                        Tilemap.tilesets desc
                         |> List.mapi (fun i r ->
                                let set = sets.(i) in
                                {
@@ -268,11 +267,8 @@ module Make (L : Luma.S) = struct
                         |> List.sort (fun a b -> compare a.first b.first)
                         |> Array.of_list
                       in
-                      Printf.printf "tilesets refs=%d sets=%d first0=%d\n%!"
-                        (List.length desc.tilesets) (Array.length sets)
-                        (match desc.tilesets with [] -> -1 | r :: _ -> r.first_gid);
 
-                      tilemap.phase <- Ready { desc; sets; spans })
+                      tilemap.phase <- Ready { desc; sets; spans }
                 | _ -> ())
               tilemap_map);
         w)
@@ -300,7 +296,7 @@ module Make (L : Luma.S) = struct
     let gid = gid0 land 0x0FFF_FFFF in
     if gid <= 0 then None
     else
-      let refs = Array.of_list rt.desc.tilesets in
+      let refs = Array.of_list (Tilemap.tilesets rt.desc) in
       let n = Int.min (Array.length refs) (Array.length rt.sets) in
       let rec scan i : (tileset_rt * Rect.t) option =
         if i < 0 then None
@@ -402,7 +398,8 @@ module Make (L : Luma.S) = struct
                             match data_opt with
                             | None -> ()
                             | Some data ->
-                                let tile_w = rt.desc.tile_size.w and tile_h = rt.desc.tile_size.h in
+                                let tile_size = Tilemap.tile_size rt.desc in
+                                let tile_w = tile_size.w and tile_h = tile_size.h in
                                 let z = tm.z_base + layer_idx in
                                 for row = 0 to tl.size.h - 1 do
                                   let base = row * tl.size.w in
@@ -420,13 +417,11 @@ module Make (L : Luma.S) = struct
                                         | Some tex ->
                                             let cell_x =
                                               Vec2.x tm.origin
-                                              +. float_of_int (col * rt.desc.tile_size.w)
-                                                 *. tm.scale
+                                              +. (float_of_int (col * tile_size.w) *. tm.scale)
                                             in
                                             let cell_y =
                                               Vec2.y tm.origin
-                                              +. float_of_int (row * rt.desc.tile_size.h)
-                                                 *. tm.scale
+                                              +. (float_of_int (row * tile_size.h) *. tm.scale)
                                             in
                                             let dw, dh =
                                               if set.columns <= 0 then
@@ -442,7 +437,7 @@ module Make (L : Luma.S) = struct
                                   done
                                 done)
                         | _ -> ())
-                      rt.desc.layers
+                      (Tilemap.layers rt.desc)
                 | _ -> ())
               tbl);
         world)
