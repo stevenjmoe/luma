@@ -208,7 +208,7 @@ struct
                     in
 
                     let* tile_width =
-                      match field "w" t with
+                      match field "width" t with
                       | `Int i -> Ok i
                       | `Float f -> Ok (int_of_float f)
                       | `Null -> Ok 0
@@ -216,7 +216,7 @@ struct
                     in
 
                     let* tile_height =
-                      match field "h" t with
+                      match field "height" t with
                       | `Int i -> Ok i
                       | `Float f -> Ok (int_of_float f)
                       | `Null -> Ok 0
@@ -258,12 +258,12 @@ struct
               in
               let tiles =
                 parsed
-                |> List.map (fun (_p, _iw, _ih, id, x, y, _tile_width, _tile_height) ->
+                |> List.map (fun (_p, _iw, _ih, id, x, y, tile_width, tile_height) ->
                        {
                          id;
                          image_path = shared_path;
                          image_size;
-                         size = tile_size;
+                         size = { w = tile_width; h = tile_height };
                          position = { x; y };
                        })
                 |> Array.of_list
@@ -436,7 +436,11 @@ struct
                           ("tilelayer.data expected string or array, got: " ^ pretty_to_string v)
                   in
                   (* TODO: chunks *)
-                  Ok { common; payload = Tile { size; encoding; compression; data; chunks = None } }
+                  Ok
+                    {
+                      common;
+                      payload = Tile_layer { size; encoding; compression; data; chunks = None };
+                    }
               | `String "objectgroup" ->
                   let* draw_order = parse_string_opt "draworder" layer in
                   let draw_order = Option.value ~default:"topdown" draw_order in

@@ -126,7 +126,7 @@ type image_layer = {
 type group = { layers : layer list }
 
 and layer_payload =
-  | Tile of tile_layer
+  | Tile_layer of tile_layer
   | Object_group of object_group
   | Image of image_layer
   | Group of group
