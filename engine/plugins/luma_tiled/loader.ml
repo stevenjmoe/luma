@@ -209,7 +209,7 @@ struct
 
                     let* tile_width =
                       match field "width" t with
-                      | `Int i -> Ok i
+                      | `Int i when i > 0 -> Ok i
                       | `Float f -> Ok (int_of_float f)
                       | `Null -> Ok 0
                       | _ -> fail path "tile.width invalid"
@@ -217,7 +217,7 @@ struct
 
                     let* tile_height =
                       match field "height" t with
-                      | `Int i -> Ok i
+                      | `Int i when i > 0 -> Ok i
                       | `Float f -> Ok (int_of_float f)
                       | `Null -> Ok 0
                       | _ -> fail path "tile.height invalid"
