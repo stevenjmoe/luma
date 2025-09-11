@@ -8,6 +8,22 @@ type render_order =
   | Left_down
   | Left_up
 
+type fill_mode =
+  | Stretch
+  | Preserve_aspect_fit
+
+type object_alignment =
+  | Unspecified
+  | Top_left
+  | Top
+  | Top_right
+  | Left
+  | Center
+  | Right
+  | Bottom_left
+  | Bottom
+  | Bottom_right
+
 type size = {
   w : int;
   h : int;
@@ -30,20 +46,6 @@ type tile = {
   image_size : size;
   size : size;
   position : position;
-}
-
-type tileset = {
-  class_ : string option;
-  columns : int;
-  grid : grid option;
-  image : string option;
-  image_size : size option;
-  margin : int;
-  name : string;
-  spacing : int;
-  tile_count : int;
-  tile_size : size;
-  tiles : tile array;
 }
 
 type map_size =

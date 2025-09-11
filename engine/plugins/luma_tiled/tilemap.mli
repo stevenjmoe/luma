@@ -23,8 +23,8 @@ val create :
   unit ->
   t
 (** [create ?background_colour ?class_ ?compression_level ?parallax_origin_x ?parallax_origin_y
-     ?properties ?render_order infinite layers next_layer_id next_object_id orientation
-     tiled_version tile_size map_size tilesets path] *)
+     ?properties ?render_order ~infinite ~layers ~next_layer_id ~next_object_id ~orientation
+     ~tiled_version ~tile_size ~map_size ~tilesets ~path] *)
 
 val background_colour : t -> string option
 val class_ : t -> string option

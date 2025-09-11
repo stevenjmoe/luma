@@ -10,14 +10,15 @@ module Make (L : Luma.S) = struct
   end)
 
   module Tileset_asset = Asset.Make (struct
-    type inner = tileset
+    type inner = Tileset.t
   end)
 
   module Loader = Loader.Make (L) (Tilemap_asset) (Tileset_asset)
 
   type tileset_rt = {
     texture_handle : Assets.handle;
-    tile_size : size;
+    tile_width : int;
+    tile_height : int;
     columns : int;
     tile_count : int;
     margin : int;
@@ -183,7 +184,7 @@ module Make (L : Luma.S) = struct
                                  |> Option.to_result
                                       ~none:(Error.asset_load "Could not get tileset asset")
                                in
-                               match ts.image with
+                               match Tileset.image ts with
                                | None ->
                                    Error
                                      (Error.parse_json
@@ -222,9 +223,12 @@ module Make (L : Luma.S) = struct
                             let ts = L.Assets.get (module Tileset_asset) assets th |> Option.get in
                             (* collection vs atlas *)
                             let (rects : (int, Rect.t) Hashtbl.t option), last_local_id =
-                              if ts.columns > 0 then (None, ts.tile_count - 1)
+                              let columns = Tileset.columns ts in
+                              let tile_count = Tileset.tile_count ts in
+                              let tiles = Tileset.tiles ts in
+                              if columns > 0 then (None, tile_count - 1)
                               else
-                                let tbl = Hashtbl.create ts.tile_count in
+                                let tbl = Hashtbl.create tile_count in
                                 Array.iter
                                   (fun t ->
                                     let pos =
@@ -232,21 +236,22 @@ module Make (L : Luma.S) = struct
                                     in
                                     let size = Vec2.create (float t.size.w) (float t.size.h) in
                                     Hashtbl.replace tbl t.id (Rect.create ~pos ~size))
-                                  ts.tiles;
+                                  tiles;
                                 let max_id =
                                   Array.fold_left
                                     (fun m (t : tile) -> if t.id > m then t.id else m)
-                                    0 ts.tiles
+                                    0 tiles
                                 in
                                 (Some tbl, max_id)
                             in
                             {
                               texture_handle = texh;
-                              tile_size = ts.tile_size;
-                              columns = ts.columns;
-                              tile_count = ts.tile_count;
-                              margin = ts.margin;
-                              spacing = ts.spacing;
+                              tile_width = Tileset.tile_width ts;
+                              tile_height = Tileset.tile_height ts;
+                              columns = Tileset.columns ts;
+                              tile_count = Tileset.tile_count ts;
+                              margin = Tileset.margin ts;
+                              spacing = Tileset.spacing ts;
                               rects;
                               last_local_id;
                             })
@@ -314,10 +319,10 @@ module Make (L : Luma.S) = struct
                 else
                   let col = local mod set.columns in
                   let row = local / set.columns in
-                  let x = set.margin + (col * (set.tile_size.w + set.spacing)) in
-                  let y = set.margin + (row * (set.tile_size.h + set.spacing)) in
+                  let x = set.margin + (col * (set.tile_width + set.spacing)) in
+                  let y = set.margin + (row * (set.tile_height + set.spacing)) in
                   let pos = Vec2.create (float x) (float y) in
-                  let size = Vec2.create (float set.tile_size.w) (float set.tile_size.h) in
+                  let size = Vec2.create (float set.tile_width) (float set.tile_height) in
                   Some (set, Rect.create ~pos ~size)
       in
       scan (n - 1)
@@ -363,10 +368,10 @@ module Make (L : Luma.S) = struct
                   else
                     let col = local mod set.columns in
                     let row = local / set.columns in
-                    let x = set.margin + (col * (set.tile_size.w + set.spacing)) in
-                    let y = set.margin + (row * (set.tile_size.h + set.spacing)) in
+                    let x = set.margin + (col * (set.tile_width + set.spacing)) in
+                    let y = set.margin + (row * (set.tile_height + set.spacing)) in
                     let pos = Vec2.create (float x) (float y) in
-                    let size = Vec2.create (float set.tile_size.w) (float set.tile_size.h) in
+                    let size = Vec2.create (float set.tile_width) (float set.tile_height) in
                     Some (set, Rect.create ~pos ~size)
         in
         bs 0 (Array.length rt.spans - 1)

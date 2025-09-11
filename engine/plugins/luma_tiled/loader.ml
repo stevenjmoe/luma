@@ -1,11 +1,9 @@
 module Make
     (L : Luma.S)
     (Tilemap_asset : L.Asset.S with type t = Tilemap.t)
-    (Tileset_asset : L.Asset.S with type t = Types.tileset) =
+    (Tileset_asset : L.Asset.S with type t = Tileset.t) =
 struct
   include Types
-
-  type x = int
 
   (* json helpers *)
   let field name = function
@@ -15,8 +13,9 @@ struct
   let fail path msg = Error (L.Error.io_finalize path msg)
 
   module Tileset_loader :
-    L.Asset_loader.LOADER with type t = tileset and type decode = bytes and type ctx = unit = struct
-    type t = tileset
+    L.Asset_loader.LOADER with type t = Tileset.t and type decode = bytes and type ctx = unit =
+  struct
+    type t = Tileset.t
     type decode = bytes
     type ctx = unit
 
@@ -87,9 +86,9 @@ struct
           in
 
           let* name = parse_string "name" j in
-          let* tile_w = int_like "tilewidth" j path in
-          let* tile_h = int_like "tileheight" j path in
-          let tile_size = { w = tile_w; h = tile_h } in
+          let* tile_width = int_like "tilewidth" j path in
+          let* tile_height = int_like "tileheight" j path in
+          let tile_size = { w = tile_width; h = tile_height } in
           let* margin = int_like_opt ~default:0 "margin" j path in
           let* spacing = int_like_opt ~default:0 "spacing" j path in
           let class_ = match field "class" j with `String s -> Some s | _ -> None in
@@ -109,7 +108,8 @@ struct
               let* tile_count = int_like "tilecount" j path in
 
               let max_cols =
-                if tile_w + spacing = 0 then 0 else (image_w - margin + spacing) / (tile_w + spacing)
+                if tile_width + spacing = 0 then 0
+                else (image_w - margin + spacing) / (tile_width + spacing)
               in
               let* () =
                 if columns <= max_cols then Ok ()
@@ -117,7 +117,8 @@ struct
               in
               let rows = (tile_count + columns - 1) / columns in
               let max_rows =
-                if tile_h + spacing = 0 then 0 else (image_h - margin + spacing) / (tile_h + spacing)
+                if tile_height + spacing = 0 then 0
+                else (image_h - margin + spacing) / (tile_height + spacing)
               in
               let* () =
                 if rows <= max_rows then Ok ()
@@ -132,24 +133,14 @@ struct
                 Array.init tile_count (fun id ->
                     let col = id mod columns in
                     let row = id / columns in
-                    let x = margin + (col * (tile_w + spacing)) in
-                    let y = margin + (row * (tile_h + spacing)) in
+                    let x = margin + (col * (tile_width + spacing)) in
+                    let y = margin + (row * (tile_height + spacing)) in
                     { id; image_path; image_size; size = tile_size; position = { x; y } })
               in
-              let r : tileset =
-                {
-                  class_;
-                  columns;
-                  grid;
-                  image = Some image_path;
-                  image_size = Some image_size;
-                  margin;
-                  name;
-                  spacing;
-                  tile_count;
-                  tile_size;
-                  tiles;
-                }
+              let r : Tileset.t =
+                Tileset.create ~class_ ~image_width:image_w ~image_height:image_h ~name ~tiles
+                  ~tile_width ~tile_height ~columns ~image:(Some image_path) ~margin ~tile_count
+                  ~spacing ~tiled_version:"" ()
               in
               Ok (L.Asset.pack (module A) r)
           (* shared image with per-tile rects *)
@@ -229,7 +220,7 @@ struct
                   tiles (Ok [])
               in
               (* same image for all tiles *)
-              let* shared_path, image_w, image_h =
+              let* shared_path, image_width, image_height =
                 match parsed with
                 | [] -> fail path "empty tiles[]"
                 | (p, iw, ih, _, _, _, tile_width, tile_height) :: rest ->
@@ -250,7 +241,7 @@ struct
                 if bounds_ok then Ok () else fail path "one or more tiles out of atlas bounds"
               in
 
-              let image_size = { w = image_w; h = image_h } in
+              let image_size = { w = image_width; h = image_height } in
               let parsed =
                 List.sort
                   (fun (_, _, _, id1, _, _, _, _) (_, _, _, id2, _, _, _, _) -> compare id1 id2)
@@ -274,20 +265,10 @@ struct
                 | `Float f -> Ok (int_of_float f)
                 | _ -> Ok (Array.length tiles)
               in
-              let r : tileset =
-                {
-                  class_;
-                  columns = 0;
-                  grid;
-                  image = Some shared_path;
-                  image_size = Some image_size;
-                  margin;
-                  name;
-                  spacing;
-                  tile_count;
-                  tile_size;
-                  tiles;
-                }
+              let r : Tileset.t =
+                Tileset.create ~class_ ~image_width ~image_height ~name ~tiles ~tile_width
+                  ~tile_height ~columns:0 ~image:(Some shared_path) ~margin ~tile_count ~spacing
+                  ~tiled_version:"" ()
               in
               Ok (L.Asset.pack (module A) r))
   end
