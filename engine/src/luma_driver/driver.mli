@@ -22,7 +22,7 @@ module type S = sig
 
     val run_io_loop : unit -> unit
     val read_file : path -> k:((bytes, Error.error) result -> unit) -> unit
-    val read_file_blocking : path -> bytes
+    val read_file_blocking : path -> string
     val write_file : path -> bytes -> unit
   end
 
@@ -82,6 +82,7 @@ module type S = sig
     val rgb : r:int -> g:int -> b:int -> colour
     val rgba : r:int -> g:int -> b:int -> a:int -> colour
     val white : colour
+    val from_string : string -> (colour, Luma__core.Error.error) result
   end
 
   module Image : sig

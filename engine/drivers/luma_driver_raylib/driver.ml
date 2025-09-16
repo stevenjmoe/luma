@@ -63,7 +63,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
             in
             loop 0L)
 
-    let read_file_blocking path = Bytes.of_string ""
+    let read_file_blocking path = ""
 
     (* TODO: Error *)
     let write_file (path : string) (bytes : bytes) : unit =
@@ -86,6 +86,21 @@ module Raylib_driver : Luma__driver.Driver.S = struct
     let rgb ~r ~g ~b = Raylib.Color.create r g b 255
     let rgba ~r ~g ~b ~a = Raylib.Color.create r g b a
     let white = Raylib.Color.white
+
+    let from_string s =
+      let s =
+        if String.length s > 0 && s.[0] = '#' then String.sub s 1 (String.length s - 1) else s
+      in
+      match s with
+      | s when String.length s = 8 ->
+          let hex i = int_of_string ("0x" ^ String.sub s i 2) in
+          let a = hex 0 and r = hex 2 and g = hex 4 and b = hex 6 in
+          Ok (Raylib.Color.create r g b a)
+      | s when String.length s = 6 ->
+          let hex i = int_of_string ("0x" ^ String.sub s i 2) in
+          let r = hex 0 and g = hex 2 and b = hex 4 in
+          Ok (Raylib.Color.create r g b 255)
+      | _ -> Error (Error.hexcode s)
   end
 
   module Image = struct

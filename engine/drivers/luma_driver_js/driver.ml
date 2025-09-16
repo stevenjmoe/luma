@@ -112,7 +112,7 @@ module Js_driver : Luma__driver.Driver.S = struct
 
     let run_io_loop () = ()
     let read_file path ~k = ()
-    let read_file_blocking path = Bytes.create 0
+    let read_file_blocking path = ""
     let write_file path bytes = ()
   end
 
@@ -219,6 +219,7 @@ module Js_driver : Luma__driver.Driver.S = struct
     let rgb ~r ~g ~b = { r = clamp r; g = clamp g; b = clamp b; a = 255 }
     let rgba ~r ~g ~b ~a = { r = clamp r; g = clamp g; b = clamp b; a = clamp a }
     let white = rgb ~r:255 ~g:255 ~b:255
+    let from_string s = failwith "TODO"
   end
 
   module Image = struct

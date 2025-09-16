@@ -105,6 +105,7 @@ module type S = sig
     val rgb : r:int -> g:int -> b:int -> t
     val rgba : r:int -> g:int -> b:int -> a:int -> t
     val white : t
+    val from_string : string -> (t, Luma__core.Error.error) result
   end
 
   module Camera : Luma__render.Camera.S
