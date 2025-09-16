@@ -27,6 +27,9 @@ module type Renderer = sig
     ?flip_y:bool ->
     ?texture_atlas:Luma__image.Texture_atlas.t option ->
     ?src:Rect.t option ->
+    ?opacity:float ->
+    ?rotation:float ->
+    ?origin:Vec2.t ->
     unit ->
     unit
 
@@ -71,6 +74,9 @@ module type Renderer = sig
     ?src:Rect.t ->
     ?flip_x:bool ->
     ?flip_y:bool ->
+    ?opacity:float ->
+    ?rotation:float ->
+    ?origin:Vec2.t ->
     Queue.item list ref ->
     unit ->
     unit
@@ -103,6 +109,9 @@ module Make (D : Luma__driver.Driver.S) :
       ?(flip_y = false)
       ?(texture_atlas = None)
       ?(src = None)
+      ?(opacity = 1.)
+      ?(rotation = 0.)
+      ?(origin = Vec2.zero)
       () =
     let full_texture () =
       Rect.create ~pos:(Vec2.create 0. 0.)
@@ -124,7 +133,11 @@ module Make (D : Luma__driver.Driver.S) :
           Rect.create ~pos:(Vec2.create (x +. w) (y +. h)) ~size:(Vec2.create (-.w) (-.h))
     in
     let dst = Rect.create ~pos:position ~size in
-    D.Texture.draw_texture texture src_rect dst Vec2.zero 0.0 D.Colour.white
+    let opacity = if opacity < 0. then 0. else if opacity > 1. then 1. else opacity in
+    let opacity = int_of_float ((opacity *. 255.0) +. 0.5) in
+    let colour = D.Colour.rgba ~r:255 ~b:255 ~g:255 ~a:opacity in
+
+    D.Texture.draw_texture texture src_rect dst origin rotation colour
 
   module Queue = struct
     open Luma__math
@@ -135,6 +148,9 @@ module Make (D : Luma__driver.Driver.S) :
       size : Vec2.t;
       flip_x : bool;
       flip_y : bool;
+      opacity : float;
+      rotation : float;
+      origin : Vec2.t;
       src : Rect.t option;
       atlas : Luma__image.Texture_atlas.t option;
     }
@@ -184,9 +200,26 @@ module Make (D : Luma__driver.Driver.S) :
       ?src
       ?(flip_x = false)
       ?(flip_y = false)
+      ?(opacity = 1.)
+      ?(rotation = 0.)
+      ?(origin = Vec2.zero)
       q
       () =
-    let s = Queue.{ tex; pos = position; size; flip_x; flip_y; atlas = texture_atlas; src } in
+    let s =
+      Queue.
+        {
+          tex;
+          pos = position;
+          size;
+          flip_x;
+          flip_y;
+          atlas = texture_atlas;
+          src;
+          opacity;
+          rotation;
+          origin;
+        }
+    in
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Sprite s }
 
   let push_rect ~z ~rect ?(layers = 1L) colour q =
@@ -233,7 +266,8 @@ module Make (D : Luma__driver.Driver.S) :
                          match cmd with
                          | Queue.Sprite s ->
                              draw_texture s.tex ~position:s.pos ~size:s.size ~flip_x:s.flip_x
-                               ~flip_y:s.flip_y ~texture_atlas:s.atlas ~src:s.src ()
+                               ~flip_y:s.flip_y ~texture_atlas:s.atlas ~src:s.src ~opacity:s.opacity
+                               ~rotation:s.rotation ~origin:s.origin ()
                          | Queue.Rect (r, colour) ->
                              draw_rect r colour;
                              ()

@@ -25,6 +25,9 @@ module type Renderer = sig
     ?flip_y:bool ->
     ?texture_atlas:Texture_atlas.t option ->
     ?src:Luma__math.Rect.t option ->
+    ?opacity:float ->
+    ?rotation:float ->
+    ?origin:Vec2.t ->
     unit ->
     unit
 
@@ -69,6 +72,9 @@ module type Renderer = sig
     ?src:Luma__math.Rect.t ->
     ?flip_x:bool ->
     ?flip_y:bool ->
+    ?opacity:float ->
+    ?rotation:float ->
+    ?origin:Vec2.t ->
     Queue.item list ref ->
     unit ->
     unit
