@@ -63,7 +63,9 @@ module Raylib_driver : Luma__driver.Driver.S = struct
             in
             loop 0L)
 
-    let read_file_blocking path = ""
+    let read_file_blocking path =
+      let ic = In_channel.open_text path in
+      In_channel.input_all ic
 
     (* TODO: Error *)
     let write_file (path : string) (bytes : bytes) : unit =

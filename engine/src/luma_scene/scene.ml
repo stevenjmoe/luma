@@ -104,9 +104,7 @@ module Make (D : Driver.S) : S = struct
         D.IO.write_file file bytes
     | Error _ -> ()
 
-  let read filepath =
-    let bytes = D.IO.read_file_blocking filepath in
-    Bytes.unsafe_to_string bytes
+  let read filepath = D.IO.read_file_blocking filepath
 
   module A = Asset.Make (struct
     type inner = t
