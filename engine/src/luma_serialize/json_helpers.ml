@@ -9,6 +9,33 @@ let of_vec2 label (v : Vec2.t) = (label, `Assoc [ ("x", `Float v.x); ("y", `Floa
 let of_float label f = (label, `Float f)
 let of_bool label f = (label, `Bool f)
 
+let field name = function
+  | `Assoc kv -> ( match List.assoc_opt name kv with Some v -> v | None -> `Null)
+  | _ -> `Null
+
+let int_error key = Error (Error.parse_json (Int key))
+
+(** Parses an int or float field with the given key as an int.
+
+    Returns an error if the field isn't an int, float, or null. *)
+let parse_int_like key j path =
+  match field key j with
+  | `Int i -> Ok i
+  | `Float f -> Ok (int_of_float f)
+  | `Null -> int_error key
+  | _ -> int_error key
+
+(** Parses an int or float field with the given key as an int.
+
+    Returns a default value if the field is null. Returns an error if the field isn't an int, float,
+    or null.*)
+let parse_int_like_or_default ?(default = 0) key j path =
+  match field key j with
+  | `Int i -> Ok i
+  | `Float f -> Ok (int_of_float f)
+  | `Null -> Ok default
+  | _ -> int_error key
+
 let parse_vec2 key json =
   match member key json with
   | `Assoc [ ("x", `Float x); ("y", `Float y) ] -> Ok (Vec2.create x y)
@@ -52,6 +79,12 @@ let parse_int_opt key json =
 
 let parse_bool key json =
   match member key json with `Bool v -> Ok v | _ -> Error (Error.parse_json (Bool key))
+
+let parse_bool_opt key json =
+  match member key json with
+  | `Bool v -> Ok (Some v)
+  | `Null -> Ok None
+  | _ -> Error (Error.parse_json (Bool key))
 
 let parse_uuid key json =
   match member key json with
