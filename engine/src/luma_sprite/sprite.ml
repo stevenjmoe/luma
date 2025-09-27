@@ -137,9 +137,10 @@ struct
                 let flip_y = Sprite.flip_y sprite in
                 let z = int_of_float transform.position.z in
                 let position = Vec2.create transform.position.x transform.position.y in
+                let rotation = transform.rotation in
 
                 Renderer.push_texture ~z ~tex ~position ~size ?texture_atlas ~flip_x ~flip_y ?src
-                  queue ())
+                  ~rotation queue ())
           entities;
         world)
 
