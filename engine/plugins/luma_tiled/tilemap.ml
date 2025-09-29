@@ -12,9 +12,11 @@ type t = {
   properties : string list; (* TODO *)
   render_order : Types.render_order;
   tiled_version : string;
-  tile_size : Types.size;
+  tile_width : int;
+  tile_height : int;
   map_size : Types.map_size;
   tilesets : Types.tileset_outer list;
+  tilesets2 : Tileset.t list;
   path : string;
 }
 
@@ -32,9 +34,11 @@ let create
     ~next_object_id
     ~orientation
     ~tiled_version
-    ~tile_size
+    ~tile_width
+    ~tile_height
     ~map_size
     ~tilesets
+    ~tilesets2
     ~path
     () =
   {
@@ -51,9 +55,11 @@ let create
     orientation;
     render_order;
     tiled_version;
-    tile_size;
+    tile_width;
+    tile_height;
     map_size;
     tilesets;
+    tilesets2;
     path;
   }
 
@@ -70,7 +76,8 @@ let next_layer_id map = map.next_layer_id
 let next_object_id map = map.next_object_id
 let orientation map = map.orientation
 let tiled_version map = map.tiled_version
-let tile_size map = map.tile_size
+let tile_width map = map.tile_width
+let tile_height map = map.tile_height
 let map_size map = map.map_size
 let tilesets map = map.tilesets
 let path map = map.path

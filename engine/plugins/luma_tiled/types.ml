@@ -1,6 +1,23 @@
+let flipped_horizontally_flag = 0x8000_0000
+let flipped_vertically_flag = 0x4000_0000
+let flipped_diagonally_flag = 0x2000_0000
+
+let all_flip_flags =
+  flipped_horizontally_flag lor flipped_vertically_flag lor flipped_diagonally_flag
+
+type stagger_axis =
+  | X
+  | Y
+
+type stagger_index =
+  | Even
+  | Odd
+
 type orientation =
   | Orthogonal
   | Isometric
+  | Staggered
+  | Hexagonal
 
 type render_order =
   | Right_down
@@ -12,21 +29,11 @@ type fill_mode =
   | Stretch
   | Preserve_aspect_fit
 
-type object_alignment =
-  | Unspecified
-  | Top_left
-  | Top
-  | Top_right
-  | Left
-  | Center
-  | Right
-  | Bottom_left
-  | Bottom
-  | Bottom_right
-
-type size = {
-  w : int;
-  h : int;
+type colour = {
+  alpha : int;
+  red : int;
+  green : int;
+  blue : int;
 }
 
 type grid = {
@@ -43,8 +50,10 @@ type position = {
 type tile = {
   id : int;
   image_path : string;
-  image_size : size;
-  size : size;
+  image_width : int;
+  image_height : int;
+  width : int option;
+  height : int option;
   position : position;
 }
 
@@ -75,7 +84,8 @@ type encoding =
 type chunk = {
   start_x : int;
   start_y : int;
-  size : size;
+  width : int;
+  height : int;
   data : layer_data;
 }
 
@@ -106,7 +116,8 @@ type compression =
   | None
 
 type tile_layer = {
-  size : size;
+  width : int;
+  height : int;
   encoding : encoding;
   compression : compression;
   data : layer_data;
@@ -127,14 +138,39 @@ type tileset_object = {
   y : float;
 }
 
+type point = {
+  x : int;
+  y : int;
+}
+
+type tiled_object = {
+  ellipse : bool option;
+  gid : int option;
+  height : float;
+  width : float;
+  id : int;
+  name : string;
+  point : bool option;
+  polygons : point array option;
+  polylines : point array option;
+  properties : property array option;
+  rotation : float;
+  template : string option;
+  text : string option; (* TODO *)
+  visible : bool;
+  x : float;
+  y : float;
+}
+
 type object_group = {
-  draw_order : string;
-  objects : Yojson.Safe.t list; (* TODO: type this *)
+  draw_order : draw_order;
+  objects : tiled_object list;
 }
 
 type image_layer = {
   image : string;
-  size : size;
+  width : int;
+  height : int;
   repeat_x : bool;
   repeat_y : bool;
 }

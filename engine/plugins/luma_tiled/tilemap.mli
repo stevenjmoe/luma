@@ -16,9 +16,11 @@ val create :
   next_object_id:int ->
   orientation:Types.orientation ->
   tiled_version:string ->
-  tile_size:Types.size ->
+  tile_width:int ->
+  tile_height:int ->
   map_size:Types.map_size ->
   tilesets:Types.tileset_outer list ->
+  tilesets2:Tileset.t list ->
   path:string ->
   unit ->
   t
@@ -39,7 +41,8 @@ val next_layer_id : t -> int
 val next_object_id : t -> int
 val orientation : t -> Types.orientation
 val tiled_version : t -> string
-val tile_size : t -> Types.size
+val tile_width : t -> int
+val tile_height : t -> int
 val map_size : t -> Types.map_size
 val tilesets : t -> Types.tileset_outer list
 val path : t -> string
