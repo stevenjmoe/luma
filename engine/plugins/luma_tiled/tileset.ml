@@ -1,130 +1,114 @@
-type tile_offset = {
-  x : int;
-  y : int;
-}
+let ( let* ) = Result.bind
 
-type tile_render_size =
-  | Tile
-  | Grid
-
-type tile_transformations = {
-  hflip : bool;
-  vflip : bool;
-  rotate : bool;
-  prefer_untransformed : bool;
-}
-
-type t = {
-  background_colour : string option;
-  class_ : string option;
-  columns : int;
-  fill_mode : Types.fill_mode;
-  first_gid : int option;
-  grid : Types.grid option;
+type tile_data = {
+  id : int;
   image : string option;
   image_width : int;
   image_height : int;
-  margin : int;
-  name : string;
-  object_alignment : Types.object_alignment;
-  properties : string list; (* TODO *)
-  source : string option;
-  spacing : int;
-  terrains : string list; (* TODO *)
-  tile_count : int;
-  tiled_version : string;
-  tile_width : int;
-  tile_height : int;
-  tile_offset : tile_offset option;
-  tile_render_size : tile_render_size;
-  tiles : Types.tile array;
-  transformations : tile_transformations option;
-  transparent_colour : string option;
-  wang_sets : string array; (*TODO*)
+  properties : string option; (* TODO *)
+  animation : string option; (* TODO *)
+  user_type : string option; (* TODO *)
+  probability : float;
 }
 
-let background_colour set = set.background_colour
-let class_ set = set.class_
-let columns set = set.columns
-let fill_mode set = set.fill_mode
-let first_gid set = set.first_gid
-let grid set = set.grid
-let image set = set.image
-let image_width set = set.image_width
-let image_height set = set.image_height
-let margin set = set.margin
-let name set = set.name
-let object_alignment set = set.object_alignment
-let properties set = set.properties
-let source set = set.source
-let spacing set = set.spacing
-let terrains set = set.terrains
-let tile_count set = set.tile_count
-let tiled_version set = set.tiled_version
-let tile_width set = set.tile_width
-let tile_height set = set.tile_height
-let tile_offset set = set.tile_offset
-let tile_render_size set = set.tile_render_size
-let tiles set = set.tiles
-let transformations set = set.transformations
-let transparent_colour set = set.transparent_colour
-let wang_sets set = set.wang_sets
+type t = {
+  source : string;
+  name : string;
+  tile_width : int;
+  tile_height : int;
+  spacing : int;
+  margin : int;
+  tile_count : int;
+  columns : int;
+  offset_x : int;
+  offset_y : int;
+  image : Image.t option;
+  tiles : (int, tile_data) Hashtbl.t;
+  wang_sets : string list option; (*TODO*)
+  user_type : string option;
+}
 
-let create
-    ?background_colour
-    ?(class_ = None)
-    ?(fill_mode = Types.Stretch)
-    ?grid
-    ?(object_alignment = Types.Unspecified)
-    ?(properties = [])
-    ?(tile_render_size = Tile)
-    ?(transformations = None)
-    ?(transparent_colour = None)
-    ?(image = None)
-    ?(first_gid = None)
-    ?(terrains = [])
-    ?(source = None)
-    ?(tile_offset = None)
-    ?(wang_sets = [||])
-    ~columns
-    ~image_width
-    ~image_height
-    ~margin
-    ~name
-    ~spacing
-    ~tile_count
-    ~tiled_version
-    ~tile_width
-    ~tile_height
-    ~tiles
-    () =
-  {
-    background_colour;
-    class_;
-    fill_mode;
-    grid;
-    object_alignment;
-    properties;
-    transparent_colour;
-    tile_render_size;
-    transformations;
-    columns;
-    first_gid;
-    image;
-    image_width;
-    image_height;
-    margin;
-    name;
-    source;
-    spacing;
-    terrains;
-    tile_count;
-    tiled_version;
-    tile_width;
-    tile_height;
-    tile_offset;
-    tiles;
-    wang_sets;
-  }
+type map_tileset = {
+  first_gid : int;
+  tileset : t;
+}
 
-let from_json json = ()
+let tile_data_from_json json =
+  let open Luma__serialize.Json_helpers in
+  let* user_type = parse_string_opt "type" json in
+  let* user_class = parse_string_opt "class" json in
+  let* probability = parse_float_opt "probability" json in
+  let* id = parse_int "id" json in
+  let* image = parse_string_opt "image" json in
+  let* image_width = parse_int_opt "image_width" json in
+  let* image_height = parse_int_opt "image_height" json in
+
+  let image_width = Option.value ~default:0 image_width in
+  let image_height = Option.value ~default:0 image_height in
+  let probability = Option.value ~default:100. probability in
+
+  Ok
+    {
+      id;
+      image;
+      image_width;
+      image_height;
+      properties = None;
+      animation = None;
+      user_type;
+      probability;
+    }
+
+let tiles_from_json json path =
+  let open Luma__serialize.Json_helpers in
+  match field "tiles" json with
+  | `List l ->
+      let* rev =
+        List.fold_left
+          (fun acc j ->
+            match acc with
+            | Error _ as e -> e
+            | Ok rs ->
+                let* r = tile_data_from_json j in
+                Ok (r :: rs))
+          (Ok []) l
+      in
+      let tbl = Hashtbl.create 16 in
+      List.rev rev |> List.iter (fun t -> Hashtbl.add tbl t.id t);
+      Ok tbl
+  | other ->
+      let other = Yojson.Safe.pretty_to_string other in
+      Error
+        (Luma__core.Error.io_finalize path
+           (Printf.sprintf "tileset.tiles expected tile list, got %s" other))
+
+let from_json json path =
+  let open Luma__serialize.Json_helpers in
+  let* spacing = parse_int "spacing" json in
+  let* margin = parse_int "margin" json in
+  let* columns = parse_int "columns" json in
+  let* name = parse_string "name" json in
+  let* user_type = parse_string_opt "type" json in
+  let* user_class = parse_string_opt "class" json in
+  let* tile_count = parse_int "tilecount" json in
+  let* tile_width = parse_int "tilewidth" json in
+  let* tile_height = parse_int "tileheight" json in
+  let* tiles = tiles_from_json json path in
+
+  Ok
+    {
+      source = path;
+      name;
+      tile_width;
+      tile_height;
+      spacing;
+      margin;
+      tile_count;
+      columns;
+      offset_x = 0;
+      offset_y = 0;
+      image = None;
+      tiles;
+      wang_sets = None;
+      user_type = None;
+    }

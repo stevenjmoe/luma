@@ -148,20 +148,17 @@ module Object_data = struct
     let open Luma__serialize.Json_helpers in
     let ( let* ) = Result.bind in
 
-    let* id, gid, name, type_, width, height, visible, rotation, template, x, y =
-      let* id = parse_int_opt "id" json in
-      let* gid = parse_int_opt "gid" json in
-      let* name = parse_string_opt "name" json in
-      let* type_ = parse_string_opt "type" json in
-      let* width = parse_float_opt "width" json in
-      let* height = parse_float_opt "height" json in
-      let* visible = parse_bool_opt "visible" json in
-      let* rotation = parse_float_opt "rotation" json in
-      let* template = parse_string_opt "template" json in
-      let* x = parse_float_opt "x" json in
-      let* y = parse_float_opt "y" json in
-      Ok (id, gid, name, type_, width, height, visible, rotation, template, x, y)
-    in
+    let* id = parse_int_opt "id" json in
+    let* gid = parse_int_opt "gid" json in
+    let* name = parse_string_opt "name" json in
+    let* type_ = parse_string_opt "type" json in
+    let* width = parse_float_opt "width" json in
+    let* height = parse_float_opt "height" json in
+    let* visible = parse_bool_opt "visible" json in
+    let* rotation = parse_float_opt "rotation" json in
+    let* template = parse_string_opt "template" json in
+    let* x = parse_float_opt "x" json in
+    let* y = parse_float_opt "y" json in
 
     let x = Option.value ~default:0. x in
     let y = Option.value ~default:0. y in
