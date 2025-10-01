@@ -80,10 +80,15 @@ let get_all (type a) (module A : Asset.S with type t = a) (assets : t) =
          else None)
   |> List.of_seq
 
-let exists assets handle = Hashtbl.find_opt assets handle.id |> Option.is_some
+let exists (assets : t) handle =
+  match Hashtbl.find_opt assets handle.id with
+  | Some r -> r.generation = handle.generation
+  | _ -> false
 
 let is_loaded assets handle =
-  match Hashtbl.find_opt assets handle.id with Some { status = Ready _; _ } -> true | _ -> false
+  match Hashtbl.find_opt assets handle.id with
+  | Some { status = Ready _; generation } -> generation = handle.generation
+  | _ -> false
 
 let unload (assets : t) handle =
   match Hashtbl.find_opt assets handle.id with
@@ -96,3 +101,18 @@ module R = Luma__resource.Resource.Make (struct
 
   let name = "Assets"
 end)
+
+module For (A : Asset.S) = struct
+  type nonrec t = t
+  type nonrec handle = handle
+
+  let add ?path assets v = add (module A) ?path assets v
+  let add_pending ?path assets = add_pending (module A) ?path assets
+  let resolve assets handle packed = resolve (module A) assets handle packed
+  let fail = fail
+  let exists = exists
+  let is_loaded = is_loaded
+  let unload = unload
+  let get assets h = get (module A) assets h
+  let get_all assets = get_all (module A) assets
+end
