@@ -15,6 +15,11 @@ module type Tilemap = sig
   }
 
   val from_json : Yojson.Safe.t -> string -> (t, Luma__core__Error.error) result
+
+  module Format : sig
+    val pp : Format.formatter -> t -> unit
+    val show : 'a Fmt.t -> 'a -> string
+  end
 end
 
 module Tilemap (L : Luma.S) : Tilemap = struct
@@ -141,4 +146,76 @@ module Tilemap (L : Luma.S) : Tilemap = struct
         stagger_index;
         tilesets;
       }
+
+  module Format = struct
+    module F = Fmt
+
+    let kv name ppv fmt v = F.pf fmt "%s: @[%a@]" name ppv v
+    let pp_list pp_elt = F.brackets (F.list ~sep:F.cut pp_elt)
+    let pp_option pp_v = F.option pp_v
+    let pp_pair ~sep a b = F.pair ~sep:(F.any sep) a b
+
+    let pp_hashtbl_kv pp_k pp_v =
+      let binding = pp_pair ~sep:" -> " pp_k pp_v in
+      F.brackets (F.hashtbl ~sep:F.cut binding)
+
+    let pp_orientation fmt = function
+      | Types.Hexagonal -> F.string fmt "Hexagonal"
+      | Types.Isometric -> F.string fmt "Isometric"
+      | Types.Orthogonal -> F.string fmt "Orthogonal"
+      | Types.Staggered -> F.string fmt "Staggered"
+
+    let pp_axis fmt = function Types.X -> F.string fmt "X" | Types.Y -> F.string fmt "Y"
+
+    let pp_index fmt = function
+      | Types.Even -> F.string fmt "Even"
+      | Types.Odd -> F.string fmt "Odd"
+
+    let pp_colour fmt (_ : Types.colour) = F.string fmt "<colour>"
+
+    let pp_image fmt (i : Image.t) =
+      F.pf fmt "@[<v>%a@,%a@,%a@,%a@]" (kv "source" F.string) i.source (kv "width" F.int) i.width
+        (kv "height" F.int) i.height
+        (kv "transparent_colour" (pp_option pp_colour))
+        i.transparent_colour
+
+    let pp_tile_data fmt (t : Tileset.tile_data) =
+      F.pf fmt "@[<v>%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@]" (kv "id" F.int) t.id
+        (kv "image" (pp_option F.string))
+        t.image (kv "image_width" F.int) t.image_width (kv "image_height" F.int) t.image_height
+        (kv "properties" (pp_option F.string))
+        t.properties
+        (kv "animation" (pp_option F.string))
+        t.animation
+        (kv "user_type" (pp_option F.string))
+        t.user_type (kv "probability" F.float) t.probability
+
+    let pp_tileset fmt (s : Tileset.t) =
+      F.pf fmt "@[<v>%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@]" (kv "source" F.string)
+        s.source (kv "name" F.string) s.name (kv "tile_width" F.int) s.tile_width
+        (kv "tile_height" F.int) s.tile_height (kv "spacing" F.int) s.spacing (kv "margin" F.int)
+        s.margin (kv "tile_count" F.int) s.tile_count (kv "columns" F.int) s.columns
+        (kv "offset_x" F.int) s.offset_x (kv "offset_y" F.int) s.offset_y
+        (kv "image" (pp_option pp_image))
+        s.image
+        (kv "tiles" (pp_hashtbl_kv F.int pp_tile_data))
+        s.tiles
+        (kv "wang_sets" (pp_option (pp_list F.string)))
+        s.wang_sets
+
+    let pp fmt (m : t) =
+      F.pf fmt "@[<v>%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@]"
+        (kv "background_colour" (pp_option F.string))
+        m.background_colour (kv "version" F.string) m.version (kv "source" F.string) m.source
+        (kv "orientation" pp_orientation) m.orientation (kv "width" F.int) m.width
+        (kv "height" F.int) m.height (kv "tile_width" F.int) m.tile_width (kv "tile_height" F.int)
+        m.tile_height
+        (kv "hex_side_length" (pp_option F.int))
+        m.hex_side_length (kv "stagger_axis" pp_axis) m.stagger_axis (kv "stagger_index" pp_index)
+        m.stagger_index
+        (kv "tilesets" (pp_list pp_tileset))
+        m.tilesets
+
+    let show (pp : 'a Fmt.t) (x : 'a) : string = F.to_to_string pp x
+  end
 end
