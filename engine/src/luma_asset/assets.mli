@@ -27,7 +27,7 @@ type handle = {
   generation : int;
   path : string option;
 }
-(** A phantom-typed handle referencing a loaded asset of type ['a]. *)
+(** A handle referencing a loaded asset. *)
 
 val create : unit -> t
 (** Create a new, empty asset store. *)
@@ -71,15 +71,40 @@ val fail : t -> handle -> failed -> unit
 module R : Luma__resource.Resource.S with type t = t
 
 (** Typed facade for a concrete asset type [A]. Removes the need to pass [(module A)] at each
-    call-site and reduces mismatches. Storage remains the same untyped registry. *)
-module For : functor (A : Asset.S) -> sig
-  type nonrec handle = handle
-  (** Handle to an asset entry (includes id, type_id, generation, path). *)
+    call-site and reduces mismatches. Storage remains the same untyped registry.
 
+    {2 Example}
+
+    {[
+      (* Define an asset kind *)
+      module Texture_asset = Asset.Make (struct
+        type inner = L.Texture.t
+      end)
+
+      (* Get a typed facade *)
+      module Assets = Assets.For (Texture_asset)
+
+      (* Insert a ready value *)
+      let h = Assets.add assets texture in
+
+      (* Read it back, typed *)
+      let () =
+        match Assets.get assets h with
+        | Some t ->
+            (* use [t : L.Texture.t] *)
+            ()
+        | None -> ()
+    ]}*)
+module type For = sig
   type nonrec t = t
   (** Asset store. *)
 
-  val add : ?path:string -> t -> A.t -> handle
+  type nonrec handle = handle
+  (** Handle to an asset entry (includes id, type_id, generation, path). *)
+
+  type asset
+
+  val add : ?path:string -> t -> asset -> handle
   (** Insert a ready asset value of type [A.t]. Returns its handle. *)
 
   val add_pending : ?path:string -> t -> handle
@@ -91,10 +116,10 @@ module For : functor (A : Asset.S) -> sig
   val fail : t -> handle -> failed -> unit
   (** Mark an entry as [Failed]. *)
 
-  val get : t -> handle -> A.t option
+  val get : t -> handle -> asset option
   (** Get a typed value if present and generations match, else [None]. *)
 
-  val get_all : t -> A.t list
+  val get_all : t -> asset list
   (** Collect all ready assets of this type. *)
 
   val exists : t -> handle -> bool
@@ -106,3 +131,6 @@ module For : functor (A : Asset.S) -> sig
   val unload : t -> handle -> unit
   (** Remove the entry if generations match. *)
 end
+
+module For : functor (A : Asset.S) ->
+  For with type t = t and type handle = handle and type asset = A.t

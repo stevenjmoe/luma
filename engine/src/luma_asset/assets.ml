@@ -102,9 +102,27 @@ module R = Luma__resource.Resource.Make (struct
   let name = "Assets"
 end)
 
-module For (A : Asset.S) = struct
+module type For = sig
   type nonrec t = t
   type nonrec handle = handle
+  type asset
+
+  val add : ?path:string -> t -> asset -> handle
+  val add_pending : ?path:string -> t -> handle
+  val resolve : t -> handle -> Asset.packed -> unit
+  val fail : t -> handle -> failed -> unit
+  val get : t -> handle -> asset option
+  val get_all : t -> asset list
+  val exists : t -> handle -> bool
+  val is_loaded : t -> handle -> bool
+  val unload : t -> handle -> unit
+end
+
+module For (A : Asset.S) : For with type t = t and type handle = handle and type asset = A.t =
+struct
+  type nonrec t = t
+  type nonrec handle = handle
+  type asset = A.t
 
   let add ?path assets v = add (module A) ?path assets v
   let add_pending ?path assets = add_pending (module A) ?path assets
