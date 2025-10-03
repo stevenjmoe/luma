@@ -94,6 +94,26 @@ let from_json json path =
   let* tile_width = parse_int "tilewidth" json in
   let* tile_height = parse_int "tileheight" json in
   let* tiles = tiles_from_json json path in
+  let* image = parse_string_opt "image" json in
+  let* image =
+    match image with
+    | Some image ->
+        let* image_width = parse_int_opt "imagewidth" json in
+        let image_width = Option.value ~default:0 image_width in
+        let* image_height = parse_int_opt "imageheight" json in
+        let image_height = Option.value ~default:0 image_height in
+        (* TODO: let* transparent_colour = parse_string_opt "transparentcolor" json in*)
+        Ok
+          (Some
+             Image.
+               {
+                 source = image;
+                 width = image_width;
+                 height = image_height;
+                 transparent_colour = None;
+               })
+    | None -> Ok None
+  in
 
   Ok
     {
@@ -107,7 +127,7 @@ let from_json json path =
       columns;
       offset_x = 0;
       offset_y = 0;
-      image = None;
+      image;
       tiles;
       wang_sets = None;
       user_type = None;
