@@ -1,9 +1,6 @@
-module type Tilemap = sig
-  type parallax_origin = {
-    x : float;
-    y : float;
-  }
+open Luma__math
 
+module type Tilemap = sig
   type t = {
     background_colour : string option;
     version : string;
@@ -18,7 +15,7 @@ module type Tilemap = sig
     stagger_index : Types.stagger_index;
     tilesets : Tileset.t list;
     layers : Layers.Layer_data.t list;
-    parallax_origin : parallax_origin;
+    parallax_origin : Vec2.t;
   }
 
   val from_json : Yojson.Safe.t -> string -> (t, Luma__core__Error.error) result
@@ -32,11 +29,6 @@ end
 module Tilemap (L : Luma.S) : Tilemap = struct
   let ( let* ) = Result.bind
 
-  type parallax_origin = {
-    x : float;
-    y : float;
-  }
-
   type t = {
     background_colour : string option;
     version : string;
@@ -51,7 +43,7 @@ module Tilemap (L : Luma.S) : Tilemap = struct
     stagger_index : Types.stagger_index;
     tilesets : Tileset.t list;
     layers : Layers.Layer_data.t list;
-    parallax_origin : parallax_origin;
+    parallax_origin : Vec2.t;
   }
 
   let rec parse_layers layers path infinite tilesets =
@@ -107,7 +99,7 @@ module Tilemap (L : Luma.S) : Tilemap = struct
     let parallax_origin_x = Option.value ~default:0. parallax_origin_x in
     let* parallax_origin_y = parse_float_opt "parallaxoriginy" json in
     let parallax_origin_y = Option.value ~default:0. parallax_origin_y in
-    let parallax_origin = { x = parallax_origin_x; y = parallax_origin_y } in
+    let parallax_origin = Vec2.create parallax_origin_x parallax_origin_y in
 
     let* orientation =
       match orientation with
