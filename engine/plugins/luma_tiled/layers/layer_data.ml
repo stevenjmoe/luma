@@ -21,45 +21,18 @@ let ( let* ) = Result.bind
 
 let from_json json path infinite tilesets =
   let open Luma__serialize.Json_helpers in
-  let* ( opacity,
-         tint_colour,
-         visible,
-         offset_x,
-         offset_y,
-         parallax_x,
-         parallax_y,
-         name,
-         id,
-         user_type,
-         user_class,
-         layer_type ) =
-    let* opacity = parse_float_opt "opacity" json in
-    let* tint_colour = parse_string_opt "tintcolor" json in
-    let* visible = parse_bool_opt "visible" json in
-    let* offset_x = parse_float_opt "offsetx" json in
-    let* offset_y = parse_float_opt "offsety" json in
-    let* parallax_x = parse_float_opt "parallaxx" json in
-    let* parallax_y = parse_float_opt "parallaxy" json in
-    let* name = parse_string "name" json in
-    let* id = parse_int_opt "id" json in
-    let* user_type = parse_string_opt "type" json in
-    let* user_class = parse_string_opt "class" json in
-    let* layer_type = parse_string "type" json in
-
-    Ok
-      ( opacity,
-        tint_colour,
-        visible,
-        offset_x,
-        offset_y,
-        parallax_x,
-        parallax_y,
-        name,
-        id,
-        user_type,
-        user_class,
-        layer_type )
-  in
+  let* opacity = parse_float_opt "opacity" json in
+  let* tint_colour = parse_string_opt "tintcolor" json in
+  let* visible = parse_bool_opt "visible" json in
+  let* offset_x = parse_float_opt "offsetx" json in
+  let* offset_y = parse_float_opt "offsety" json in
+  let* parallax_x = parse_float_opt "parallaxx" json in
+  let* parallax_y = parse_float_opt "parallaxy" json in
+  let* name = parse_string "name" json in
+  let* id = parse_int_opt "id" json in
+  let* user_type = parse_string_opt "type" json in
+  let* user_class = parse_string_opt "class" json in
+  let* layer_type = parse_string "type" json in
 
   let* layer_type =
     match layer_type with
