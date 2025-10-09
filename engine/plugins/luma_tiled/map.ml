@@ -1,4 +1,9 @@
 module type Tilemap = sig
+  type parallax_origin = {
+    x : float;
+    y : float;
+  }
+
   type t = {
     background_colour : string option;
     version : string;
@@ -12,6 +17,8 @@ module type Tilemap = sig
     stagger_axis : Types.stagger_axis;
     stagger_index : Types.stagger_index;
     tilesets : Tileset.t list;
+    layers : Layers.Layer_data.t list;
+    parallax_origin : parallax_origin;
   }
 
   val from_json : Yojson.Safe.t -> string -> (t, Luma__core__Error.error) result
@@ -25,6 +32,11 @@ end
 module Tilemap (L : Luma.S) : Tilemap = struct
   let ( let* ) = Result.bind
 
+  type parallax_origin = {
+    x : float;
+    y : float;
+  }
+
   type t = {
     background_colour : string option;
     version : string;
@@ -38,6 +50,8 @@ module Tilemap (L : Luma.S) : Tilemap = struct
     stagger_axis : Types.stagger_axis;
     stagger_index : Types.stagger_index;
     tilesets : Tileset.t list;
+    layers : Layers.Layer_data.t list;
+    parallax_origin : parallax_origin;
   }
 
   let rec parse_layers layers path infinite tilesets =
@@ -89,6 +103,11 @@ module Tilemap (L : Luma.S) : Tilemap = struct
     let* height = parse_int "height" json in
     let* tile_width = parse_int "tilewidth" json in
     let* tile_height = parse_int "tileheight" json in
+    let* parallax_origin_x = parse_float_opt "parallaxoriginx" json in
+    let parallax_origin_x = Option.value ~default:0. parallax_origin_x in
+    let* parallax_origin_y = parse_float_opt "parallaxoriginy" json in
+    let parallax_origin_y = Option.value ~default:0. parallax_origin_y in
+    let parallax_origin = { x = parallax_origin_x; y = parallax_origin_y } in
 
     let* orientation =
       match orientation with
@@ -145,6 +164,8 @@ module Tilemap (L : Luma.S) : Tilemap = struct
         stagger_axis;
         stagger_index;
         tilesets;
+        layers;
+        parallax_origin;
       }
 
   module Format = struct
@@ -180,9 +201,12 @@ module Tilemap (L : Luma.S) : Tilemap = struct
         i.transparent_colour
 
     let pp_tile_data fmt (t : Tileset.tile_data) =
+      let image_source, image_width, image_height =
+        match t.image with Some i -> (Some i.source, i.width, i.height) | None -> (None, 0, 0)
+      in
       F.pf fmt "@[<v>%a@,%a@,%a@,%a@,%a@,%a@,%a@,%a@]" (kv "id" F.int) t.id
         (kv "image" (pp_option F.string))
-        t.image (kv "image_width" F.int) t.image_width (kv "image_height" F.int) t.image_height
+        image_source (kv "image_width" F.int) image_width (kv "image_height" F.int) image_height
         (kv "properties" (pp_option F.string))
         t.properties
         (kv "animation" (pp_option F.string))
