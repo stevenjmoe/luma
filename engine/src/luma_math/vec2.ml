@@ -8,6 +8,12 @@ let zero = { x = 0.; y = 0. }
 let splat v = { x = v; y = v }
 let x t = t.x
 let y t = t.y
+
+let abs t =
+  let x = Float.abs t.x in
+  let y = Float.abs t.y in
+  create x y
+
 let set_x t x = t.x <- x
 let set_y t y = t.y <- y
 

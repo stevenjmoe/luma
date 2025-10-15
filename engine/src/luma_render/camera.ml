@@ -32,6 +32,7 @@ module type S = sig
   val order : t -> int
   val active : t -> bool
   val camera : t -> camera
+  val center : t -> Vec2.t
   val get_screen_to_world_2d : Vec2.t -> t -> Vec2.t
   val get_world_to_screen_2d : Vec2.t -> t -> Vec2.t
   val set_target : t -> Vec2.t -> unit
@@ -72,6 +73,20 @@ module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
   let order c = c.order
   let active c = c.active
   let camera c = c.camera
+
+  let center c =
+    match c.viewport with
+    | None -> D.Camera.target c.camera
+    | Some vp ->
+        let screen_center = Viewport.center vp in
+        let dx = (Vec2.x screen_center -. Vec2.x (offset c)) /. zoom c in
+        let dy = (Vec2.y screen_center -. Vec2.y (offset c)) /. zoom c in
+        let rot = -.rotation c in
+        let cosr = cos rot and sinr = sin rot in
+        let rx = (dx *. cosr) -. (dy *. sinr) in
+        let ry = (dx *. sinr) +. (dy *. cosr) in
+
+        Vec2.create (Vec2.x (target c) +. rx) (Vec2.y (target c) +. ry)
 
   let get_screen_to_world_2d position camera =
     D.Camera.get_screen_to_world_2d position camera.camera

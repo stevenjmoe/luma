@@ -19,6 +19,13 @@ let make ~pos ~size depth_min depth_max =
   { physical_position = pos; physical_size = size; depth }
 
 let full w h = make ~pos:(Vec2.create 0. 0.) ~size:(Vec2.create (float w) (float h)) 0. 1.
+let position v = v.physical_position
+let size v = v.physical_size
+let x v = Vec2.x v.physical_position
+let y v = Vec2.y v.physical_position
+let w v = Vec2.x v.physical_size
+let h v = Vec2.y v.physical_size
+let center v = Vec2.create (x v +. (0.5 *. w v)) (y v +. (0.5 *. h v))
 
 let to_rect v =
   ( int_of_float v.physical_position.x,
