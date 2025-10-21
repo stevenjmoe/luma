@@ -159,7 +159,6 @@ module Object_data = struct
     let* template = parse_string_opt "template" json in
     let* x = parse_float_opt "x" json in
     let* y = parse_float_opt "y" json in
-
     let x = Option.value ~default:0. x in
     let y = Option.value ~default:0. y in
     let tile = Option.bind gid (fun gid -> Object_tile_data.from_bits gid tilesets None) in

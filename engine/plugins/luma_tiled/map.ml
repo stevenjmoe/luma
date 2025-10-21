@@ -132,7 +132,7 @@ module Tilemap (L : Luma.S) : Tilemap = struct
     in
     let* layers =
       match field "layers" json with
-      | `List l -> parse_layers l "path" infinite tilesets
+      | `List l -> parse_layers l path infinite tilesets
       | other ->
           let s = Yojson.Safe.pretty_to_string other in
           Error
@@ -186,7 +186,7 @@ module Tilemap (L : Luma.S) : Tilemap = struct
 
     let pp_colour fmt (_ : Types.colour) = F.string fmt "<colour>"
 
-    let pp_image fmt (i : Image.t) =
+    let pp_image fmt (i : Types.image) =
       F.pf fmt "@[<v>%a@,%a@,%a@,%a@]" (kv "source" F.string) i.source (kv "width" F.int) i.width
         (kv "height" F.int) i.height
         (kv "transparent_colour" (pp_option pp_colour))

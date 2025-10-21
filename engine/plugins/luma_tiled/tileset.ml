@@ -1,12 +1,16 @@
 let ( let* ) = Result.bind
 
 type tile_data = {
-  id : int;
-  image : Image.t option;
+  id : int;  (** Local id of the tile. *)
+  image : Types.image option;
   properties : string option; (* TODO *)
   animation : string option; (* TODO *)
   user_type : string option; (* TODO *)
-  probability : float;
+  probability : float;  (** Percentage chance this tile is chosen over others in the editor. *)
+  x : float;
+  y : float;
+  width : float;
+  height : float;
 }
 
 type t = {
@@ -20,7 +24,7 @@ type t = {
   columns : int;
   offset_x : int;
   offset_y : int;
-  image : Image.t option;
+  image : Types.image option;
   tiles : (int, tile_data) Hashtbl.t;
   wang_sets : string list option; (*TODO*)
   user_type : string option;
@@ -31,28 +35,25 @@ type map_tileset = {
   tileset : t;
 }
 
-let parse_image json path =
+let parse_image json path : (Types.image option, Luma__core.Error.error) result =
   let open Luma__serialize.Json_helpers in
   let ( let* ) = Result.bind in
   let* image = parse_string_opt "image" json in
   match image with
   | Some image ->
+      let* width = parse_int_opt "width" json in
       let* image_width = parse_int_opt "imagewidth" json in
-      let image_width = Option.value ~default:0 image_width in
+      let width = Option.value width ~default:(Option.value image_width ~default:0) in
+
+      let* height = parse_int_opt "height" json in
       let* image_height = parse_int_opt "imageheight" json in
-      let image_height = Option.value ~default:0 image_height in
+      let height = Option.value height ~default:(Option.value image_height ~default:0) in
+
       let full_path = Filename.concat path image in
       (* TODO: let* transparent_colour = parse_string_opt "transparentcolor" json in*)
 
       Ok
-        (Some
-           Image.
-             {
-               source = full_path;
-               width = image_width;
-               height = image_height;
-               transparent_colour = None;
-             })
+        (Some { source = full_path; width; height; transparent_colour = None } : Types.image option)
   | None -> Ok None
 
 let tile_data_from_json json path =
@@ -62,9 +63,17 @@ let tile_data_from_json json path =
   let* probability = parse_float_opt "probability" json in
   let* id = parse_int "id" json in
   let* image = parse_image json path in
+  let* x = parse_int_opt "x" json in
+  let* y = parse_int_opt "y" json in
+  let x = Option.value ~default:0 x |> float in
+  let y = Option.value ~default:0 y |> float in
+  let* width = parse_int_opt "width" json in
+  let* height = parse_int_opt "height" json in
+  let width = Option.value ~default:0 width |> float in
+  let height = Option.value ~default:0 height |> float in
   let probability = Option.value ~default:100. probability in
 
-  Ok { id; image; properties = None; animation = None; user_type; probability }
+  Ok { id; image; properties = None; animation = None; user_type; probability; x; y; width; height }
 
 let tiles_from_json json path =
   let open Luma__serialize.Json_helpers in
