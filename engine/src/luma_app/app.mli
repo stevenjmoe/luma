@@ -23,15 +23,15 @@ val clear_plugins : t -> t
 
 val register_component :
   string -> (module Component.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
-(** [register_component name component serializes app] will register component [C] with the given
+(** [register_component name component serializers app] will register component [C] with the given
     name in the application's component registry. The normalised name must be unique across all
     registered components, and will throw if it isn't. Returns the updated [App.t] *)
 
 val register_resource :
   string -> (module Resource.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
-(** [register_resource name resource serializes app] will register resource [R] with the given name
-    in the application's resource registry. The normalised name must be unique across all registered
-    resources, and will throw if it isn't. Returns the updated [App.t] *)
+(** [register_resource name resource_module serializers app] will register resource [R] with the
+    given name in the application's resource registry. The normalised name must be unique across all
+    registered resources, and will throw if it isn't. Returns the updated [App.t] *)
 
 val init_state : (module STATE with type t = 'a) -> 'a -> t -> t
 (** [init_state state_module initial_state app] initialises state that can be used to control when
@@ -66,7 +66,9 @@ val once :
     before that anchor when ready.
 
     [After u] : Append to the after list keyed by anchor UUID [u]. Entries are drained immediately
-    after that anchor when ready. *)
+    after that anchor when ready.
+
+    @param run_if The system will only run if this predicate returns true. *)
 
 val while_in :
   (module Luma__state__State.STATE with type t = 's) ->
@@ -79,12 +81,12 @@ val while_in :
     scheduler stage, only while in the provided State. *)
 
 val on_enter : (module STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
-(** [on_enter state_module state_value system sched] registers a system to run once, immediately
-    after transitioning into the given state. *)
+(** [on_enter state_module state system sched] registers a system to run once, immediately after
+    transitioning into the given state. *)
 
 val on_exit : (module STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
-(** [on_exit state_module state_value system sched] registers a system to run once, immediately
-    after transitioning from the given state. *)
+(** [on_exit state_module state system sched] registers a system to run once, immediately after
+    transitioning from the given state. *)
 
 val add_plugin : (t -> t) -> t -> t
 (** [add_plugin plugin app] applies a plugin function to the application.
@@ -110,6 +112,8 @@ val add_plugin : (t -> t) -> t -> t
     ]} *)
 
 val step : t -> t
+(** [step app] runs each system in each stage in the order they were added. *)
+
 val run_with_driver : t -> (t -> t Lwt.t) -> unit Lwt.t
 
 val run : (module Luma__driver.Driver.S) -> t -> unit
