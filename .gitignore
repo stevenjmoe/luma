@@ -27,3 +27,10 @@ setup.log
 
 # Local OPAM switch
 _opam/
+
+*.wav
+*.jpg
+*.zip
+*.png
+*.ini
+editor/

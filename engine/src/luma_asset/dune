@@ -1,0 +1,10 @@
+(library 
+  (public_name luma.asset)
+  (name luma__asset)
+  (libraries 
+    lwt
+    luma.app
+    luma.driver
+    luma.task_queue)
+  (preprocess
+    (pps lwt_ppx)))

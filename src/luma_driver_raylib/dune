@@ -1,5 +1,0 @@
-(library
-  (name luma__driver_raylib)
-  (public_name luma.driver.raylib) 
-  (modules camera driver input texture window)
-  (libraries raylib raygui luma.driver luma.math luma.types))

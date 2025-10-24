@@ -1,0 +1,13 @@
+(library
+  (public_name luma.render)
+  (libraries 
+    luma.app 
+    luma.asset 
+    luma.driver
+    luma.image 
+    luma.math 
+    luma.resource
+    ppx_component)
+  (name luma__render)
+  (preprocess 
+   (pps ppx_assert ppx_component)))

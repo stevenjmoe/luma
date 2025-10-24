@@ -1,0 +1,4 @@
+(library
+  (public_name luma.type_register)
+  (libraries luma.ecs luma.serialize yojson)
+  (name luma__type_register))

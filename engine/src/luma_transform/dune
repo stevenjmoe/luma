@@ -1,0 +1,4 @@
+(library
+  (public_name luma.transform)
+  (libraries luma.app luma.ecs luma.math)
+  (name luma__transform))

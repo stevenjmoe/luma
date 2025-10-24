@@ -1,0 +1,15 @@
+(library 
+  (public_name luma.image)
+  (name luma__image)
+  (libraries 
+    containers 
+    luma.app 
+    luma.math 
+    luma.asset 
+    luma.ecs)
+  (modules 
+    Texture
+    Texture_atlas 
+    Texture_atlas_layout)
+  (preprocess 
+   (pps ppx_inline_test ppx_assert)))

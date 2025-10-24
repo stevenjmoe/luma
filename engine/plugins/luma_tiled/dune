@@ -1,0 +1,5 @@
+(include_subdirs qualified)
+(library
+  (public_name luma.tiled)
+  (libraries luma)
+  (name luma__tiled))

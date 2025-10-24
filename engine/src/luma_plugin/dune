@@ -1,0 +1,19 @@
+(library
+  (public_name luma.plugin)
+  (libraries 
+    luma.app 
+    luma.audio
+    luma.driver 
+    luma.render 
+    luma.time 
+    luma.window 
+    luma.input
+    luma.image
+    luma.scene
+    luma.sprite
+    luma.type_register
+    luma.transform
+    luma.debug)
+  (name luma__plugin)
+  (preprocess 
+   (pps ppx_assert)))
