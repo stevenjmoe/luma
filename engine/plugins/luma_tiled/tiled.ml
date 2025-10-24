@@ -8,6 +8,9 @@ module Make (L : Luma.S) = struct
   let log = Luma__core.Log.sub_log "tiled_plugin"
 
   module Map = Map.Tilemap (L)
+  module Plan = Plan.Make (Map)
+  module Tiled_render = Render.Make (Plan) (L)
+  open Tiled_render
 
   (* Internal assets. Public facing API should only see the final Tilemap type and the resource. *)
   module Tilemap_asset = Asset.Make (struct
@@ -17,277 +20,46 @@ module Make (L : Luma.S) = struct
   module Tilemap_assets = Assets.For (Tilemap_asset)
   module Loader = Loader.Make (L) (Map) (Tilemap_asset)
 
-  type flip = {
-    h : bool;
-    v : bool;
-    d : bool;
-  }
+  type maps = Tiled_render.map_tbl
 
-  type draw_cmd = {
-    texture : Assets.handle;
-    source : Rect.t;
-    dest : Rect.t;
-    origin : Vec2.t;
-    rotation : float;
-    z : int;
-    flip : flip;
-  }
-
-  type layer_plan = draw_cmd array
-
-  type plan_meta = {
-    parallax : Vec2.t;
-    offset : Vec2.t;
-    opacity : float;
-  }
-
-  type plan = {
-    layers : layer_plan array;
-    meta : plan_meta array;
-    map_parallax_origin : Vec2.t;
-  }
-
-  type object_tile_data = {
-    handle : Assets.handle;  (** Handle for the object texture. *)
-    size : Vec2.t;  (** The width and height of the sub-rectangle. *)
-    pos : Vec2.t;  (** The position of the sub-rectangle. *)
-  }
-
-  type tileset_loaded =
-    | Texture of {
-        texture : Assets.handle;
-        cell_w : float;
-        cell_h : float;
-        columns : int;
-        spacing : int;
-        margin : int;
-      }
-    | Textures of { texture_by_tile_id : (int, object_tile_data) Hashtbl.t }
-
-  type tileset_texture =
-    | Image of Assets.handle  (** Single image tileset. *)
-    | Collection_of_images of (int, object_tile_data) Hashtbl.t  (** Keyed by tile local id. *)
-
-  type phase =
-    | Init
-    | Loading_textures of { textures_by_tileset : (int, tileset_texture) Hashtbl.t }
-    | Ready of {
-        tilesets : (int, tileset_loaded) Hashtbl.t (* tileset index -> loaded tileset *);
-        plan : plan;
-      }
-    | Failed of Error.error
-
-  let make_plan ?(z_base = 0) (map : Map.t) (tilesets : (int, tileset_loaded) Hashtbl.t) : plan =
-    let atlas_src ~columns ~spacing ~margin ~cell_w ~cell_h id =
-      let col = id mod columns in
-      let row = id / columns in
-      let x = margin + (col * (int_of_float cell_w + spacing)) |> float in
-      let y = margin + (row * (int_of_float cell_h + spacing)) |> float in
-      Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create cell_w cell_h)
-    in
-
-    let build_object_layer
-        (layer_index : int)
-        (objs : Object.Object_data.t list)
-        (tilesets : (int, tileset_loaded) Hashtbl.t) : layer_plan =
-      let cmds = ref [] in
-
-      let push ?(rotation = 0.) texture ~source ~x ~y ~w ~h ~flip_h ~flip_v ~flip_d =
-        let dest = Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create w h) in
-        let origin = Vec2.create 0. h in
-        let flip = { h = flip_h; v = flip_v; d = flip_d } in
-        let cmd = { texture; source; dest; origin; rotation; z = z_base + layer_index; flip } in
-        cmds := cmd :: !cmds
-      in
-
-      List.iter
-        (fun (object_data : Object.Object_data.t) ->
-          if not object_data.visible then ()
-          else
-            match object_data.tile with
-            | None -> ()
-            | Some tile -> (
-                match Hashtbl.find_opt tilesets tile.tileset_location with
-                | None -> ()
-                | Some ts_loaded -> (
-                    match ts_loaded with
-                    | Texture { texture; cell_w; cell_h; columns; spacing; margin } ->
-                        let w, h =
-                          match object_data.shape with
-                          | Object.Object_data.Rect { width; height } when width > 0. && height > 0.
-                            ->
-                              (width, height)
-                          | _ -> (cell_w, cell_h)
-                        in
-                        let x = object_data.x and y = object_data.y in
-                        let source = atlas_src ~columns ~spacing ~margin ~cell_w ~cell_h tile.id in
-                        let flip_h, flip_v, flip_d =
-                          match object_data.tile with
-                          | Some tile -> (tile.flip_h, tile.flip_v, tile.flip_d)
-                          | None -> (false, false, false)
-                        in
-                        push texture ~source ~x ~y ~w ~h ~rotation:object_data.rotation ~flip_h
-                          ~flip_v ~flip_d
-                    | Textures { texture_by_tile_id } -> (
-                        match Hashtbl.find_opt texture_by_tile_id tile.id with
-                        | None -> ()
-                        | Some { handle; size; pos } ->
-                            let native_w, native_h = (Vec2.x size, Vec2.y size) in
-                            let w, h =
-                              match object_data.shape with
-                              | Object.Object_data.Rect { width; height }
-                                when width > 0. && height > 0. ->
-                                  (width, height)
-                              | _ -> (native_w, native_h)
-                            in
-                            let flip_h, flip_v, flip_d =
-                              match object_data.tile with
-                              | Some tile -> (tile.flip_h, tile.flip_v, tile.flip_d)
-                              | None -> (false, false, false)
-                            in
-                            let x = object_data.x and y = object_data.y in
-                            let source = Rect.create ~pos ~size:(Vec2.create native_w native_h) in
-                            push handle ~source ~x ~y ~w ~h ~rotation:object_data.rotation ~flip_h
-                              ~flip_v ~flip_d))))
-        objs;
-      Array.of_list (List.rev !cmds)
-    in
-    let build_tile_layer layer_index (tile_data : Layers.Tile_data.t) =
-      match tile_data with
-      | Infinite -> [||]
-      | Finite { width; height = _; tiles } ->
-          let cmds = ref [] in
-          List.iteri
-            (fun i (tile_layer_data : Layers.Tile_data.tile_layer_data option) ->
-              match tile_layer_data with
-              | None -> ()
-              | Some { tileset_index; id; flip_h; flip_v; flip_d } -> (
-                  match Hashtbl.find_opt tilesets tileset_index with
-                  | None -> ()
-                  | Some ts_loaded -> (
-                      let col = i mod width in
-                      let row = i / width in
-                      let dx = float_of_int (col * map.tile_width) in
-                      let dy = float_of_int (row * map.tile_height) in
-
-                      match ts_loaded with
-                      | Texture { texture; cell_w; cell_h; columns; spacing; margin } ->
-                          let source = atlas_src ~columns ~spacing ~margin ~cell_w ~cell_h id in
-                          let dest =
-                            Rect.create ~pos:(Vec2.create dx dy) ~size:(Vec2.create cell_w cell_h)
-                          in
-                          let flip = { h = flip_h; v = flip_v; d = flip_d } in
-                          let cmd =
-                            {
-                              texture;
-                              source;
-                              dest;
-                              origin = Vec2.zero;
-                              rotation = 0.;
-                              z = z_base + layer_index;
-                              flip;
-                            }
-                          in
-                          cmds := cmd :: !cmds
-                      | Textures { texture_by_tile_id } -> (
-                          match Hashtbl.find_opt texture_by_tile_id id with
-                          | None -> ()
-                          | Some { handle; size; pos } ->
-                              let w = float_of_int map.tile_width
-                              and h = float_of_int map.tile_height in
-                              let dest =
-                                Rect.create ~pos:(Vec2.create dx dy) ~size:(Vec2.create w h)
-                              in
-                              let flip = { h = flip_h; v = flip_v; d = flip_d } in
-                              let cmd =
-                                {
-                                  texture = handle;
-                                  source = Rect.create ~pos:Vec2.zero ~size:(Vec2.create w h);
-                                  dest;
-                                  origin = Vec2.zero;
-                                  rotation = 0.;
-                                  z = z_base + layer_index;
-                                  flip;
-                                }
-                              in
-                              cmds := cmd :: !cmds))))
-            tiles;
-          Array.of_list (List.rev !cmds)
-    in
-    let build_layer layer_index (layer : Layers.Layer_data.t) =
-      if not layer.visible then
-        ([||], { parallax = Vec2.create 1. 1.; offset = Vec2.zero; opacity = layer.opacity })
-      else
-        let parallax = Vec2.create layer.parallax_x layer.parallax_y in
-        let offset = Vec2.create layer.offset_x layer.offset_y in
-        let meta = { parallax; offset; opacity = layer.opacity } in
-
-        match layer.layer_type with
-        | Object object_data -> (build_object_layer layer_index object_data.objects tilesets, meta)
-        | Tiles tile_data -> (build_tile_layer layer_index tile_data, meta)
-    in
-
-    let items = map.layers |> List.mapi build_layer in
-    let layers = items |> List.map fst |> Array.of_list in
-    let meta = items |> List.map snd |> Array.of_list in
-    let map_parallax_origin = map.parallax_origin in
-
-    { layers; meta; map_parallax_origin }
-
-  type tilemap_res = {
-    mutable background_colour : string option;
-    origin : Vec2.t; (* world-space top-left of tile (0,0) *)
-    scale : float; (* world units per pixel; 1.0 = pixels *)
-    layers : string list option; (* None = all TMJ tile layers *)
-    z_base : int; (* z for first layer; layers add +1, etc. *)
-    mutable phase : phase;
-  }
-
-  type t = (Assets.handle, tilemap_res) Hashtbl.t
-
-  module R = Resource.Make (struct
-    type inner = t
-
-    let name = "tilemap_res"
-  end)
+  module R = Tiled_render.R
 
   let create () = Hashtbl.create 16
 
   (* public functions *)
 
   let add world path origin scale z tilemaps =
-    let ( let* ) = Option.bind in
-    let* packed = World.get_resource world Asset_server.R.type_id in
-    let* server = Resource.unpack_opt (module Asset_server.R) packed in
+    let server =
+      Option.bind (World.get_resource world Asset_server.R.type_id) (fun p ->
+          Resource.unpack_opt (module Asset_server.R) p)
+    in
+    match server with
+    | Some server -> (
+        match Asset_server.load (module Tilemap_asset) server path world with
+        | Ok handle ->
+            let r =
+              { origin; scale; layers = None; z_base = z; phase = Init; background_colour = None }
+            in
+            Hashtbl.add tilemaps handle r;
+            Ok handle
+        | Error e -> Error e)
+    | None -> Error (Error.resource_not_found "Tiled_plugin.add asset server not found")
 
-    match Asset_server.load (module Tilemap_asset) server path world with
-    | Ok handle ->
-        let r =
-          { origin; scale; layers = None; z_base = z; phase = Init; background_colour = None }
-        in
-        Hashtbl.add tilemaps handle r;
-        Some handle
-    | Error e ->
-        Log.error (fun log -> log "%a" Luma__core.Error.pp e);
-        None
+  let ( let+ ) o f = match o with Some x -> f x | None -> false
 
   let tilemap_loaded world handle =
-    World.get_resource world R.type_id
-    |> Option.fold ~none:false ~some:(fun packed ->
-           Resource.unpack_opt (module R) packed
-           |> Option.fold ~none:false ~some:(fun tbl ->
-                  match Hashtbl.find_opt tbl handle with
-                  | Some tilemap -> ( match tilemap.phase with Ready _ -> true | _ -> false)
-                  | None -> false))
+    let+ packed = World.get_resource world R.type_id in
+    let+ tbl = Resource.unpack_opt (module R) packed in
+    match Hashtbl.find_opt tbl handle with
+    | Some tilemap -> ( match tilemap.phase with Ready _ -> true | _ -> false)
+    | None -> false
 
   let tilemaps_loaded world =
-    World.get_resource world R.type_id
-    |> Option.fold ~none:false ~some:(fun packed ->
-           Resource.unpack_opt (module R) packed
-           |> Option.fold ~none:false ~some:(fun res ->
-                  Hashtbl.fold
-                    (fun _ res acc -> match res.phase with Ready _ -> true | _ -> false)
-                    res false))
+    let+ packed = World.get_resource world R.type_id in
+    let+ tbl = Resource.unpack_opt (module R) packed in
+    Hashtbl.fold
+      (fun _ (tm : map_inner) acc -> acc && match tm.phase with Ready _ -> true | _ -> false)
+      tbl true
 
   (* private functions *)
 
@@ -374,13 +146,13 @@ module Make (L : Luma.S) = struct
       (fun w e r ->
         Query.Tuple.with3 r (fun assets server tilemap_map ->
             Hashtbl.iter
-              (fun tilemap_handle tilemap_res ->
-                match tilemap_res.phase with
+              (fun tilemap_handle (render_map : map_inner) ->
+                match render_map.phase with
                 | Init -> (
                     match Tilemap_assets.get assets tilemap_handle with
                     | Some map ->
                         let handles = start_loading_textures server map w in
-                        tilemap_res.phase <- Loading_textures { textures_by_tileset = handles };
+                        render_map.phase <- Loading_textures { textures_by_tileset = handles };
                         ()
                     | None -> ())
                 | Loading_textures { textures_by_tileset } ->
@@ -388,10 +160,10 @@ module Make (L : Luma.S) = struct
                       match Tilemap_assets.get assets tilemap_handle with
                       | Some map ->
                           let tilesets = finalize_maps map textures_by_tileset in
-                          let z_base = tilemap_res.z_base in
-                          let plan = make_plan ~z_base map tilesets in
-                          tilemap_res.background_colour <- map.background_colour;
-                          tilemap_res.phase <- Ready { tilesets; plan }
+                          let z_base = render_map.z_base in
+                          let plan = Plan.make_plan ~z_base map tilesets in
+                          render_map.background_colour <- map.background_colour;
+                          render_map.phase <- Ready { tilesets; plan }
                       | None -> ()
                     else ()
                 | _ -> ())
@@ -413,8 +185,8 @@ module Make (L : Luma.S) = struct
         let draw_plan_for_camera
             (assets : Assets.t)
             (cam : Camera.t)
-            (tm : tilemap_res)
-            (plan : plan)
+            (tm : map_inner)
+            (plan : Plan.t)
             (queue : Renderer.Queue.t) =
           let map_origin_world =
             Vec2.(
@@ -436,7 +208,7 @@ module Make (L : Luma.S) = struct
               in
 
               Array.iter
-                (fun (cmd : draw_cmd) ->
+                (fun (cmd : Plan.draw_cmd) ->
                   match Image.Texture.Assets.get assets cmd.texture with
                   | None -> ()
                   | Some tex ->
@@ -460,7 +232,7 @@ module Make (L : Luma.S) = struct
         in
 
         Query.Tuple.with4 res
-          (fun _server (maps : t) (assets : Assets.t) (queue : Renderer.Queue.t) ->
+          (fun _server (maps : map_tbl) (assets : Assets.t) (queue : Renderer.Queue.t) ->
             let cams_sorted =
               cams
               |> List.filter_map (fun (_e, (cam, ())) ->

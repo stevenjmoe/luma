@@ -2,8 +2,7 @@ let ( let* ) = Result.bind
 
 open Util
 
-module Make (L : Luma.S) (Map : Map.Tilemap) (Tilemap_asset : L.Asset.S with type t = Map.t) =
-struct
+module Make (L : Luma.S) (Map : Map.S) (Tilemap_asset : L.Asset.S with type t = Map.t) = struct
   include Types
 
   module Tilemap_loader :

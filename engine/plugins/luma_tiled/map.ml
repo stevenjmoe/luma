@@ -1,6 +1,6 @@
 open Luma__math
 
-module type Tilemap = sig
+module type S = sig
   type t = {
     background_colour : string option;
     version : string;
@@ -26,7 +26,7 @@ module type Tilemap = sig
   end
 end
 
-module Tilemap (L : Luma.S) : Tilemap = struct
+module Tilemap (L : Luma.S) : S = struct
   let ( let* ) = Result.bind
 
   type t = {
