@@ -1,7 +1,6 @@
 module Driver = Luma_driver_raylib.Driver
 module Luma = Luma.Make (Driver)
 open Luma
-module Velocity = [%component: Raylib.Vector2.t]
 module Player_tag = [%component: int]
 
 [%%component
@@ -46,7 +45,7 @@ let setup_player () =
       let texture =
         Asset_server.load
           (module Image.Texture.A)
-          asset_server "examples/3-assets/assets/Player Idle 48x48.png" world
+          asset_server "examples/2-assets/assets/Player Idle 48x48.png" world
         |> Result.get_ok
       in
       let layout = Luma.Image.Texture_atlas_layout.from_grid (Luma.Math.Vec2.create 48. 48.) 10 1 in
@@ -55,7 +54,7 @@ let setup_player () =
       let player_tag = 1 in
 
       let position = Math.Vec3.create 60. 60. 200. in
-      let scale = Math.Vec3.create 600. 600. 0. in
+      let scale = Math.Vec3.create 1. 1. 0. in
       let transform = Transform.create ~position ~scale () in
 
       let animation_config =
@@ -72,16 +71,6 @@ let setup_player () =
       |> World.with_component world (module Player_tag.C) player_tag
       |> World.with_component world (module Animation_config.C) animation_config
       |> World.with_component world (module Transform.C) transform
-      |> ignore;
-
-      let target = Math.Vec2.create 50. 30. in
-      let offset = Math.Vec2.create 0. 0. in
-
-      let viewport = Camera.Viewport.make ~pos:target ~size:target 0. 1. in
-      let camera = Camera.make ~viewport:(Some viewport) ~target ~offset ~zoom:2. ~rotation:1. () in
-      world
-      |> World.add_entity ~name:"second_camera"
-      |> World.with_component world (module Camera.C) camera
       |> ignore;
 
       world)
