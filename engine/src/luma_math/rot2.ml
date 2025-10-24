@@ -37,6 +37,16 @@ let compose a b =
 (** Returns the inverse of a rotation (its clockwise counterpart). *)
 let inverse rot = { cos = rot.cos; sin = -.rot.sin }
 
+(** [turn_fraction fraction] creates a [Rot2.t] from a counterclockwise fraction of a full turn of
+    360 degrees.
+
+    A negative number rotates clockwise. *)
+let turn_fraction f = of_radians (Constants.tau *. f)
+
+let rotate_vec r v =
+  let open Vec2 in
+  { x = (v.x *. r.cos) -. (v.y *. r.sin); y = (v.x *. r.sin) +. (v.y *. r.cos) }
+
 (** A rotation of π radians. Corresponds to a half-turn. *)
 let pi = of_radians Float.pi
 
