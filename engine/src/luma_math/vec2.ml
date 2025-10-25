@@ -35,6 +35,20 @@ let sub t rhs =
 let scale k v = create (k *. x v) (k *. y v)
 let length_squared v = (v.x *. v.x) +. (v.y *. v.y)
 
+(** [distance vec1 vec2] computes the euclidean distance between two vectors *)
+let distance v1 v2 =
+  let dx = v1.x -. v2.x in
+  let dy = v1.y -. v2.y in
+  Float.sqrt ((dx *. dx) +. (dy *. dy))
+
+(** [distance_squared vec1 vec2] computes the euclidean distance between two vectors.
+
+    Cheaper than [distance] because it avoids [Float.sqrt]. *)
+let distance_squared v1 v2 =
+  let dx = v1.x -. v2.x in
+  let dy = v1.y -. v2.y in
+  (dx *. dx) +. (dy *. dy)
+
 module Infix = struct
   let ( *.. ) a b = mul a b
   let ( +.. ) a b = add a b
