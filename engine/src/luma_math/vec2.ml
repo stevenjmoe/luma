@@ -61,6 +61,8 @@ let max v1 v2 =
 let min v1 v2 =
   { x = (if v1.x < v2.x then v1.x else v2.x); y = (if v1.y < v2.y then v1.y else v2.y) }
 
+let clamp min_ max_ v = max min_ (min v max_)
+
 module Infix = struct
   let ( *.. ) a b = mul a b
   let ( +.. ) a b = add a b

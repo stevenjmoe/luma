@@ -17,6 +17,8 @@ module rec Aabb2d : sig
   val merge : t -> t -> t
   val grow : t -> Vec2.t -> t
   val shrink : t -> Vec2.t -> t
+  val intersects_aabb : t -> t -> bool
+  val intersects_circle : t -> Bounding_circle.t -> bool
 end
 
 and Bounding_circle : sig
@@ -28,4 +30,7 @@ and Bounding_circle : sig
 
   val aabb_2d : t -> Aabb2d.t
   (** Computes the smallest [Aabb2d.t] containing this [Bounding_circle.t]. *)
+
+  val intersects_aabb : t -> Aabb2d.t -> bool
+  val intersects_circle : t -> t -> bool
 end

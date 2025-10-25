@@ -39,6 +39,8 @@ module rec Aabb2d : sig
   val of_min_max : Vec2.t -> Vec2.t -> t
   val min : t -> Vec2.t
   val max : t -> Vec2.t
+  val intersects_aabb : t -> t -> bool
+  val intersects_circle : t -> Bounding_circle.t -> bool
 
   (* TODO: val scale_around_center : t -> Vec2.t -> t
   val transformed_by : t -> Vec2.t -> Rot2.t -> t
@@ -54,6 +56,8 @@ end = struct
   type rotation = Rot2.t
   type half_size = Vec2.t
   type t = Types.aabb
+
+  let closest_point aabb point = Vec2.clamp aabb.min aabb.max point
 
   let of_center_halfsize center half_size =
     assert (Vec2.x half_size >= 0. && Vec2.y half_size >= 0.);
@@ -82,6 +86,17 @@ end = struct
   let bounding_circle aabb =
     let radius = Vec2.distance aabb.min aabb.max /. 2. in
     Bounding_circle.create (center aabb) radius
+
+  let intersects_aabb a b =
+    let x_overlaps = a.min.x <= b.max.x && a.max.x >= b.min.x in
+    let y_overlaps = a.min.y <= b.max.y && a.max.y >= b.min.y in
+    x_overlaps && y_overlaps
+
+  let intersects_circle aabb circle =
+    let cp = closest_point aabb circle.center in
+    let ds = Vec2.distance_squared circle.center cp in
+    let radius_squared = circle.circle.radius *. circle.circle.radius in
+    ds <= radius_squared
 end
 
 and Bounding_circle : sig
@@ -98,6 +113,8 @@ and Bounding_circle : sig
   val center : t -> Vec2.t
   val radius : t -> float
   val aabb_2d : t -> Aabb2d.t
+  val intersects_aabb : t -> Aabb2d.t -> bool
+  val intersects_circle : t -> t -> bool
 end = struct
   open Types
 
@@ -123,4 +140,12 @@ end = struct
     let min = Vec2.sub b.center (Vec2.splat b.circle.radius) in
     let max = Vec2.add b.center (Vec2.splat b.circle.radius) in
     Aabb2d.of_min_max min max
+
+  let intersects_aabb circle aabb = Aabb2d.intersects_circle aabb circle
+
+  let intersects_circle circle1 circle2 =
+    let center_distance_squared = Vec2.distance_squared circle1.center circle2.center in
+    let radius_sum = circle1.circle.radius +. circle2.circle.radius in
+    let radius_sum_squared = radius_sum *. radius_sum in
+    center_distance_squared <= radius_sum_squared
 end

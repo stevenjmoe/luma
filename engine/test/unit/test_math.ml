@@ -10,6 +10,10 @@ let check_vec name a b =
   Alcotest.(check (float 1e-6)) (name ^ " y") b.y a.y
 
 let check_float name expected actual = Alcotest.(check (float e)) name expected actual
+let v x y = Vec2.create x y
+let aabb_minmax x0 y0 x1 y1 = Bounded2d.Aabb2d.of_min_max (v x0 y0) (v x1 y1)
+let aabb_center cX cY hx hy = Bounded2d.Aabb2d.of_center_halfsize (v cX cY) (v hx hy)
+let circle cx cy r = Bounded2d.Bounding_circle.create (v cx cy) r
 
 module Rotation = struct
   let test_creation () =
@@ -185,6 +189,105 @@ module Bounded2d = struct
     let rect_circle = bounding_circle rect in
     let rect_circle_aabb = Bounding_circle.aabb_2d rect_circle in
     check bool "reboxed contains original" true (contains rect_circle_aabb rect)
+
+  let test_aabb_aabb_overlap () =
+    let a = aabb_minmax 0. 0. 4. 3. in
+    let b = aabb_minmax 2. 1. 6. 5. in
+    check bool "overlap" true (Aabb2d.intersects_aabb a b);
+    check bool "symmetry" true (Aabb2d.intersects_aabb b a)
+
+  let test_aabb_aabb_touch_edge () =
+    (* b touches a on the right edge at x=4 *)
+    let a = aabb_minmax 0. 0. 4. 3. in
+    let b = aabb_minmax 4. (-1.) 6. 1. in
+    check bool "touch edge counts as intersect" true (Aabb2d.intersects_aabb a b)
+
+  let test_aabb_aabb_touch_corner () =
+    let a = aabb_minmax 0. 0. 2. 2. in
+    let b = aabb_minmax 2. 2. 3. 3. in
+    check bool "touch corner counts as intersect" true (Aabb2d.intersects_aabb a b)
+
+  let test_aabb_aabb_separated () =
+    let a = aabb_minmax 0. 0. 2. 2. in
+    let b = aabb_minmax 3. 0. 4. 1. in
+    check bool "separated" false (Aabb2d.intersects_aabb a b)
+
+  let test_aabb_aabb_containment () =
+    let outer = aabb_minmax 0. 0. 10. 10. in
+    let inner = aabb_minmax 2. 2. 3. 3. in
+    check bool "containment is intersect" true (Aabb2d.intersects_aabb outer inner)
+
+  let test_aabb_aabb_degenerate_point () =
+    (* point at (2,2) intersecting a box that contains it *)
+    let box = aabb_minmax 0. 0. 4. 4. in
+    let pt = aabb_minmax 2. 2. 2. 2. in
+
+    check bool "point inside" true (Aabb2d.intersects_aabb box pt);
+
+    let pt2 = aabb_minmax 5. 5. 5. 5. in
+    check bool "point outside" false (Aabb2d.intersects_aabb box pt2)
+
+  let test_aabb_circle_inside () =
+    let box = aabb_minmax 0. 0. 5. 5. in
+    let c = circle 5.5 5.5 1.0 in
+    check bool "circle fully inside box" true (Aabb2d.intersects_circle box c)
+
+  let test_aabb_circle_touching_edge () =
+    let box = aabb_minmax 0. 0. 4. 4. in
+
+    (* circle centered at (5,2) radius=1 touches right edge x=4 *)
+    let c = circle 5. 2. 1. in
+    check bool "touching edge" true (Aabb2d.intersects_circle box c)
+
+  let test_aabb_circle_overlap_general () =
+    let box = aabb_minmax 0. 0. 4. 4. in
+    let c = circle 4.5 4.5 1.0 in
+    check bool "overlap (corner region)" true (Aabb2d.intersects_circle box c)
+
+  let test_aabb_circle_separated () =
+    let box = aabb_minmax 0. 0. 2. 2. in
+    let c = circle 5. 5. 1.0 in
+    check bool "no intersection" false (Aabb2d.intersects_circle box c)
+
+  let test_circle_circle_overlap () =
+    let c1 = circle 0. 0. 2. in
+    let c2 = circle 3. 0. 2. in
+    check bool "overlapping" true (Bounding_circle.intersects_circle c1 c2)
+
+  let test_circle_circle_touching () =
+    let c1 = circle 0. 0. 1. in
+    let c2 = circle 2. 0. 1. in
+    check bool "touching edges" true (Bounding_circle.intersects_circle c1 c2)
+
+  let test_circle_circle_contained () =
+    let c1 = circle 0. 0. 3. in
+    let c2 = circle 1. 0. 1. in
+    check bool "one inside other" true (Bounding_circle.intersects_circle c1 c2)
+
+  let test_circle_circle_separated () =
+    let c1 = circle 0. 0. 1. in
+    let c2 = circle 5. 0. 1. in
+    check bool "separated" false (Bounding_circle.intersects_circle c1 c2)
+
+  let test_circle_aabb_inside () =
+    let box = aabb_minmax 0. 0. 5. 5. in
+    let c = circle 2.5 2.5 1. in
+    check bool "circle inside box" true (Bounding_circle.intersects_aabb c box)
+
+  let test_circle_aabb_touching () =
+    let box = aabb_minmax 0. 0. 4. 4. in
+    let c = circle 5. 2. 1. in
+    check bool "touching edge" true (Bounding_circle.intersects_aabb c box)
+
+  let test_circle_aabb_corner_overlap () =
+    let box = aabb_minmax 0. 0. 4. 4. in
+    let c = circle 4.5 4.5 1. in
+    check bool "touching corner" true (Bounding_circle.intersects_aabb c box)
+
+  let test_circle_aabb_separated () =
+    let box = aabb_minmax 0. 0. 4. 4. in
+    let c = circle 7. 7. 1. in
+    check bool "completely outside" false (Bounding_circle.intersects_aabb c box)
 end
 
 let tests =
@@ -204,4 +307,20 @@ let tests =
       "Aabb2d.t bounding_circle" -: Bounded2d.test_bounding_circle;
       "Bounding_circle.t circle_aabb_roundtrip_contains"
       -: Bounded2d.test_circle_aabb_roundtrip_contains;
+      "Aabb2d.t aabb_intersects_aabb" -: Bounded2d.test_aabb_aabb_overlap;
+      "Aabb2d.t aabb_aabb_touch_edge" -: Bounded2d.test_aabb_aabb_touch_edge;
+      "Aabb2d.t aabb_aabb_touch_corner" -: Bounded2d.test_aabb_aabb_touch_corner;
+      "Aabb2d.t aabb_aabb_separated" -: Bounded2d.test_aabb_aabb_separated;
+      "Aabb2d.t aabb_aabb_containment" -: Bounded2d.test_aabb_aabb_containment;
+      "Aabb2d.t aabb_circle_inside" -: Bounded2d.test_aabb_circle_inside;
+      "Aabb2d.t aabb_circle_touching_edge" -: Bounded2d.test_aabb_circle_touching_edge;
+      "Aabb2d.t aabb_circle_overlap_general" -: Bounded2d.test_aabb_circle_overlap_general;
+      "Aabb2d.t aabb_circle_no_intersection" -: Bounded2d.test_aabb_circle_separated;
+      "Aabb2d.t circle_circle_overlap" -: Bounded2d.test_circle_circle_overlap;
+      "Aabb2d.t circle_circle_touching" -: Bounded2d.test_circle_circle_touching;
+      "Aabb2d.t circle_circle_contained" -: Bounded2d.test_circle_circle_contained;
+      "Aabb2d.t circle_aabb_inside" -: Bounded2d.test_circle_aabb_inside;
+      "Aabb2d.t circle_aabb_touching" -: Bounded2d.test_circle_aabb_touching;
+      "Aabb2d.t circle_aabb_corner_overlap" -: Bounded2d.test_circle_aabb_corner_overlap;
+      "Aabb2d.t circle_aabb_separated" -: Bounded2d.test_circle_aabb_separated;
     ] )
