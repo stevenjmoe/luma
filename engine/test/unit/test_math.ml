@@ -290,6 +290,45 @@ module Bounded2d = struct
     check bool "completely outside" false (Bounding_circle.intersects_aabb c box)
 end
 
+module Direction = struct
+  open Direction
+  open Luma__math
+
+  let test_create () =
+    let open Dir2 in
+    (* OK: normalizes (3,4) -> (0.6, 0.8), len = 5 *)
+    (match create (Vec2.create 3. 4.) with
+    | Ok (dir, len) ->
+        check_float "len (3,4)" 5.0 len;
+        check_vec "dir (3,4) -> (0.6,0.8)" dir (Vec2.create 0.6 0.8)
+    | Error _ -> Alcotest.fail "expected Ok for finite non-zero vector");
+
+    (* Error Zero: zero vector *)
+    (match create Vec2.zero with
+    | Error (`Invalid_direction Zero) -> ()
+    | Ok _ -> Alcotest.fail "expected Error Zero for zero vector"
+    | Error (`Invalid_direction Infinite) -> Alcotest.fail "got Infinite for zero vector"
+    | Error (`Invalid_direction NaN) -> Alcotest.fail "got NaN for zero vector"
+    | _ -> Alcotest.fail "Got unexpected error");
+
+    (* 3) Error NaN: any NaN component -> NaN length *)
+    (match create (Vec2.create Float.nan 0.) with
+    | Error (`Invalid_direction NaN) -> ()
+    | Ok _ -> Alcotest.fail "expected Error NaN"
+    | Error (`Invalid_direction Zero) -> Alcotest.fail "got Zero for NaN input"
+    | Error (`Invalid_direction Infinite) -> Alcotest.fail "got Infinite for NaN input"
+    | _ -> Alcotest.fail "Got unexpected error");
+
+    (* Error Infinite: any infinite component -> infinite length *)
+    (match create (Vec2.create Float.infinity 1.) with
+    | Error (`Invalid_direction Infinite) -> ()
+    | Ok _ -> Alcotest.fail "expected Error Infinite"
+    | Error (`Invalid_direction Zero) -> Alcotest.fail "got Zero for Infinite input"
+    | Error (`Invalid_direction NaN) -> Alcotest.fail "got NaN for Infinite input"
+    | _ -> Alcotest.fail "Got unexpected error");
+    ()
+end
+
 let tests =
   ( "math",
     [
@@ -323,4 +362,5 @@ let tests =
       "Aabb2d.t circle_aabb_touching" -: Bounded2d.test_circle_aabb_touching;
       "Aabb2d.t circle_aabb_corner_overlap" -: Bounded2d.test_circle_aabb_corner_overlap;
       "Aabb2d.t circle_aabb_separated" -: Bounded2d.test_circle_aabb_separated;
+      "Dir2.t create" -: Direction.test_create;
     ] )
