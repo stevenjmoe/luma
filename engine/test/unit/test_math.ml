@@ -41,10 +41,32 @@ let test_normalise () =
   check (float e) "" 0.44721362 normalised.cos;
   ()
 
+let test_circle_closest_point () =
+  let open Primitives.Circle in
+  let circle = { radius = 2.0 } in
+
+  let point_in = Vec2.create 1.0 1.0 in
+  check_vec "inside" (closest_point circle point_in) point_in;
+
+  let point_on = Vec2.create 2.0 0.0 in
+  check_vec "on-boundary" (closest_point circle point_on) point_on;
+
+  let point_out_x = Vec2.create 3.0 0.0 in
+  let expect_x = Vec2.create 2.0 0.0 in
+  check_vec "outside axis" (closest_point circle point_out_x) expect_x;
+
+  let point_out_diag = Vec2.create 3.0 4.0 in
+  let expect_diag = Vec2.create 1.2 1.6 in
+  check_vec "outside diagonal" (closest_point circle point_out_diag) expect_diag;
+
+  let point_zero = Vec2.create 0.0 0.0 in
+  check_vec "origin" (closest_point circle point_zero) point_zero
+
 let tests =
   ( "math",
     [
       "Rot2.t creation" -: test_creation;
       "Rot2.t rotation" -: test_rotate;
       "Rot2.t normalise" -: test_normalise;
+      "Circle.t closest_point" -: test_circle_closest_point;
     ] )

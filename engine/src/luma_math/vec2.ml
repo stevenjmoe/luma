@@ -33,6 +33,7 @@ let sub t rhs =
   { x; y }
 
 let scale k v = create (k *. x v) (k *. y v)
+let length_squared v = (v.x *. v.x) +. (v.y *. v.y)
 
 module Infix = struct
   let ( *.. ) a b = mul a b

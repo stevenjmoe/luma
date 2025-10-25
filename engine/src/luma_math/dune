@@ -1,3 +1,5 @@
+(include_subdirs unqualified)
+
 (library 
   (public_name luma.math)
   (name luma__math)
