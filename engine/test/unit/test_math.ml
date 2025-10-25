@@ -64,7 +64,7 @@ module Circle = struct
     let expect_diag = Vec2.create 1.2 1.6 in
     check_vec "outside diagonal" (closest_point circle point_out_diag) expect_diag;
 
-    let point_zero = Vec2.create 0.0 0.0 in
+    let point_zero = Vec2.zero in
     check_vec "origin" (closest_point circle point_zero) point_zero
 end
 
@@ -101,6 +101,92 @@ module Vec2 = struct
     check_float "distance² consistent" expected (distance_squared a b)
 end
 
+module Bounded2d = struct
+  open Bounded2d
+  open Aabb2d
+  open Luma__math
+
+  let check_aabb name (a : Aabb2d.t) (b : Aabb2d.t) =
+    check_vec (name ^ " min") (min a) (min b);
+    check_vec (name ^ " max") (max a) (max b)
+
+  let test_of_center_halfsize () =
+    let c = Vec2.create 3. 4. in
+    let hs = Vec2.create 2. 1. in
+    let a = of_center_halfsize c hs in
+
+    check_vec "center" (center a) c;
+    check_vec "half_size" (half_size a) hs;
+    check_vec "min" (min a) (Vec2.sub c hs);
+    check_vec "max" (max a) (Vec2.add c hs);
+    ()
+
+  let test_of_min_max () =
+    let mn = Vec2.create 1. 2. and mx = Vec2.create 5. 6. in
+    let a = of_min_max mn mx in
+    check_vec "min" (min a) mn;
+    check_vec "max" (max a) mx;
+    check_vec "center" (center a) (Vec2.create 3. 4.);
+    check_vec "half_size" (half_size a) (Vec2.create 2. 2.);
+    ()
+
+  let test_visible_area () =
+    let a = of_min_max Vec2.zero (Vec2.create 4. 3.) in
+
+    check_float "area" 12. (Aabb2d.visible_area a);
+
+    (* degenerate / inverted gives non-negative area via clamp-to-zero extents *)
+    let bad = Aabb2d.of_min_max (Vec2.create 5. 7.) (Vec2.create 2. 3.) in
+    check_float "area non-negative" 0. (Aabb2d.visible_area bad)
+
+  let test_contains_merge () =
+    let a = of_min_max Vec2.zero (Vec2.create 4. 3.) in
+    let b = of_min_max (Vec2.create 1. 1.) (Vec2.create 2. 2.) in
+    let c = of_min_max (Vec2.create (-1.) 1.) (Vec2.create 5. 2.) in
+
+    (check bool) "a contains b" true (contains a b);
+    (check bool) "a !contains c" false (contains a c);
+
+    let u = merge a c in
+    check_vec "merge min" (min u) (Vec2.create (-1.) 0.);
+    check_vec "merge max" (max u) (Vec2.create 5. 3.)
+
+  let test_grow_shrink () =
+    let a = of_min_max Vec2.zero (Vec2.create 4. 3.) in
+    let amt = Vec2.create 1. 2. in
+    let g = grow a amt in
+
+    check_vec "grow min" (min g) (Vec2.create (-1.) (-2.));
+    check_vec "grow max" (max g) (Vec2.create 5. 5.);
+
+    let s = shrink a amt in
+    check_vec "shrink min" (min s) (Vec2.create 1. 2.);
+    check_vec "shrink max" (max s) (Vec2.create 3. 1.)
+
+  let test_bounding_circle () =
+    (* AABB centered at origin with width=4, height=2 ⇒ diagonal=√20, r=√20/2 *)
+    let a = of_min_max (Vec2.create (-2.) (-1.)) (Vec2.create 2. 1.) in
+    let bc = bounding_circle a in
+
+    check_vec "bc center" (Bounding_circle.center bc) Vec2.zero;
+    check_float "bc radius" (0.5 *. Float.sqrt 20.) (Bounding_circle.radius bc)
+
+  let test_circle_aabb_roundtrip_contains () =
+    let c = Vec2.create 1. 2. and r = 3. in
+    let circ = Bounding_circle.create c r in
+    let a = Bounding_circle.aabb_2d circ in
+
+    (* Circle’s AABB should be [center ± r] *)
+    check_vec "aabb min" (min a) (Vec2.create (c.x -. r) (c.y -. r));
+    check_vec "aabb max" (max a) (Vec2.create (c.x +. r) (c.y +. r));
+
+    (* A rect’s circumscribed circle then reboxed AABB must contain the original rect *)
+    let rect = of_min_max Vec2.zero (Vec2.create 4. 1.) in
+    let rect_circle = bounding_circle rect in
+    let rect_circle_aabb = Bounding_circle.aabb_2d rect_circle in
+    check bool "reboxed contains original" true (contains rect_circle_aabb rect)
+end
+
 let tests =
   ( "math",
     [
@@ -110,4 +196,12 @@ let tests =
       "Circle.t closest_point" -: Circle.test_circle_closest_point;
       "Vec2.t distance" -: Vec2.test_distance;
       "Vec2.t distance_squared" -: Vec2.test_distance_squared;
+      "Aabb2d.t of_center_halfsize" -: Bounded2d.test_of_center_halfsize;
+      "Aabb2d.t of_min_max" -: Bounded2d.test_of_min_max;
+      "Aabb2d.t visible_area" -: Bounded2d.test_visible_area;
+      "Aabb2d.t contains_merge" -: Bounded2d.test_contains_merge;
+      "Aabb2d.t grow / shrink" -: Bounded2d.test_grow_shrink;
+      "Aabb2d.t bounding_circle" -: Bounded2d.test_bounding_circle;
+      "Bounding_circle.t circle_aabb_roundtrip_contains"
+      -: Bounded2d.test_circle_aabb_roundtrip_contains;
     ] )

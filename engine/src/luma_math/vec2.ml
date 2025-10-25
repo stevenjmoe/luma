@@ -32,7 +32,13 @@ let sub t rhs =
   let y = t.y -. rhs.y in
   { x; y }
 
+let div t rhs =
+  let x = t.x /. rhs.x in
+  let y = t.y /. rhs.y in
+  { x; y }
+
 let scale k v = create (k *. x v) (k *. y v)
+let length v = Float.sqrt (v.x *. v.x) +. (v.y *. v.y)
 let length_squared v = (v.x *. v.x) +. (v.y *. v.y)
 
 (** [distance vec1 vec2] computes the euclidean distance between two vectors *)
@@ -48,6 +54,12 @@ let distance_squared v1 v2 =
   let dx = v1.x -. v2.x in
   let dy = v1.y -. v2.y in
   (dx *. dx) +. (dy *. dy)
+
+let max v1 v2 =
+  { x = (if v1.x > v2.x then v1.x else v2.x); y = (if v1.y > v2.y then v1.y else v2.y) }
+
+let min v1 v2 =
+  { x = (if v1.x < v2.x then v1.x else v2.x); y = (if v1.y < v2.y then v1.y else v2.y) }
 
 module Infix = struct
   let ( *.. ) a b = mul a b
