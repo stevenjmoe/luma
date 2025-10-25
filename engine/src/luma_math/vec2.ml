@@ -5,6 +5,19 @@ type t = {
 
 let create x y = { x; y }
 let zero = { x = 0.; y = 0. }
+
+(** A vector which points along the positive x axis. *)
+let x = { x = 1.; y = 0. }
+
+(** A vector which points along the positive y axis. *)
+let y = { x = 0.; y = 1. }
+
+(** A vector which points along the negative x axis. *)
+let neg_x = { x = -1.; y = 0. }
+
+(** A vector which points along the negative y axis. *)
+let neg_y = { x = 0.; y = -1. }
+
 let splat v = { x = v; y = v }
 let x t = t.x
 let y t = t.y
