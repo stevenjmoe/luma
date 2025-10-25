@@ -15,6 +15,12 @@ let aabb_minmax x0 y0 x1 y1 = Bounded2d.Aabb2d.of_min_max (v x0 y0) (v x1 y1)
 let aabb_center cX cY hx hy = Bounded2d.Aabb2d.of_center_halfsize (v cX cY) (v hx hy)
 let circle cx cy r = Bounded2d.Bounding_circle.create (v cx cy) r
 
+let check_opt_float name expected actual =
+  match (expected, actual) with
+  | None, None -> ()
+  | Some e, Some a -> check (float e) name e a
+  | _ -> fail (name ^ ": expected " ^ match expected with Some _ -> "Some" | None -> "None")
+
 module Rotation = struct
   let test_creation () =
     let rotation1 = Rot2.half_pi in
@@ -297,7 +303,7 @@ module Direction = struct
   let test_create () =
     let open Dir2 in
     (* OK: normalizes (3,4) -> (0.6, 0.8), len = 5 *)
-    (match create (Vec2.create 3. 4.) with
+    (match create_and_length (Vec2.create 3. 4.) with
     | Ok (dir, len) ->
         check_float "len (3,4)" 5.0 len;
         check_vec "dir (3,4) -> (0.6,0.8)" dir (Vec2.create 0.6 0.8)
@@ -327,6 +333,49 @@ module Direction = struct
     | Error (`Invalid_direction NaN) -> Alcotest.fail "got NaN for Infinite input"
     | _ -> Alcotest.fail "Got unexpected error");
     ()
+end
+
+module Ray = struct
+  open Ray.Ray2d
+
+  let test_intersect_plane_basic () =
+    (* Plane: y = 0, normal = (0,1) *)
+    let plane_origin = v 0. 0. in
+    let plane = Primitives.Plane2d.{ normal = v 0. 1. } in
+
+    (* Ray from (0,-5) pointing up hits plane at t=5 *)
+    let ray = create (v 0. (-5.)) (v 0. 1.) in
+    check_opt_float "ray below, upward" (Some 5.0) (intersect_plane ray plane_origin plane);
+
+    (* Ray from (0,5) pointing down hits at t=5 *)
+    let ray2 = create (v 0. 5.) (v 0. (-1.)) in
+    check_opt_float "ray above, downward" (Some 5.0) (intersect_plane ray2 plane_origin plane);
+
+    (* Ray parallel (horizontal): no intersection *)
+    let ray3 = create (v 0. 5.) (v 1. 0.) in
+    check_opt_float "parallel ray" None (intersect_plane ray3 plane_origin plane);
+
+    (* Ray pointing away (upward from above): no intersection *)
+    let ray4 = create (v 0. 5.) (v 0. 1.) in
+    check_opt_float "away direction" None (intersect_plane ray4 plane_origin plane);
+    ()
+
+  let test_intersect_plane_offset () =
+    (* Plane: x = 2, normal = (1,0) *)
+    let plane_origin = v 2. 0. in
+    let plane = Primitives.Plane2d.{ normal = v 1. 0. } in
+
+    (* Ray from (0,0) → rightward intersects at t=2 *)
+    let ray = create (v 0. 0.) (v 1. 0.) in
+    check_opt_float "rightward hit" (Some 2.0) (intersect_plane ray plane_origin plane);
+
+    (* Ray from (3,0) → rightward (pointing away) → none *)
+    let ray2 = create (v 3. 0.) (v 1. 0.) in
+    check_opt_float "away from plane" None (intersect_plane ray2 plane_origin plane);
+
+    (* Ray from (3,0) → leftward → t=1 *)
+    let ray3 = create (v 3. 0.) (v (-1.) 0.) in
+    check_opt_float "leftward hit" (Some 1.0) (intersect_plane ray3 plane_origin plane)
 end
 
 let tests =
@@ -363,4 +412,6 @@ let tests =
       "Aabb2d.t circle_aabb_corner_overlap" -: Bounded2d.test_circle_aabb_corner_overlap;
       "Aabb2d.t circle_aabb_separated" -: Bounded2d.test_circle_aabb_separated;
       "Dir2.t create" -: Direction.test_create;
+      "Ray2d.t basic" -: Ray.test_intersect_plane_basic;
+      "Ray2d.t intersect_plane_offset" -: Ray.test_intersect_plane_offset;
     ] )

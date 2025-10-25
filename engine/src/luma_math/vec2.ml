@@ -80,6 +80,8 @@ let clamp min_ max_ v = max min_ (min v max_)
 *)
 let is_finite v = Float.is_finite v.x && Float.is_finite v.y
 
+let dot a b = (a.x *. b.x) +. (a.y *. b.y)
+
 module Infix = struct
   let ( *.. ) a b = mul a b
   let ( +.. ) a b = add a b

@@ -13,13 +13,15 @@ module Dir2 = struct
   let invalid_direction_error_of_length length =
     if Float.is_nan length then NaN else if not (Float.is_finite length) then Infinite else Zero
 
-  let create v : (Vec2.t * float, [> error ]) result =
+  let create_and_length v : (Vec2.t * float, [> error ]) result =
     let len = Vec2.length v in
     if Float.is_finite len && len > 0. then
       let inv = 1.0 /. len in
       let dir = Vec2.scale inv v in
       Ok (dir, len)
     else Error (`Invalid_direction (invalid_direction_error_of_length len))
+
+  let create v = Result.map fst (create_and_length v)
 
   let create_unchecked v =
     let length_squared = Vec2.length_squared v in
