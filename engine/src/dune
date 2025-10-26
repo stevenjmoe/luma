@@ -15,6 +15,7 @@
    luma.scene
    luma.sprite
    luma.state
+   luma.storage
    luma.time
    luma.transform
    luma.image
