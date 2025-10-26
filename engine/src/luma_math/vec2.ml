@@ -88,6 +88,16 @@ let perp_dot a b = (a.x *. b.y) -. (a.y *. b.x)
 (** [recip v] returns the component-wise reciprocal of [v]. *)
 let recip v = create (1. /. v.x) (1. /. v.y)
 
+let normalise v =
+  let len = length v in
+  if len > 0. then create (v.x /. len) (v.y /. len) else create 0. 0.
+
+let rotate v theta =
+  let c = cos theta and s = sin theta in
+  let x = (v.x *. c) -. (v.y *. s) in
+  let y = (v.x *. s) +. (v.y *. c) in
+  { x; y }
+
 module Infix = struct
   let ( *.. ) a b = mul a b
   let ( +.. ) a b = add a b
