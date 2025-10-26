@@ -111,7 +111,7 @@ module Vec2 = struct
     check_float "distance² consistent" expected (distance_squared a b)
 end
 
-module Bounded2d = struct
+module Bounded2d_tests = struct
   open Bounded2d
   open Aabb2d
   open Luma__math
@@ -376,6 +376,61 @@ module Ray = struct
     (* Ray from (3,0) → leftward → t=1 *)
     let ray3 = create (v 3. 0.) (v (-1.) 0.) in
     check_opt_float "leftward hit" (Some 1.0) (intersect_plane ray3 plane_origin plane)
+
+  let test_aabb_hit_center () =
+    let open Bounded2d in
+    let aabb = Aabb2d.of_center_halfsize (v 0. 0.) (v 1. 1.) in
+    let ray = Raycast2d.from_ray (Ray.Ray2d.create (v (-2.) 0.) (v 1. 0.)) 10. in
+    check_opt_float "hit center" (Some 1.0) (Raycast2d.aabb_intersection_at ray aabb)
+
+  let test_aabb_parallel_miss () =
+    (* Ray is horizontal at y=3, outside the AABB’s vertical slab -> miss *)
+    let open Bounded2d in
+    let aabb = Aabb2d.of_center_halfsize (v 0. 0.) (v 1. 1.) in
+    let ray = Raycast2d.from_ray (Ray.Ray2d.create (v (-2.) 3.) (v 1. 0.)) 10. in
+    check_opt_float "parallel miss (y outside slab)" None (Raycast2d.aabb_intersection_at ray aabb)
+
+  let test_aabb_parallel_overlap_hit () =
+    (* Ray is horizontal but within the AABB’s vertical slab -> should hit *)
+    let open Bounded2d in
+    let aabb = Aabb2d.of_center_halfsize (v 0. 0.) (v 1. 1.) in
+    let ray = Raycast2d.from_ray (Ray.Ray2d.create (v (-2.) 0.5) (v 1. 0.)) 10. in
+    check_opt_float "parallel overlap hit" (Some 1.0) (Raycast2d.aabb_intersection_at ray aabb)
+
+  let test_aabb_inside_box () =
+    (* Origin inside box -> t = 0.0 *)
+    let open Bounded2d in
+    let aabb = Aabb2d.of_center_halfsize (v 0. 0.) (v 1. 1.) in
+    let ray = Raycast2d.from_ray (Ray.Ray2d.create (v 0. 0.) (v 1. 0.)) 10. in
+    check_opt_float "starts inside" (Some 0.0) (Raycast2d.aabb_intersection_at ray aabb)
+
+  let test_aabb_max_cull () =
+    (* Entry at x=4 → t=4.0; max=10 -> hit, max=3 -> culled *)
+    let open Bounded2d in
+    let aabb = Aabb2d.of_center_halfsize (v 5. 0.) (v 1. 1.) in
+    let ray_ok = Raycast2d.from_ray (Ray.Ray2d.create (v 0. 0.) (v 1. 0.)) 10. in
+    let ray_cut = Raycast2d.from_ray (Ray.Ray2d.create (v 0. 0.) (v 1. 0.)) 3. in
+    check_opt_float "within max" (Some 4.0) (Raycast2d.aabb_intersection_at ray_ok aabb);
+    check_opt_float "beyond max" None (Raycast2d.aabb_intersection_at ray_cut aabb)
+
+  let test_circle_hit_from_left () =
+    (* Circle center at (0,0), r=1; ray from (-2,0) -> (1,0) *)
+    let circle = Bounded2d.Bounding_circle.create (v 0. 0.) 1. in
+    let ray = Raycast2d.from_ray (Ray.Ray2d.create (v (-2.) 0.) (v 1. 0.)) 10. in
+    (* Entry when x = -1, so t = 1 *)
+    check_opt_float "hit from left" (Some 1.0) (Raycast2d.circle_intersection_at ray circle)
+
+  let test_circle_pointing_away_miss () =
+    (* Start left of circle but pointing further left → projected > 0, and projected^2 > d2 ⇒ miss *)
+    let circle = Bounded2d.Bounding_circle.create (v 0. 0.) 1. in
+    let ray = Raycast2d.from_ray (Ray.Ray2d.create (v (-2.) 0.) (v (-1.) 0.)) 10. in
+    check_opt_float "pointing away" None (Raycast2d.circle_intersection_at ray circle)
+
+  let test_circle_start_inside () =
+    (* Inside circle at origin, shoot any direction → t = 0 *)
+    let circle = Bounded2d.Bounding_circle.create (v 0. 0.) 1. in
+    let ray = Raycast2d.from_ray (Ray.Ray2d.create (v 0. 0.) (v 1. 0.)) 10. in
+    check_opt_float "start inside" (Some 0.0) (Raycast2d.circle_intersection_at ray circle)
 end
 
 let tests =
@@ -387,31 +442,39 @@ let tests =
       "Circle.t closest_point" -: Circle.test_circle_closest_point;
       "Vec2.t distance" -: Vec2.test_distance;
       "Vec2.t distance_squared" -: Vec2.test_distance_squared;
-      "Aabb2d.t of_center_halfsize" -: Bounded2d.test_of_center_halfsize;
-      "Aabb2d.t of_min_max" -: Bounded2d.test_of_min_max;
-      "Aabb2d.t visible_area" -: Bounded2d.test_visible_area;
-      "Aabb2d.t contains_merge" -: Bounded2d.test_contains_merge;
-      "Aabb2d.t grow / shrink" -: Bounded2d.test_grow_shrink;
-      "Aabb2d.t bounding_circle" -: Bounded2d.test_bounding_circle;
+      "Aabb2d.t of_center_halfsize" -: Bounded2d_tests.test_of_center_halfsize;
+      "Aabb2d.t of_min_max" -: Bounded2d_tests.test_of_min_max;
+      "Aabb2d.t visible_area" -: Bounded2d_tests.test_visible_area;
+      "Aabb2d.t contains_merge" -: Bounded2d_tests.test_contains_merge;
+      "Aabb2d.t grow / shrink" -: Bounded2d_tests.test_grow_shrink;
+      "Aabb2d.t bounding_circle" -: Bounded2d_tests.test_bounding_circle;
       "Bounding_circle.t circle_aabb_roundtrip_contains"
-      -: Bounded2d.test_circle_aabb_roundtrip_contains;
-      "Aabb2d.t aabb_intersects_aabb" -: Bounded2d.test_aabb_aabb_overlap;
-      "Aabb2d.t aabb_aabb_touch_edge" -: Bounded2d.test_aabb_aabb_touch_edge;
-      "Aabb2d.t aabb_aabb_touch_corner" -: Bounded2d.test_aabb_aabb_touch_corner;
-      "Aabb2d.t aabb_aabb_separated" -: Bounded2d.test_aabb_aabb_separated;
-      "Aabb2d.t aabb_aabb_containment" -: Bounded2d.test_aabb_aabb_containment;
-      "Aabb2d.t aabb_circle_inside" -: Bounded2d.test_aabb_circle_inside;
-      "Aabb2d.t aabb_circle_touching_edge" -: Bounded2d.test_aabb_circle_touching_edge;
-      "Aabb2d.t aabb_circle_overlap_general" -: Bounded2d.test_aabb_circle_overlap_general;
-      "Aabb2d.t aabb_circle_no_intersection" -: Bounded2d.test_aabb_circle_separated;
-      "Aabb2d.t circle_circle_overlap" -: Bounded2d.test_circle_circle_overlap;
-      "Aabb2d.t circle_circle_touching" -: Bounded2d.test_circle_circle_touching;
-      "Aabb2d.t circle_circle_contained" -: Bounded2d.test_circle_circle_contained;
-      "Aabb2d.t circle_aabb_inside" -: Bounded2d.test_circle_aabb_inside;
-      "Aabb2d.t circle_aabb_touching" -: Bounded2d.test_circle_aabb_touching;
-      "Aabb2d.t circle_aabb_corner_overlap" -: Bounded2d.test_circle_aabb_corner_overlap;
-      "Aabb2d.t circle_aabb_separated" -: Bounded2d.test_circle_aabb_separated;
+      -: Bounded2d_tests.test_circle_aabb_roundtrip_contains;
+      "Aabb2d.t aabb_intersects_aabb" -: Bounded2d_tests.test_aabb_aabb_overlap;
+      "Aabb2d.t aabb_aabb_touch_edge" -: Bounded2d_tests.test_aabb_aabb_touch_edge;
+      "Aabb2d.t aabb_aabb_touch_corner" -: Bounded2d_tests.test_aabb_aabb_touch_corner;
+      "Aabb2d.t aabb_aabb_separated" -: Bounded2d_tests.test_aabb_aabb_separated;
+      "Aabb2d.t aabb_aabb_containment" -: Bounded2d_tests.test_aabb_aabb_containment;
+      "Aabb2d.t aabb_circle_inside" -: Bounded2d_tests.test_aabb_circle_inside;
+      "Aabb2d.t aabb_circle_touching_edge" -: Bounded2d_tests.test_aabb_circle_touching_edge;
+      "Aabb2d.t aabb_circle_overlap_general" -: Bounded2d_tests.test_aabb_circle_overlap_general;
+      "Aabb2d.t aabb_circle_no_intersection" -: Bounded2d_tests.test_aabb_circle_separated;
+      "Aabb2d.t circle_circle_overlap" -: Bounded2d_tests.test_circle_circle_overlap;
+      "Aabb2d.t circle_circle_touching" -: Bounded2d_tests.test_circle_circle_touching;
+      "Aabb2d.t circle_circle_contained" -: Bounded2d_tests.test_circle_circle_contained;
+      "Aabb2d.t circle_aabb_inside" -: Bounded2d_tests.test_circle_aabb_inside;
+      "Aabb2d.t circle_aabb_touching" -: Bounded2d_tests.test_circle_aabb_touching;
+      "Aabb2d.t circle_aabb_corner_overlap" -: Bounded2d_tests.test_circle_aabb_corner_overlap;
+      "Aabb2d.t circle_aabb_separated" -: Bounded2d_tests.test_circle_aabb_separated;
       "Dir2.t create" -: Direction.test_create;
       "Ray2d.t basic" -: Ray.test_intersect_plane_basic;
       "Ray2d.t intersect_plane_offset" -: Ray.test_intersect_plane_offset;
+      "Raycast2d.t aabb_hit_center" -: Ray.test_aabb_hit_center;
+      "Raycast2d.t aabb_parallel_miss" -: Ray.test_aabb_parallel_miss;
+      "Raycast2d.t aabb_parallel_overlap_hit" -: Ray.test_aabb_parallel_overlap_hit;
+      "Raycast2d.t aabb_inside_box" -: Ray.test_aabb_inside_box;
+      "Raycast2d.t aabb_max_cull" -: Ray.test_aabb_max_cull;
+      "Raycast2d.t circle_hit_from_left" -: Ray.test_circle_hit_from_left;
+      "Raycast2d.t circle_pointing_away_miss" -: Ray.test_circle_pointing_away_miss;
+      "Raycast2d.t circle_start_inside" -: Ray.test_circle_start_inside;
     ] )

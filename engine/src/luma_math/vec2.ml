@@ -82,6 +82,12 @@ let is_finite v = Float.is_finite v.x && Float.is_finite v.y
 
 let dot a b = (a.x *. b.x) +. (a.y *. b.y)
 
+(** [perp_dot a b] The perpendicular dot product of [a] and [b] *)
+let perp_dot a b = (a.x *. b.y) -. (a.y *. b.x)
+
+(** [recip v] returns the component-wise reciprocal of [v]. *)
+let recip v = create (1. /. v.x) (1. /. v.y)
+
 module Infix = struct
   let ( *.. ) a b = mul a b
   let ( +.. ) a b = add a b

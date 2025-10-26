@@ -4,9 +4,13 @@ module Ray2d = struct
     direction : Direction.Dir2.t;
   }
 
+  (**[create origin direction] *)
   let create origin direction = { origin; direction }
+
+  (** [get_point ray distance] *)
   let get_point ray distance = Vec2.add ray.origin (Vec2.scale distance ray.direction)
 
+  (** [intersect_plane ray plane_origin plane] *)
   let intersect_plane ray plane_origin (plane : Primitives.Plane2d.t) =
     let denominator = Vec2.dot plane.normal ray.direction in
     if Float.abs denominator > Float.epsilon then
