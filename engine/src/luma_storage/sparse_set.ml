@@ -48,8 +48,7 @@ let get_dense_index t entity_id =
   if page < Vector.length t.sparse then
     let sparse_page = Vector.get t.sparse page in
     match vector_get_opt sparse_page sparse_index with Some r -> r | None -> None
-  else
-    None
+  else None
 
 let set t entity_id value =
   match get_dense_index t entity_id with
@@ -94,6 +93,7 @@ let delete t entity_id =
 let dense s = s.dense
 let sparse s = s.sparse
 let max_size s = s.max_size
+let length s = Vector.length s.dense
 
 let%test "resize" =
   let s_set = create () in

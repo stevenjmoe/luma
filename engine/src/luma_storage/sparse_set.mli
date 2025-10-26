@@ -9,3 +9,4 @@ val max_size : 'a t -> int
 val set : 'a t -> int -> 'a -> unit
 val get : 'a t -> int -> 'a option
 val delete : 'a t -> int -> unit
+val length : 'a t -> int
