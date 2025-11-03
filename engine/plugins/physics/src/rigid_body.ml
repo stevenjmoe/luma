@@ -107,10 +107,4 @@ module Make (L : Luma.S) (Config : Config.S) : S = struct
 
     let name = "rigid_body"
   end)
-
-  module R = L.Resource.Make (struct
-    type inner = t
-
-    let name = "body_store"
-  end)
 end

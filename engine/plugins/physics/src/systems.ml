@@ -1,9 +1,7 @@
-module Make (L : Luma.S) (Config : Config.S) (Rigid_body : Rigid_body.S) = struct
-  module Store = Storage.Make (L)
-
+module Make (L : Luma.S) (Config : Config.S) (Rb : Rigid_body.S) (Store : Storage.Store) = struct
   let sync_rigid_bodies () =
     L.System.make_with_resources
-      ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
+      ~components:L.Query.Component.(Required (module Rb.C) & End)
       ~resources:
         L.Query.Resource.(Resource (module Store.R) & Resource (module Storage.Rb_index.R) & End)
       "sync_rigid_bodies"
@@ -15,7 +13,7 @@ module Make (L : Luma.S) (Config : Config.S) (Rigid_body : Rigid_body.S) = struc
           e;
 
         List.iter
-          (fun (entity, (rb, _)) ->
+          (fun (entity, ((rb : Rigid_body.t), _)) ->
             let open Rigid_body in
             let eid = L.Id.Entity.to_int entity in
 
@@ -52,7 +50,7 @@ module Make (L : Luma.S) (Config : Config.S) (Rigid_body : Rigid_body.S) = struc
 
   let step () =
     L.System.make_with_resources
-      ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
+      ~components:L.Query.Component.(Required (module Rb.C) & End)
       ~resources:
         L.Query.Resource.(
           Resource (module L.Time.R) & Resource (module Config.R) & Resource (module Store.R) & End)

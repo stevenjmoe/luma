@@ -5,8 +5,8 @@ open Luma__storage
 module Make (L : Luma.S) = struct
   module Config = Config.Make (L)
   module Rigid_body = Rigid_body.Make (L) (Config)
-  module S = Systems.Make (L) (Config) (Rigid_body)
   module Store = Storage.Make (L)
+  module S = Systems.Make (L) (Config) (Rigid_body) (Store)
 
   let get_pos world entity =
     let ( let* ) = Option.bind in
@@ -28,8 +28,8 @@ module Make (L : Luma.S) = struct
     L.World.add_resource Config.R.type_id packed world |> ignore;
 
     let body_store = Store.create ~initial:50 () in
-    let packed_bodies = L.Resource.pack (module Store.R) body_store in
-    L.World.add_resource Store.R.type_id packed_bodies world |> ignore;
+    let packed_store = L.Resource.pack (module Store.R) body_store in
+    L.World.add_resource Store.R.type_id packed_store world |> ignore;
 
     let rb_index = Storage.Rb_index.create ~initial:50 in
     let packed_index = L.Resource.pack (module Storage.Rb_index.R) rb_index in
@@ -40,8 +40,5 @@ module Make (L : Luma.S) = struct
   let plugin ?(world_config = None) app =
     let app = setup app world_config in
 
-    app
-    |> L.App.on Startup (S.setup ())
-    |> L.App.on PreUpdate (S.sync_rigid_bodies ())
-    |> L.App.on Update (S.step ())
+    app |> L.App.on PreUpdate (S.sync_rigid_bodies ()) |> L.App.on Update (S.step ())
 end

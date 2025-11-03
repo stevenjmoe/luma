@@ -6,8 +6,6 @@ open Rigid_body
 
     Each body is represented by the same index in each array. The index should be the *)
 module type Store = sig
-  type rigid_body
-
   type t = {
     mutable len : int;
     mutable cap : int;
@@ -29,7 +27,7 @@ module type Store = sig
   val create : ?initial:int -> unit -> t
   val ensure_capacity : t -> int -> unit
   val swap_rows : t -> int -> int -> unit
-  val add : t -> rigid_body -> int
+  val add : t -> Rigid_body.t -> int
   val remove : t -> int -> unit
   val set_velocity : t -> int -> float -> float -> unit
   val add_force : t -> int -> float -> float -> unit
@@ -42,7 +40,7 @@ module type Store = sig
   val integrate_linear_row : t -> row:int -> gx:float -> gy:float -> dt:float -> unit
 end
 
-module Make (L : Luma.S) = struct
+module Make (L : Luma.S) : Store = struct
   type rigid_body = Rigid_body.t
 
   type t = {
