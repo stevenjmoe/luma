@@ -19,8 +19,8 @@ depends: [
   "ocaml"
   "ppxlib"
   "ppx_inline_test"
-  "raylib"
-  "raygui"
+  "raylib" {>= "1.4.0"}
+  "raygui" {>= "1.4.0"}
   "ptime"
   "fmt"
   "uuidm"
