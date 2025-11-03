@@ -70,6 +70,11 @@ end = struct
   let max aabb = aabb.max
   let center aabb = Vec2.div (Vec2.add aabb.min aabb.max) (Vec2.splat 2.)
   let half_size aabb = Vec2.div (Vec2.sub aabb.max aabb.min) (Vec2.splat 2.)
+
+  let area aabb =
+    let size = Vec2.sub aabb.max aabb.min in
+    size.x *. size.y
+
   let set_min aabb min = aabb.min <- min
   let set_max aabb max = aabb.min <- max
 

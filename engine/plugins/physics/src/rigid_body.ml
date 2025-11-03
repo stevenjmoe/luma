@@ -102,6 +102,18 @@ module Make (L : Luma.S) (Config : Config.S) : S = struct
       force_accumulator = Vec2.zero;
     }
 
+  let moi_of_circle mass radius = 0.5 *. mass *. radius *. radius
+  let moi_of_aabb mass (size : Vec2.t) = mass *. ((size.x *. size.x) +. (size.y *. size.y)) /. 12.
+
+  (** [moi body] calculates the moment of inertia. *)
+  let moi body =
+    match body.shape with
+    | Circle c -> moi_of_circle body.mass (Bounded2d.Bounding_circle.radius c)
+    | Aabb a -> moi_of_aabb body.mass Bounded2d.Aabb2d.(Vec2.sub (max a) (min a))
+
+  let bounding_box body =
+    match body.shape with Circle c -> Bounded2d.Bounding_circle.aabb_2d c | Aabb a -> a
+
   module C = L.Component.Make (struct
     type inner = t
 
