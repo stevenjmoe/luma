@@ -1,0 +1,6 @@
+(library
+  (name luma_physics)
+  (public_name luma.physics)
+  (libraries luma)
+  (preprocess
+    (pps ppx_component)))

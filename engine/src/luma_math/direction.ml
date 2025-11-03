@@ -17,7 +17,7 @@ module Dir2 = struct
     let len = Vec2.length v in
     if Float.is_finite len && len > 0. then
       let inv = 1.0 /. len in
-      let dir = Vec2.scale inv v in
+      let dir = Vec2.scale v inv in
       Ok (dir, len)
     else Error (`Invalid_direction (invalid_direction_error_of_length len))
 

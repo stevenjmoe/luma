@@ -50,7 +50,7 @@ let div t rhs =
   let y = t.y /. rhs.y in
   { x; y }
 
-let scale k v = create (k *. x v) (k *. y v)
+let scale v k = create (k *. x v) (k *. y v)
 let length v = Float.sqrt ((v.x *. v.x) +. (v.y *. v.y))
 let length_squared v = (v.x *. v.x) +. (v.y *. v.y)
 

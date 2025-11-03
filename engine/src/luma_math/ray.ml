@@ -8,7 +8,7 @@ module Ray2d = struct
   let create origin direction = { origin; direction }
 
   (** [get_point ray distance] *)
-  let get_point ray distance = Vec2.add ray.origin (Vec2.scale distance ray.direction)
+  let get_point ray distance = Vec2.add ray.origin (Vec2.scale ray.direction distance)
 
   (** [intersect_plane ray plane_origin plane] *)
   let intersect_plane ray plane_origin (plane : Primitives.Plane2d.t) =

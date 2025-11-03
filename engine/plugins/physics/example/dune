@@ -1,0 +1,5 @@
+(executable
+  (name physics_example)
+  (libraries luma luma.driver.raylib luma.physics)
+  (preprocess
+    (pps ppx_component)))

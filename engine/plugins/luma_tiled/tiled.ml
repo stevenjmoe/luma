@@ -192,8 +192,9 @@ module Make (L : Luma.S) = struct
             Vec2.(
               tm.origin
               |> add
-                   (scale tm.scale
-                      (Vec2.create (x plan.map_parallax_origin) (y plan.map_parallax_origin))))
+                   (scale
+                      (Vec2.create (x plan.map_parallax_origin) (y plan.map_parallax_origin))
+                      tm.scale))
           in
           let cam_center_world = Camera.center cam in
           let d = Vec2.sub cam_center_world map_origin_world in
@@ -216,12 +217,13 @@ module Make (L : Luma.S) = struct
                       let mp_map = Vec2.add dst_pos_map meta.offset in
 
                       (* map -> world, then parallax shift *)
-                      let world_base = Vec2.add tm.origin (Vec2.scale tm.scale mp_map) in
+                      let world_base = Vec2.add tm.origin (Vec2.scale mp_map tm.scale) in
                       let base_world = Vec2.add world_base shift_world in
 
                       let size_world =
-                        Vec2.scale tm.scale
+                        Vec2.scale
                           (Vec2.create (Rect.width cmd.dest) (Rect.height cmd.dest))
+                          tm.scale
                       in
 
                       Renderer.push_texture ~z:cmd.z ~tex ~position:base_world ~size:size_world

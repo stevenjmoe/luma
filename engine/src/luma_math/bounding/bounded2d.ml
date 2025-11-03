@@ -1,11 +1,11 @@
 module Types = struct
   type aabb = {
-    min : Vec2.t;  (** The minimum bottom-left point of the box *)
-    max : Vec2.t;  (** The maximum top-right point of the box *)
+    mutable min : Vec2.t;  (** The minimum bottom-left point of the box *)
+    mutable max : Vec2.t;  (** The maximum top-right point of the box *)
   }
 
   type circle = {
-    center : Vec2.t;
+    mutable center : Vec2.t;
     circle : Primitives.Circle.t;
   }
 end
@@ -41,6 +41,8 @@ module rec Aabb2d : sig
   val max : t -> Vec2.t
   val intersects_aabb : t -> t -> bool
   val intersects_circle : t -> Bounding_circle.t -> bool
+  val set_min : t -> Vec2.t -> unit
+  val set_max : t -> Vec2.t -> unit
 
   (* TODO: val scale_around_center : t -> Vec2.t -> t
   val transformed_by : t -> Vec2.t -> Rot2.t -> t
@@ -68,6 +70,8 @@ end = struct
   let max aabb = aabb.max
   let center aabb = Vec2.div (Vec2.add aabb.min aabb.max) (Vec2.splat 2.)
   let half_size aabb = Vec2.div (Vec2.sub aabb.max aabb.min) (Vec2.splat 2.)
+  let set_min aabb min = aabb.min <- min
+  let set_max aabb max = aabb.min <- max
 
   let visible_area aabb =
     let b = Vec2.max (Vec2.sub aabb.max aabb.min) Vec2.zero in
@@ -115,6 +119,7 @@ and Bounding_circle : sig
   val aabb_2d : t -> Aabb2d.t
   val intersects_aabb : t -> Aabb2d.t -> bool
   val intersects_circle : t -> t -> bool
+  val set_center : t -> Vec2.t -> unit
 end = struct
   open Types
 
@@ -131,6 +136,7 @@ end = struct
   let radius b = b.circle.radius
   let half_size c = radius c
   let visible_area c = Float.pi *. c.circle.radius *. c.circle.radius
+  let set_center c center = c.center <- center
   let contains c1 c2 = failwith "TODO"
   let merge c1 c2 = failwith "TODO"
   let grow c1 c2 = failwith "TODO"

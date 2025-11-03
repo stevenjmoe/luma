@@ -19,18 +19,23 @@ module rec Aabb2d : sig
   val shrink : t -> Vec2.t -> t
   val intersects_aabb : t -> t -> bool
   val intersects_circle : t -> Bounding_circle.t -> bool
+  val set_min : t -> Vec2.t -> unit
+  val set_max : t -> Vec2.t -> unit
 end
 
 and Bounding_circle : sig
   type t
 
   val create : Vec2.t -> float -> t
+  (** [create center radius] *)
+
   val center : t -> Vec2.t
   val radius : t -> float
 
   val aabb_2d : t -> Aabb2d.t
   (** Computes the smallest [Aabb2d.t] containing this [Bounding_circle.t]. *)
 
+  val set_center : t -> Vec2.t -> unit
   val intersects_aabb : t -> Aabb2d.t -> bool
   val intersects_circle : t -> t -> bool
 end
