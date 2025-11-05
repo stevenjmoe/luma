@@ -1,0 +1,81 @@
+open Luma__math
+
+module Grid_cell = struct
+  type t = {
+    mutable len : int;
+    mutable cap : int;
+    mutable data : int array;
+  }
+
+  let create () = { len = 0; cap = 4; data = Array.make 4 0 }
+  let clear c = c.len <- 0
+
+  let push c v =
+    if c.len = c.cap then (
+      let cap = max 4 (2 * c.cap) in
+      let data = Array.make cap 0 in
+      Array.blit c.data 0 data 0 c.len;
+      c.data <- data;
+      c.cap <- cap);
+    c.data.(c.len) <- v;
+    c.len <- c.len + 1
+end
+
+type t = {
+  cells : Grid_cell.t array;  (** 1d array representing 2D grid. *)
+  cell_size : float;
+  rows : int;  (** Grid dimensions. *)
+  cols : int;  (** Grid dimensions. *)
+  world_min : Vec2.t;  (** World boundaries for grid mapping. *)
+  world_max : Vec2.t;  (** World boundaries for grid mapping. *)
+}
+
+(** [create world_bound cell_size] *)
+let create world_bound cell_size =
+  let open Bounded2d in
+  let world_min = Aabb2d.min world_bound in
+  let world_max = Aabb2d.max world_bound in
+  let world_size = Vec2.sub world_max world_min in
+
+  let rows = int_of_float world_size.x / int_of_float cell_size in
+  let cols = int_of_float world_size.y / int_of_float cell_size in
+  let cells = Array.make (rows * cols) (Grid_cell.create ()) in
+
+  { cells; cell_size; rows; cols; world_min; world_max }
+
+(** [cell_index grid row col] converts 2D grid coordinates to 1D array index. *)
+let cell_index grid ~row ~col = (row * grid.cols) + col
+
+let clear_grid grid =
+  for i = 0 to Array.length grid.cells - 1 do
+    Grid_cell.clear grid.cells.(i)
+  done
+
+let grid_cell grid ~pos_x ~pos_y =
+  let relative_pos = Vec2.sub (Vec2.create pos_x pos_y) grid.world_min in
+  let col = relative_pos.x /. grid.cell_size |> int_of_float in
+  let row = relative_pos.y /. grid.cell_size |> int_of_float in
+
+  (* clamp to grid boundaries *)
+  let col = max 0 (min col (grid.cols - 1)) in
+  let row = max 0 (min row (grid.rows - 1)) in
+  (col, row)
+
+(** [insert grid body_index ~min_x ~min_y ~max_x ~max_y] *)
+let insert grid body_index ~min_x ~min_y ~max_x ~max_y =
+  let open Bounded2d.Aabb2d in
+  let start_col, start_row = grid_cell grid ~pos_x:min_x ~pos_y:min_y in
+  let end_col, end_row = grid_cell grid ~pos_x:max_x ~pos_y:max_y in
+
+  for row = start_row to end_row do
+    for col = start_col to end_col do
+      let cell_idx = cell_index grid ~row ~col in
+      Grid_cell.push grid.cells.(cell_idx) body_index
+    done
+  done
+
+module R = Luma__resource.Resource.Make (struct
+  type inner = t
+
+  let name = "physics_grid"
+end)
