@@ -3,20 +3,17 @@ open Luma__math
 open Luma__storage
 
 module Make (L : Luma.S) = struct
-  module Config = Config.Make (L)
-  module Rigid_body = Rigid_body.Make (L) (Config)
-  module Store = Storage.Make (L)
-  module S = Systems.Make (L) (Config) (Rigid_body) (Store)
+  module S = Systems.Make (L)
 
   let get_pos world entity =
     let ( let* ) = Option.bind in
-    let* store_packed = L.World.get_resource world Store.R.type_id in
-    let* store = L.Resource.unpack_opt (module Store.R) store_packed in
+    let* store_packed = L.World.get_resource world Pb_store.R.type_id in
+    let* store = L.Resource.unpack_opt (module Pb_store.R) store_packed in
 
-    let* index_packed = L.World.get_resource world Storage.Rb_index.R.type_id in
-    let* index = L.Resource.unpack_opt (module Storage.Rb_index.R) index_packed in
+    let* index_packed = L.World.get_resource world Pb_store.Index.R.type_id in
+    let* index = L.Resource.unpack_opt (module Pb_store.Index.R) index_packed in
 
-    match Storage.Rb_index.row_of_entity index (L.Id.Entity.to_int entity) with
+    match Pb_store.Index.row_of_entity index (L.Id.Entity.to_int entity) with
     | Some row -> Some (Vec2.create store.pos_x.(row) store.pos_y.(row))
     | None -> None
 
@@ -27,13 +24,17 @@ module Make (L : Luma.S) = struct
     let packed = L.Resource.pack (module Config.R) config in
     L.World.add_resource Config.R.type_id packed world |> ignore;
 
-    let body_store = Store.create ~initial:50 () in
-    let packed_store = L.Resource.pack (module Store.R) body_store in
-    L.World.add_resource Store.R.type_id packed_store world |> ignore;
+    let body_store = Pb_store.create ~initial:50 () in
+    let packed_store = L.Resource.pack (module Pb_store.R) body_store in
+    L.World.add_resource Pb_store.R.type_id packed_store world |> ignore;
 
-    let rb_index = Storage.Rb_index.create ~initial:50 in
-    let packed_index = L.Resource.pack (module Storage.Rb_index.R) rb_index in
-    L.World.add_resource Storage.Rb_index.R.type_id packed_index world |> ignore;
+    let rb_index = Pb_store.Index.create ~initial:50 in
+    let packed_index = L.Resource.pack (module Pb_store.Index.R) rb_index in
+    L.World.add_resource Pb_store.Index.R.type_id packed_index world |> ignore;
+
+    let grid = Grid.create config.bounds 20. in
+    let packed_grid = L.Resource.pack (module Grid.R) grid in
+    L.World.add_resource Grid.R.type_id packed_grid world |> ignore;
 
     app
 
