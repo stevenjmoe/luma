@@ -7,13 +7,13 @@ module Make (L : Luma.S) = struct
 
   let get_pos world entity =
     let ( let* ) = Option.bind in
-    let* store_packed = L.World.get_resource world Pb_store.R.type_id in
-    let* store = L.Resource.unpack_opt (module Pb_store.R) store_packed in
+    let* store_packed = L.World.get_resource world Rb_store.R.type_id in
+    let* store = L.Resource.unpack_opt (module Rb_store.R) store_packed in
 
-    let* index_packed = L.World.get_resource world Pb_store.Index.R.type_id in
-    let* index = L.Resource.unpack_opt (module Pb_store.Index.R) index_packed in
+    let* index_packed = L.World.get_resource world Rb_store.Index.R.type_id in
+    let* index = L.Resource.unpack_opt (module Rb_store.Index.R) index_packed in
 
-    match Pb_store.Index.row_of_entity index (L.Id.Entity.to_int entity) with
+    match Rb_store.Index.row_of_entity index (L.Id.Entity.to_int entity) with
     | Some row -> Some (Vec2.create store.pos_x.(row) store.pos_y.(row))
     | None -> None
 
@@ -24,13 +24,13 @@ module Make (L : Luma.S) = struct
     let packed = L.Resource.pack (module Config.R) config in
     L.World.add_resource Config.R.type_id packed world |> ignore;
 
-    let body_store = Pb_store.create ~initial:50 () in
-    let packed_store = L.Resource.pack (module Pb_store.R) body_store in
-    L.World.add_resource Pb_store.R.type_id packed_store world |> ignore;
+    let body_store = Rb_store.create ~initial:50 () in
+    let packed_store = L.Resource.pack (module Rb_store.R) body_store in
+    L.World.add_resource Rb_store.R.type_id packed_store world |> ignore;
 
-    let rb_index = Pb_store.Index.create ~initial:50 in
-    let packed_index = L.Resource.pack (module Pb_store.Index.R) rb_index in
-    L.World.add_resource Pb_store.Index.R.type_id packed_index world |> ignore;
+    let rb_index = Rb_store.Index.create ~initial:50 in
+    let packed_index = L.Resource.pack (module Rb_store.Index.R) rb_index in
+    L.World.add_resource Rb_store.Index.R.type_id packed_index world |> ignore;
 
     let grid = Grid.create config.bounds 20. in
     let packed_grid = L.Resource.pack (module Grid.R) grid in
