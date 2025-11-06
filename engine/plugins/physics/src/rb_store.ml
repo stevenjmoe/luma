@@ -301,8 +301,18 @@ module Index = struct
 
   let on_remove s ~row =
     let last = s.len - 1 in
+    if row < 0 || row >= s.len then invalid_arg "Rb_index.on_remove";
+
+    let e_removed = s.row_to_ent.(row) in
     let e_last = s.row_to_ent.(last) in
-    if e_last <> -1 then Hashtbl.remove s.ent_to_row e_last;
+
+    if row < last then (
+      Hashtbl.replace s.ent_to_row e_last row;
+      (* Move last's entry into removed slot *)
+      s.row_to_ent.(row) <- e_last);
+
+    (* Clean up last entry and removed entity *)
+    Hashtbl.remove s.ent_to_row e_removed;
     s.row_to_ent.(last) <- -1;
     s.len <- last
 
