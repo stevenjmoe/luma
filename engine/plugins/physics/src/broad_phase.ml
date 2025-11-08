@@ -29,50 +29,56 @@ let update_potential_collision_pairs c grid =
     let a = Int64.of_int (min id1 id2) and b = Int64.of_int (max id1 id2) in
     Int64.logor (Int64.shift_left a 32) b
   in
+  let occ_len = Dynarray.length Grid.(grid.occupied) in
 
-  for row = 0 to Grid.(grid.rows) - 1 do
-    for col = 0 to grid.cols - 1 do
-      let current_cell = grid.cells.(Grid.cell_index grid ~row ~col) in
-      let n = current_cell.len in
+  for i = 0 to occ_len - 1 do
+    let idx = Dynarray.get grid.occupied i in
+    let row = idx / grid.cols in
+    let col = idx mod grid.cols in
+    let current_cell = grid.cells.(idx) in
+    let n = current_cell.len in
 
-      if n >= 2 then
-        for i = 0 to n - 2 do
-          for j = i + 1 to n - 1 do
-            let id1 = current_cell.data.(i) in
-            let id2 = current_cell.data.(j) in
-            let pair_key = pair_key_of_pairs id1 id2 in
-            if not (Hashtbl.mem added_pairs pair_key) then (
-              Hashtbl.add added_pairs pair_key ();
-              Dynarray.add_last ids1 id1;
-              Dynarray.add_last ids2 id2)
-          done
-        done;
+    (* pairs within the same cell *)
+    if n >= 2 then
+      for a = 0 to n - 2 do
+        for b = a + 1 to n - 1 do
+          let id1 = current_cell.data.(a) in
+          let id2 = current_cell.data.(b) in
+          let pair_key = pair_key_of_pairs id1 id2 in
 
+          if not (Hashtbl.mem added_pairs pair_key) then (
+            Hashtbl.add added_pairs pair_key ();
+            Dynarray.add_last ids1 id1;
+            Dynarray.add_last ids2 id2)
+        done
+      done;
+
+    (* pairs with neighbors *)
+    if n > 0 then
       for dir = 0 to 3 do
         let new_col = col + dx.(dir) in
         let new_row = row + dy.(dir) in
 
-        (* skip if neighbour is out of bounds *)
         if new_col >= 0 && new_col < grid.cols && new_row >= 0 && new_row < grid.rows then
           let adjacent_cell = grid.cells.(Grid.cell_index grid ~row:new_row ~col:new_col) in
 
-          (* Pairs between current cell and neighbour *)
-          for i = 0 to current_cell.len - 1 do
-            let id1 = current_cell.data.(i) in
+          if adjacent_cell.len > 0 then
+            for a = 0 to current_cell.len - 1 do
+              let id1 = current_cell.data.(a) in
 
-            for j = 0 to adjacent_cell.len - 1 do
-              let id2 = adjacent_cell.data.(j) in
-              if id1 <> id2 then
-                let pair_key = pair_key_of_pairs id1 id2 in
+              for b = 0 to adjacent_cell.len - 1 do
+                let id2 = adjacent_cell.data.(b) in
 
-                if not (Hashtbl.mem added_pairs pair_key) then (
-                  Hashtbl.add added_pairs pair_key ();
-                  Dynarray.add_last ids1 id1;
-                  Dynarray.add_last ids2 id2)
+                if id1 <> id2 then
+                  let pair_key = pair_key_of_pairs id1 id2 in
+
+                  if not (Hashtbl.mem added_pairs pair_key) then (
+                    Hashtbl.add added_pairs pair_key ();
+                    Dynarray.add_last ids1 id1;
+                    Dynarray.add_last ids2 id2)
+              done
             done
-          done
       done
-    done
   done
 
 let update_broad_phase (s : Rb_store.t) (grid : Grid.t) =

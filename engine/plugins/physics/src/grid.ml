@@ -28,6 +28,10 @@ type t = {
   cols : int;  (** Grid dimensions. *)
   world_min : Vec2.t;  (** World boundaries for grid mapping. *)
   world_max : Vec2.t;  (** World boundaries for grid mapping. *)
+  occupied : int Dynarray.t;  (** A collection of all the currently occupied cell indexes. *)
+  touched : bool array;
+      (** A collection of bools indicating whether the corresponding cell in [cells] has been
+          touched this frame. *)
 }
 
 (** [create world_bound cell_size] *)
@@ -40,19 +44,25 @@ let create world_bound cell_size =
   if cell_size > world_size.x || cell_size > world_size.y then
     failwith "cell_size is greater than world size";
 
-  let cols = int_of_float (world_size.x /. cell_size) in
-  let rows = int_of_float (world_size.y /. cell_size) in
-  let cells = Array.init (cols * rows) (fun _ -> Grid_cell.create ()) in
+  let cols = int_of_float (ceil (world_size.x /. cell_size)) in
+  let rows = int_of_float (ceil (world_size.y /. cell_size)) in
+  let length = cols * rows in
+  let cells = Array.init length (fun _ -> Grid_cell.create ()) in
+  let occupied = Dynarray.create () in
+  let touched = Array.make length false in
 
-  { cells; cell_size; rows; cols; world_min; world_max }
+  { cells; cell_size; rows; cols; world_min; world_max; occupied; touched }
 
 (** [cell_index grid row col] converts 2D grid coordinates to 1D array index. *)
 let cell_index grid ~row ~col = (row * grid.cols) + col
 
 let clear_grid grid =
-  for i = 0 to Array.length grid.cells - 1 do
-    Grid_cell.clear grid.cells.(i)
-  done
+  for i = 0 to Dynarray.length grid.occupied - 1 do
+    let idx = Dynarray.get grid.occupied i in
+    Grid_cell.clear grid.cells.(idx);
+    grid.touched.(idx) <- false
+  done;
+  Dynarray.clear grid.occupied
 
 let grid_cell grid ~pos_x ~pos_y =
   let relative_pos = Vec2.sub (Vec2.create pos_x pos_y) grid.world_min in
@@ -73,6 +83,9 @@ let insert grid body_index ~min_x ~min_y ~max_x ~max_y =
   for row = start_row to end_row do
     for col = start_col to end_col do
       let cell_idx = cell_index grid ~row ~col in
+      if not grid.touched.(cell_idx) then (
+        grid.touched.(cell_idx) <- true;
+        Dynarray.add_last grid.occupied cell_idx);
       Grid_cell.push grid.cells.(cell_idx) body_index
     done
   done
