@@ -32,9 +32,13 @@ module Make (L : Luma.S) = struct
     let packed_index = L.Resource.pack (module Rb_store.Index.R) rb_index in
     L.World.add_resource Rb_store.Index.R.type_id packed_index world |> ignore;
 
-    let grid = Grid.create config.bounds 20. in
+    let grid = Grid.create config.bounds 2. in
     let packed_grid = L.Resource.pack (module Grid.R) grid in
     L.World.add_resource Grid.R.type_id packed_grid world |> ignore;
+
+    let broad_phase = Broad_phase.create () in
+    let packed_bp = L.Resource.pack (module Broad_phase.R) broad_phase in
+    L.World.add_resource Broad_phase.R.type_id packed_bp world |> ignore;
 
     app
 

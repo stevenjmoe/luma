@@ -77,9 +77,10 @@ module Make (L : Luma.S) = struct
           & Resource (module Config.R)
           & Resource (module Rb_store.R)
           & Resource (module Grid.R)
+          & Resource (module Broad_phase.R)
           & End)
       "step"
-      (fun w e (time, (config, (s, (grid, _)))) ->
+      (fun w e (time, (config, (s, (grid, (bp, _))))) ->
         (* Clamp dt to prevent instability *)
         let dt = min (L.Time.dt time) config.max_step_dt in
 
@@ -94,9 +95,9 @@ module Make (L : Luma.S) = struct
             Rb_store.integrate_linear_motion_at s ~row ~dt
           done;
 
-          for row = 0 to s.len - 1 do
-            Grid.insert grid row ~min_x:s.min_y.(row) ~min_y:s.min_y.(row) ~max_x:s.max_x.(row)
-              ~max_y:s.max_y.(row)
-          done);
+          Broad_phase.update_broad_phase s grid;
+          Broad_phase.update_potential_collision_pairs bp grid;
+
+          ());
         w)
 end
