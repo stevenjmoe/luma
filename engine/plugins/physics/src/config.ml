@@ -27,8 +27,8 @@ end)
 let default () =
   let gravity = Vec2.create 0. (-9.81) in
   let max_step_dt = 0.016 in
-  let min = Vec2.create (-100.) (-100.) in
-  let max = Vec2.create 100. 100. in
+  let min = Vec2.create (-1024.) (-1024.) in
+  let max = Vec2.create 1024. 1024. in
   let bounds = Bounded2d.Aabb2d.of_min_max min max in
   { gravity; max_step_dt; bounds }
 
