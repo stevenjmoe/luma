@@ -143,6 +143,7 @@ let add s (rb : rigid_body) =
   s.damping.(i) <- rb.damping;
   s.angle.(i) <- rb.angle;
   s.active.(i) <- (if rb.active then 1 else 0);
+  s.shape.(i) <- Rigid_body.encode_shape rb.shape;
   s.len <- i + 1;
 
   (match rb.shape with
