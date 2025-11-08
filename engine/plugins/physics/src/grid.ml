@@ -37,9 +37,12 @@ let create world_bound cell_size =
   let world_max = Aabb2d.max world_bound in
   let world_size = Vec2.sub world_max world_min in
 
-  let rows = int_of_float world_size.x / int_of_float cell_size in
-  let cols = int_of_float world_size.y / int_of_float cell_size in
-  let cells = Array.make (rows * cols) (Grid_cell.create ()) in
+  if cell_size > world_size.x || cell_size > world_size.y then
+    failwith "cell_size is greater than world size";
+
+  let cols = int_of_float (world_size.x /. cell_size) in
+  let rows = int_of_float (world_size.y /. cell_size) in
+  let cells = Array.init (cols * rows) (fun _ -> Grid_cell.create ()) in
 
   { cells; cell_size; rows; cols; world_min; world_max }
 
