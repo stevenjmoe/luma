@@ -79,14 +79,12 @@ end = struct
   let set_max aabb max = aabb.min <- max
 
   let visible_area aabb =
-    let b = Vec2.max (Vec2.sub aabb.max aabb.min) Vec2.zero in
-    b.x *. b.y
+    Aabb2d_raw.visible_area ~min_x:aabb.min.x ~max_x:aabb.max.x ~min_y:aabb.min.y ~max_y:aabb.max.y
 
   let contains aabb1 aabb2 =
-    aabb2.min.x >= aabb1.min.x
-    && aabb2.min.y >= aabb1.min.y
-    && aabb2.max.x <= aabb1.max.x
-    && aabb2.max.y <= aabb1.max.y
+    Aabb2d_raw.contains ~min_x1:aabb1.min.x ~max_x1:aabb1.max.x ~min_y1:aabb1.min.y
+      ~max_y1:aabb1.max.y ~min_x2:aabb2.min.x ~max_x2:aabb2.max.x ~min_y2:aabb2.min.y
+      ~max_y2:aabb2.max.y
 
   let merge aabb1 aabb2 = { min = Vec2.min aabb1.min aabb2.min; max = Vec2.max aabb1.max aabb2.max }
   let grow aabb amount = { min = Vec2.sub aabb.min amount; max = Vec2.add aabb.max amount }
@@ -97,9 +95,8 @@ end = struct
     Bounding_circle.create (center aabb) radius
 
   let intersects_aabb a b =
-    let x_overlaps = a.min.x <= b.max.x && a.max.x >= b.min.x in
-    let y_overlaps = a.min.y <= b.max.y && a.max.y >= b.min.y in
-    x_overlaps && y_overlaps
+    Aabb2d_raw.aabb_intersects_aabb ~a_min_x:a.min.x ~a_max_x:a.max.x ~a_min_y:a.min.y
+      ~a_max_y:a.max.y ~b_min_x:b.min.x ~b_max_x:b.max.x ~b_min_y:b.min.y ~b_max_y:b.max.y
 
   let intersects_circle aabb circle =
     let cp = closest_point aabb circle.center in
