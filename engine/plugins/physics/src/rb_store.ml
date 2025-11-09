@@ -23,6 +23,8 @@ type t = {
   mutable angle : float array;
   mutable shape : int array;
   mutable radius : float array;
+  mutable circle_center_x : float array;
+  mutable circle_center_y : float array;
   mutable box_hw : float array;
   mutable box_hh : float array;
   mutable min_x : float array;
@@ -55,6 +57,8 @@ let create ?(initial = 128) () =
     angle = f 0.;
     shape = f 0;
     radius = f 0.;
+    circle_center_x = f 0.;
+    circle_center_y = f 0.;
     box_hw = f 0.;
     box_hh = f 0.;
     min_x = f 0.;
@@ -91,6 +95,8 @@ let ensure_capacity s need =
     s.angle <- grow_float s.angle;
     s.active <- grow_int s.active;
     s.radius <- grow_float s.radius;
+    s.circle_center_x <- grow_float s.circle_center_x;
+    s.circle_center_y <- grow_float s.circle_center_y;
     s.box_hw <- grow_float s.box_hw;
     s.box_hh <- grow_float s.box_hh;
     s.min_x <- grow_float s.min_x;
@@ -120,6 +126,8 @@ let swap_rows s i j =
     swap s.active;
     swap s.shape;
     swap s.radius;
+    swap s.circle_center_x;
+    swap s.circle_center_y;
     swap s.box_hw;
     swap s.box_hh;
     swap s.min_x;
@@ -147,7 +155,10 @@ let add s (rb : rigid_body) =
   s.len <- i + 1;
 
   (match rb.shape with
-  | Circle c -> s.radius.(i) <- Bounded2d.Bounding_circle.radius c
+  | Circle c ->
+      s.radius.(i) <- Bounded2d.Bounding_circle.radius c;
+      s.circle_center_x.(i) <- (Bounded2d.Bounding_circle.center c).x;
+      s.circle_center_y.(i) <- (Bounded2d.Bounding_circle.center c).y
   | Aabb a ->
       let half_size = Bounded2d.Aabb2d.half_size a in
       s.box_hw.(i) <- half_size.x;
