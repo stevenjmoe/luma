@@ -95,6 +95,7 @@ let ensure_capacity s need =
     s.angle <- grow_float s.angle;
     s.active <- grow_int s.active;
     s.radius <- grow_float s.radius;
+    s.shape <- grow_int s.shape;
     s.circle_center_x <- grow_float s.circle_center_x;
     s.circle_center_y <- grow_float s.circle_center_y;
     s.box_hw <- grow_float s.box_hw;
