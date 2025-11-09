@@ -150,8 +150,7 @@ end = struct
   let intersects_aabb circle aabb = Aabb2d.intersects_circle aabb circle
 
   let intersects_circle circle1 circle2 =
-    let center_distance_squared = Vec2.distance_squared circle1.center circle2.center in
-    let radius_sum = circle1.radius +. circle2.radius in
-    let radius_sum_squared = radius_sum *. radius_sum in
-    center_distance_squared <= radius_sum_squared
+    Aabb2d_raw.circle_intersects_circle ~a_center_x:circle1.center.x ~a_center_y:circle1.center.x
+      ~a_radius:circle1.radius ~b_center_x:circle2.center.x ~b_center_y:circle2.center.y
+      ~b_radius:circle2.radius
 end

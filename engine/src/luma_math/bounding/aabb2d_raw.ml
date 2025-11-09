@@ -27,3 +27,11 @@ let aabbb_intersects_circle
   let distance_squared = (distance_x *. distance_x) +. (distance_y *. distance_y) in
 
   distance_squared <= circle_radius *. circle_radius
+
+let circle_intersects_circle ~a_center_x ~a_center_y ~a_radius ~b_center_x ~b_center_y ~b_radius =
+  let dx = a_center_x -. b_center_x in
+  let dy = a_center_y -. b_center_y in
+  let center_distance_squared = (dx *. dx) +. (dy *. dy) in
+  let radius_sum = a_radius +. b_radius in
+  let radius_sum_squared = radius_sum *. radius_sum in
+  center_distance_squared <= radius_sum_squared
