@@ -58,7 +58,7 @@ end
 module Circle = struct
   let test_circle_closest_point () =
     let open Primitives.Circle in
-    let circle = { radius = 2.0 } in
+    let circle = { radius = 2.0; center = Vec2.zero } in
 
     let point_in = Vec2.create 1.0 1.0 in
     check_vec "inside" (closest_point circle point_in) point_in;

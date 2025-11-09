@@ -1,10 +1,11 @@
 module Circle = struct
-  type t = { radius : float }
+  type t = {
+    radius : float;
+    mutable center : Vec2.t;
+  }
 
-  let default () = { radius = 0.5 }
-
-  (** [create radius] *)
-  let create radius = { radius }
+  (** [create radius center] *)
+  let create radius center = { radius; center }
 
   let diameter c = 2.0 *. c.radius
   let radius_squared c = c.radius *. c.radius

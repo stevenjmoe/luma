@@ -4,10 +4,7 @@ module Types = struct
     mutable max : Vec2.t;  (** The maximum top-right point of the box *)
   }
 
-  type circle = {
-    mutable center : Vec2.t;
-    circle : Primitives.Circle.t;
-  }
+  type circle = Primitives.Circle.t
 end
 
 module type Bounding_volume = sig
@@ -98,10 +95,10 @@ end = struct
     Aabb2d_raw.aabb_intersects_aabb ~a_min_x:a.min.x ~a_max_x:a.max.x ~a_min_y:a.min.y
       ~a_max_y:a.max.y ~b_min_x:b.min.x ~b_max_x:b.max.x ~b_min_y:b.min.y ~b_max_y:b.max.y
 
-  let intersects_circle aabb circle =
+  let intersects_circle aabb (circle : circle) =
     let cp = closest_point aabb circle.center in
     let ds = Vec2.distance_squared circle.center cp in
-    let radius_squared = circle.circle.radius *. circle.circle.radius in
+    let radius_squared = circle.radius *. circle.radius in
     ds <= radius_squared
 end
 
@@ -124,6 +121,7 @@ and Bounding_circle : sig
   val set_center : t -> Vec2.t -> unit
 end = struct
   open Types
+  open Primitives.Circle
 
   type translation = Vec2.t
   type rotation = Rot2.t
@@ -132,12 +130,12 @@ end = struct
 
   let create center radius =
     assert (radius >= 0.);
-    { center; circle = Primitives.Circle.create radius }
+    Primitives.Circle.create radius center
 
   let center b = b.center
-  let radius b = b.circle.radius
+  let radius b = b.radius
   let half_size c = radius c
-  let visible_area c = Float.pi *. c.circle.radius *. c.circle.radius
+  let visible_area c = Float.pi *. c.radius *. c.radius
   let set_center c center = c.center <- center
   let contains c1 c2 = failwith "TODO"
   let merge c1 c2 = failwith "TODO"
@@ -145,15 +143,15 @@ end = struct
   let shrink c1 c2 = failwith "TODO"
 
   let aabb_2d b =
-    let min = Vec2.sub b.center (Vec2.splat b.circle.radius) in
-    let max = Vec2.add b.center (Vec2.splat b.circle.radius) in
+    let min = Vec2.sub b.center (Vec2.splat b.radius) in
+    let max = Vec2.add b.center (Vec2.splat b.radius) in
     Aabb2d.of_min_max min max
 
   let intersects_aabb circle aabb = Aabb2d.intersects_circle aabb circle
 
   let intersects_circle circle1 circle2 =
     let center_distance_squared = Vec2.distance_squared circle1.center circle2.center in
-    let radius_sum = circle1.circle.radius +. circle2.circle.radius in
+    let radius_sum = circle1.radius +. circle2.radius in
     let radius_sum_squared = radius_sum *. radius_sum in
     center_distance_squared <= radius_sum_squared
 end
