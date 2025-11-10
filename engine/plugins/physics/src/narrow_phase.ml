@@ -21,16 +21,19 @@ let clear c =
   Dynarray.clear c.ids2
 
 let aabb_aabb_collision (s : Rb_store.t) idx1 idx2 =
+  if s.shape.(idx1) != 1 || s.shape.(idx2) != 1 then failwith "Expected aabb aabb pair";
   Aabb2d_raw.aabb_intersects_aabb ~a_min_x:s.min_x.(idx1) ~a_min_y:s.min_y.(idx1)
     ~a_max_x:s.max_x.(idx1) ~a_max_y:s.max_y.(idx1) ~b_min_x:s.min_x.(idx2) ~b_min_y:s.min_y.(idx2)
     ~b_max_x:s.max_x.(idx2) ~b_max_y:s.max_y.(idx2)
 
 let aabb_circle_collision (s : Rb_store.t) idx1 idx2 =
+  if s.shape.(idx1) != 1 || s.shape.(idx2) != 0 then failwith "Expected aabb circle pair";
   Aabb2d_raw.aabbb_intersects_circle ~aabb_min_x:s.min_x.(idx1) ~aabb_min_y:s.min_y.(idx1)
     ~aabb_max_x:s.max_x.(idx1) ~aabb_max_y:s.max_y.(idx1) ~circle_center_x:s.pos_x.(idx2)
     ~circle_center_y:s.pos_y.(idx2) ~circle_radius:s.radius.(idx2)
 
 let circle_circle_collision (s : Rb_store.t) idx1 idx2 =
+  if s.shape.(idx1) != 0 || s.shape.(idx2) != 0 then failwith "Expected circle circle pair";
   Aabb2d_raw.circle_intersects_circle ~a_center_x:s.pos_x.(idx1) ~a_center_y:s.pos_y.(idx1)
     ~a_radius:s.radius.(idx1) ~b_center_x:s.pos_x.(idx2) ~b_center_y:s.pos_y.(idx2)
     ~b_radius:s.radius.(idx2)
