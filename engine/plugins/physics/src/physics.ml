@@ -40,6 +40,10 @@ module Make (L : Luma.S) = struct
     let packed_bp = L.Resource.pack (module Broad_phase.R) broad_phase in
     L.World.add_resource Broad_phase.R.type_id packed_bp world |> ignore;
 
+    let narrow_phase = Narrow_phase.create () in
+    let packed_np = L.Resource.pack (module Narrow_phase.R) narrow_phase in
+    L.World.add_resource Narrow_phase.R.type_id packed_np world |> ignore;
+
     app
 
   let plugin ?(world_config = None) app =

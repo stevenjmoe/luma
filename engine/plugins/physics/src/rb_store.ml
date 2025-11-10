@@ -1,11 +1,6 @@
 open Luma__math
 open Rigid_body
 
-(** The rigid body Store is used to represent a rigid body's values in a way that prevents boxed
-    values in hot paths.
-
-    Each body is represented by the same index in each array. The index should be the *)
-
 type rigid_body = Rigid_body.t
 
 type t = {
@@ -23,8 +18,6 @@ type t = {
   mutable angle : float array;
   mutable shape : int array;
   mutable radius : float array;
-  mutable circle_center_x : float array;
-  mutable circle_center_y : float array;
   mutable box_hw : float array;
   mutable box_hh : float array;
   mutable min_x : float array;
@@ -57,8 +50,6 @@ let create ?(initial = 128) () =
     angle = f 0.;
     shape = f 0;
     radius = f 0.;
-    circle_center_x = f 0.;
-    circle_center_y = f 0.;
     box_hw = f 0.;
     box_hh = f 0.;
     min_x = f 0.;
@@ -96,8 +87,6 @@ let ensure_capacity s need =
     s.active <- grow_int s.active;
     s.radius <- grow_float s.radius;
     s.shape <- grow_int s.shape;
-    s.circle_center_x <- grow_float s.circle_center_x;
-    s.circle_center_y <- grow_float s.circle_center_y;
     s.box_hw <- grow_float s.box_hw;
     s.box_hh <- grow_float s.box_hh;
     s.min_x <- grow_float s.min_x;
@@ -127,8 +116,6 @@ let swap_rows s i j =
     swap s.active;
     swap s.shape;
     swap s.radius;
-    swap s.circle_center_x;
-    swap s.circle_center_y;
     swap s.box_hw;
     swap s.box_hh;
     swap s.min_x;
@@ -157,9 +144,16 @@ let add s (rb : rigid_body) =
 
   (match rb.shape with
   | Circle c ->
-      s.radius.(i) <- Bounded2d.Bounding_circle.radius c;
-      s.circle_center_x.(i) <- (Bounded2d.Bounding_circle.center c).x;
-      s.circle_center_y.(i) <- (Bounded2d.Bounding_circle.center c).y
+      let radius = Bounded2d.Bounding_circle.radius c in
+      s.radius.(i) <- radius;
+
+      (* circle aabb *)
+      let cx = s.pos_x.(i) and cy = s.pos_y.(i) in
+      s.min_x.(i) <- cx -. radius;
+      s.min_y.(i) <- cy -. radius;
+      s.max_x.(i) <- cx +. radius;
+      s.max_y.(i) <- cy +. radius;
+      ()
   | Aabb a ->
       let half_size = Bounded2d.Aabb2d.half_size a in
       s.box_hw.(i) <- half_size.x;
@@ -248,11 +242,11 @@ let integrate_linear_motion_at s ~row ~dt =
     (* 0: Circle. 1: Box *)
     (if s.shape.(row) = 0 then (
        let r = s.radius.(row) in
+
        s.min_x.(row) <- s.pos_x.(row) -. r;
        s.max_x.(row) <- s.pos_x.(row) +. r;
        s.min_y.(row) <- s.pos_y.(row) -. r;
-       s.max_y.(row) <- s.pos_y.(row) +. r;
-       ())
+       s.max_y.(row) <- s.pos_y.(row) +. r)
      else
        let half_w = s.box_hw.(row) in
        let half_h = s.box_hh.(row) in

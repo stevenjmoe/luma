@@ -39,7 +39,15 @@ module Make (L : Luma.S) = struct
                 rb_store.shape.(row) <- Rigid_body.encode_shape rb.shape;
 
                 match rb.shape with
-                | Circle c -> rb_store.radius.(row) <- Bounding_circle.radius c
+                | Circle c ->
+                    let radius = Bounding_circle.radius c in
+                    rb_store.radius.(row) <- radius;
+                    let center_x = rb_store.pos_x.(row) and center_y = rb_store.pos_y.(row) in
+
+                    rb_store.min_x.(row) <- center_x -. radius;
+                    rb_store.min_y.(row) <- center_y -. radius;
+                    rb_store.max_x.(row) <- center_x +. radius;
+                    rb_store.max_y.(row) <- center_y +. radius
                 | Aabb a ->
                     let min = Aabb2d.min a in
                     let max = Aabb2d.max a in
@@ -78,26 +86,33 @@ module Make (L : Luma.S) = struct
           & Resource (module Rb_store.R)
           & Resource (module Grid.R)
           & Resource (module Broad_phase.R)
+          & Resource (module Narrow_phase.R)
           & End)
       "step"
-      (fun w e (time, (config, (s, (grid, (bp, _))))) ->
+      (fun w e (time, (config, (store, (grid, (bp, (np, _)))))) ->
         (* Clamp dt to prevent instability *)
         let dt = min (L.Time.dt time) config.max_step_dt in
 
-        if dt > 0. && s.len > 0 then (
+        if dt > 0. && store.len > 0 then (
           let gx = config.gravity.x and gy = config.gravity.y in
 
-          for row = 0 to s.len - 1 do
-            Rb_store.apply_gravity_at s ~row ~gx ~gy
+          for row = 0 to store.len - 1 do
+            if store.active.(row) = 1 then (
+              Rb_store.apply_gravity_at store ~row ~gx ~gy;
+              Rb_store.integrate_linear_motion_at store ~row ~dt)
           done;
 
-          for row = 0 to s.len - 1 do
-            Rb_store.integrate_linear_motion_at s ~row ~dt
-          done;
-
-          Broad_phase.update_broad_phase s grid;
+          Broad_phase.update_broad_phase store grid;
           Broad_phase.update_potential_collision_pairs bp grid;
 
+          (* potential collisions this frame *)
+          let _ids1, _ids2 = Broad_phase.pairs_view bp in
+
+          Narrow_phase.update_actual_collision_pairs np store bp;
+          let ids1, ids2 = Narrow_phase.collisions_view np in
+          Dynarray.iteri
+            (fun idx id -> Printf.printf "Collision: %d %d\n%!" id (Dynarray.get ids2 idx))
+            ids1;
           ());
         w)
 end
