@@ -57,7 +57,7 @@ let create_circle ?(mass = 0.) body_type pos radius =
     shape = Circle circle;
   }
 
-(** [create_box body_type pos size mass] *)
+(** [create_box ?mass body_type pos size] *)
 let create_box ?(mass = 1.) body_type pos size =
   let mass, inv_mass = if body_type = Static then (0., 0.) else (mass, inv_mass mass) in
   let aabb = Bounded2d.Aabb2d.of_center_halfsize pos (Vec2.scale size 0.5) in
