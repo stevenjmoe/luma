@@ -104,15 +104,8 @@ module Make (L : Luma.S) = struct
 
           Broad_phase.update_broad_phase store grid;
           Broad_phase.update_potential_collision_pairs bp grid;
-
-          (* potential collisions this frame *)
-          let _ids1, _ids2 = Broad_phase.pairs_view bp in
-
           Narrow_phase.update_actual_collision_pairs np store bp;
-          let ids1, ids2 = Narrow_phase.collisions_view np in
-          Dynarray.iteri
-            (fun idx id -> Printf.printf "Collision: %d %d\n%!" id (Dynarray.get ids2 idx))
-            ids1;
+          Resolver.resolve_collisions store np;
           ());
         w)
 end
