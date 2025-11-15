@@ -1,4 +1,5 @@
 let squared f1 f2 = (f1 *. f1) +. (f2 *. f2)
+let dot ~ax ~ay ~bx ~by = (ax *. bx) +. (ay *. by)
 
 let apply_normal_impulse (store : Rb_store.t) ~restitution ~a ~b ~normal_x ~normal_y =
   let vel_a_x = store.vel_x.(a) in
@@ -226,10 +227,171 @@ let resolve_aabb_aabb (store : Rb_store.t) ~a ~b ~restitution ~position_correcti
           store.min_y.(b) <- min_b_y +. dy_b;
           store.max_y.(b) <- max_b_y +. dy_b)
 
+let resolve_aabb_circle (store : Rb_store.t) ~a ~b ~restitution ~position_correction =
+  if store.shape.(a) != 0 && store.shape.(b) != 1 then ()
+  else
+    let _ = () in
+    ()
+
+let length vx vy = Float.sqrt ((vx *. vx) +. (vy *. vy))
+
+let resolve_circle_aabb
+    ?(friction = 0.4)
+    (store : Rb_store.t)
+    ~circle
+    ~aabb
+    ~restitution
+    ~position_correction =
+  if store.shape.(circle) <> 0 || store.shape.(aabb) <> 1 then ()
+  else
+    (* AABB props *)
+    let aabb_min_x = store.min_x.(aabb) in
+    let aabb_min_y = store.min_y.(aabb) in
+    let aabb_max_x = store.max_x.(aabb) in
+    let aabb_max_y = store.max_y.(aabb) in
+    let aabb_vel_x = store.vel_x.(aabb) in
+    let aabb_vel_y = store.vel_y.(aabb) in
+    let aabb_inv_mass = store.inv_mass.(aabb) in
+
+    (* Circle props *)
+    let circle_pos_x = store.pos_x.(circle) in
+    let circle_pos_y = store.pos_y.(circle) in
+    let circle_radius = store.radius.(circle) in
+    let circle_vel_x = store.vel_x.(circle) in
+    let circle_vel_y = store.vel_y.(circle) in
+    let circle_inv_mass = store.inv_mass.(circle) in
+
+    (* Closest point on AABB to circle center *)
+    let closest_x = Float.max aabb_min_x (Float.min circle_pos_x aabb_max_x) in
+    let closest_y = Float.max aabb_min_y (Float.min circle_pos_y aabb_max_y) in
+
+    let distance_x = circle_pos_x -. closest_x in
+    let distance_y = circle_pos_y -. closest_y in
+    let distance_mag = length distance_x distance_y in
+    let epsilon = 0.0001 in
+
+    (* No collision *)
+    if distance_mag > circle_radius then ()
+    else (* Inline normal computation, allocation-free *)
+      let dx = distance_x in
+      let dy = distance_y in
+      let dmag = distance_mag in
+
+      (* mutable  vars to populate *)
+      let normal_x = ref 0.0 in
+      let normal_y = ref 0.0 in
+      let dist_x = ref dx in
+      let dist_y = ref dy in
+      let dist_mag = ref dmag in
+
+      (if dmag < epsilon then (
+         let aabb_center_x = (aabb_min_x +. aabb_max_x) *. 0.5 in
+         let aabb_center_y = (aabb_min_y +. aabb_max_y) *. 0.5 in
+
+         let dx' = circle_pos_x -. aabb_center_x in
+         let dy' = circle_pos_y -. aabb_center_y in
+         let dmag' = length dx' dy' in
+
+         dist_x := dx';
+         dist_y := dy';
+         dist_mag := dmag';
+
+         if dmag' < epsilon then (
+           normal_x := 0.0;
+           normal_y := 1.0)
+         else
+           let inv = 1.0 /. dmag' in
+           normal_x := dx' *. inv;
+           normal_y := dy' *. inv)
+       else
+         let inv = 1.0 /. dmag in
+         normal_x := dx *. inv;
+         normal_y := dy *. inv);
+
+      (* Final scalar values *)
+      let distance_mag = !dist_mag in
+      let normal_x = !normal_x in
+      let normal_y = !normal_y in
+
+      let penetration_depth = circle_radius -. distance_mag in
+      if penetration_depth <= 0.0 then ()
+      else
+        let rel_vel_x = circle_vel_x -. aabb_vel_x in
+        let rel_vel_y = circle_vel_y -. aabb_vel_y in
+        let impact_speed = dot ~ax:rel_vel_x ~ay:rel_vel_y ~bx:normal_x ~by:normal_y in
+
+        let total_inv_mass = circle_inv_mass +. aabb_inv_mass in
+        if total_inv_mass <= 0.0 then ()
+        else if impact_speed >= 0.0 then (
+          (* Moving apart: position correction only. *)
+          let correction_amount = position_correction *. penetration_depth /. total_inv_mass in
+          let corr_x = normal_x *. correction_amount in
+          let corr_y = normal_y *. correction_amount in
+
+          if circle_inv_mass > 0.0 then (
+            store.pos_x.(circle) <- circle_pos_x +. (corr_x *. circle_inv_mass);
+            store.pos_y.(circle) <- circle_pos_y +. (corr_y *. circle_inv_mass));
+
+          if aabb_inv_mass > 0.0 then (
+            store.pos_x.(aabb) <- store.pos_x.(aabb) -. (corr_x *. aabb_inv_mass);
+            store.pos_y.(aabb) <- store.pos_y.(aabb) -. (corr_y *. aabb_inv_mass));
+
+          (* Update bounds *)
+          store.min_x.(circle) <- circle_pos_x -. circle_radius;
+          store.max_x.(circle) <- circle_pos_x +. circle_radius;
+          store.min_y.(circle) <- circle_pos_y -. circle_radius;
+          store.max_y.(circle) <- circle_pos_y +. circle_radius;
+
+          let half_w = store.box_hw.(aabb) in
+          let half_h = store.box_hh.(aabb) in
+          let new_aabb_x = store.pos_x.(aabb) in
+          let new_aabb_y = store.pos_y.(aabb) in
+          store.min_x.(aabb) <- new_aabb_x -. half_w;
+          store.max_x.(aabb) <- new_aabb_x +. half_w;
+          store.min_y.(aabb) <- new_aabb_y -. half_h;
+          store.max_y.(aabb) <- new_aabb_y +. half_h)
+        else
+          let normal_impulse_mag = -.(1.0 +. restitution) *. impact_speed /. total_inv_mass in
+          let impulse_x = normal_x *. normal_impulse_mag in
+          let impulse_y = normal_y *. normal_impulse_mag in
+
+          if circle_inv_mass > 0.0 then (
+            store.vel_x.(circle) <- circle_vel_x +. (impulse_x *. circle_inv_mass);
+            store.vel_y.(circle) <- circle_vel_y +. (impulse_y *. circle_inv_mass));
+          if aabb_inv_mass > 0.0 then (
+            store.vel_x.(aabb) <- aabb_vel_x -. (impulse_x *. aabb_inv_mass);
+            store.vel_y.(aabb) <- aabb_vel_y -. (impulse_y *. aabb_inv_mass));
+
+          (* Friction *)
+          let tangent_x = -.normal_y in
+          let tangent_y = normal_x in
+          let tangent_speed = dot ~ax:rel_vel_x ~ay:rel_vel_y ~bx:tangent_x ~by:tangent_y in
+
+          let friction_impulse =
+            let raw = -.tangent_speed /. total_inv_mass in
+            let max_friction = friction *. Float.abs normal_impulse_mag in
+            if raw > max_friction then max_friction
+            else if raw < -.max_friction then -.max_friction
+            else raw
+          in
+
+          let friction_x = tangent_x *. friction_impulse in
+          let friction_y = tangent_y *. friction_impulse in
+
+          if circle_inv_mass > 0.0 then (
+            store.vel_x.(circle) <- store.vel_x.(circle) +. (friction_x *. circle_inv_mass);
+            store.vel_y.(circle) <- store.vel_y.(circle) +. (friction_y *. circle_inv_mass));
+
+          if aabb_inv_mass > 0.0 then (
+            store.vel_x.(aabb) <- store.vel_x.(aabb) -. (friction_x *. aabb_inv_mass);
+            store.vel_y.(aabb) <- store.vel_y.(aabb) -. (friction_y *. aabb_inv_mass))
+
 let resolve (store : Rb_store.t) ~a ~b ~restitution ~position_correction =
   match (store.shape.(a), store.shape.(b)) with
   | 0, 0 -> resolve_circle_circle ~restitution ~position_correction store ~a ~b
   | 1, 1 -> resolve_aabb_aabb store ~a ~b ~restitution ~position_correction
+  | 0, 1 -> resolve_circle_aabb store ~circle:a ~aabb:b ~restitution ~position_correction
+  | 1, 0 -> resolve_circle_aabb store ~circle:b ~aabb:a ~restitution ~position_correction
   | _ -> ()
 
 let resolve_collisions ?(restitution = 0.2) ?(position_correction = 0.8) store np =
