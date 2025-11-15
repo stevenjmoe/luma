@@ -5,13 +5,26 @@ module Make (L : Luma.S) = struct
 
     match Rb_store.Index.row_of_entity index eid with None -> None | Some row -> Some row
 
+  let derive_kinematic_velocity (store : Rb_store.t) ~row ~curr_x ~curr_y ~dt =
+    if dt > 0. then (
+      let prev_x = store.prev_pos_x.(row) in
+      let prev_y = store.prev_pos_y.(row) in
+      store.vel_x.(row) <- (curr_x -. prev_x) /. dt;
+      store.vel_y.(row) <- (curr_y -. prev_y) /. dt;
+      store.prev_pos_x.(row) <- curr_x;
+      store.prev_pos_y.(row) <- curr_y)
+
   let sync_rigid_bodies () =
     L.System.make_with_resources
       ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
-        L.Query.Resource.(Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
+        L.Query.Resource.(
+          Resource (module Rb_store.R)
+          & Resource (module Rb_store.Index.R)
+          & Resource (module L.Time.R)
+          & End)
       "sync_rigid_bodies"
-      (fun w e (rb_store, (index, _)) ->
+      (fun w e (rb_store, (index, (time, _))) ->
         let current = Hashtbl.create 1024 in
 
         List.iter
@@ -41,8 +54,14 @@ module Make (L : Luma.S) = struct
                     rb_store.radius.(row) <- radius;
 
                     if is_kinematic then (
-                      rb_store.pos_x.(row) <- rb.pos.x;
-                      rb_store.pos_y.(row) <- rb.pos.y);
+                      let curr_x = rb.pos.x in
+                      let curr_y = rb.pos.y in
+                      let dt = L.Time.dt time in
+
+                      rb_store.pos_x.(row) <- curr_x;
+                      rb_store.pos_y.(row) <- curr_y;
+
+                      derive_kinematic_velocity rb_store ~row ~curr_x ~curr_y ~dt);
 
                     let center_x = rb_store.pos_x.(row) in
                     let center_y = rb_store.pos_y.(row) in
@@ -57,8 +76,14 @@ module Make (L : Luma.S) = struct
                     rb_store.box_hh.(row) <- half_size.y;
 
                     if is_kinematic then (
-                      rb_store.pos_x.(row) <- rb.pos.x;
-                      rb_store.pos_y.(row) <- rb.pos.y);
+                      let curr_x = rb.pos.x in
+                      let curr_y = rb.pos.y in
+                      let dt = L.Time.dt time in
+
+                      rb_store.pos_x.(row) <- curr_x;
+                      rb_store.pos_y.(row) <- curr_y;
+
+                      derive_kinematic_velocity rb_store ~row ~curr_x ~curr_y ~dt);
 
                     let center_x = rb_store.pos_x.(row) in
                     let center_y = rb_store.pos_y.(row) in

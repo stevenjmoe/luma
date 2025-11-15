@@ -9,6 +9,8 @@ type t = {
   mutable body_type : int array;
   mutable pos_x : float array;
   mutable pos_y : float array;
+  mutable prev_pos_x : float array;
+  mutable prev_pos_y : float array;
   mutable vel_x : float array;
   mutable vel_y : float array;
   mutable force_acc_x : float array;
@@ -41,6 +43,8 @@ let create ?(initial = 128) () =
     body_type = f 0;
     pos_x = f 0.;
     pos_y = f 0.;
+    prev_pos_x = f 0.;
+    prev_pos_y = f 0.;
     vel_x = f 0.;
     vel_y = f 0.;
     force_acc_x = f 0.;
@@ -77,6 +81,8 @@ let ensure_capacity s need =
     s.body_type <- grow_int s.body_type;
     s.pos_x <- grow_float s.pos_x;
     s.pos_y <- grow_float s.pos_y;
+    s.prev_pos_x <- grow_float s.prev_pos_x;
+    s.prev_pos_y <- grow_float s.prev_pos_y;
     s.vel_x <- grow_float s.vel_x;
     s.vel_y <- grow_float s.vel_y;
     s.force_acc_x <- grow_float s.force_acc_x;
@@ -106,6 +112,8 @@ let swap_rows s i j =
     swap s.body_type;
     swap s.pos_x;
     swap s.pos_y;
+    swap s.prev_pos_x;
+    swap s.prev_pos_y;
     swap s.vel_x;
     swap s.vel_y;
     swap s.force_acc_x;
@@ -131,6 +139,8 @@ let add s (rb : rigid_body) =
   s.inv_mass.(i) <- rb.inv_mass;
   s.pos_x.(i) <- rb.pos.x;
   s.pos_y.(i) <- rb.pos.y;
+  s.prev_pos_x.(i) <- rb.pos.x;
+  s.prev_pos_y.(i) <- rb.pos.y;
   s.vel_x.(i) <- rb.vel.x;
   s.vel_y.(i) <- rb.vel.y;
   s.force_acc_x.(i) <- rb.force_accumulator.x;
