@@ -33,27 +33,40 @@ module Make (L : Luma.S) = struct
                 rb_store.damping.(row) <- rb.damping;
                 rb_store.body_type.(row) <- Rigid_body.encode_body_type rb.body_type;
                 rb_store.shape.(row) <- Rigid_body.encode_shape rb.shape;
+                let is_kinematic = rb.body_type = Kinematic in
 
                 match rb.shape with
                 | Circle c ->
                     let radius = Bounding_circle.radius c in
                     rb_store.radius.(row) <- radius;
-                    let center_x = rb_store.pos_x.(row) and center_y = rb_store.pos_y.(row) in
+
+                    if is_kinematic then (
+                      rb_store.pos_x.(row) <- rb.pos.x;
+                      rb_store.pos_y.(row) <- rb.pos.y);
+
+                    let center_x = rb_store.pos_x.(row) in
+                    let center_y = rb_store.pos_y.(row) in
 
                     rb_store.min_x.(row) <- center_x -. radius;
                     rb_store.min_y.(row) <- center_y -. radius;
                     rb_store.max_x.(row) <- center_x +. radius;
                     rb_store.max_y.(row) <- center_y +. radius
                 | Aabb a ->
-                    let min = Aabb2d.min a in
-                    let max = Aabb2d.max a in
                     let half_size = Aabb2d.half_size a in
-                    rb_store.min_x.(row) <- min.x;
-                    rb_store.min_y.(row) <- min.y;
-                    rb_store.max_x.(row) <- max.x;
-                    rb_store.max_y.(row) <- max.y;
                     rb_store.box_hw.(row) <- half_size.x;
                     rb_store.box_hh.(row) <- half_size.y;
+
+                    if is_kinematic then (
+                      rb_store.pos_x.(row) <- rb.pos.x;
+                      rb_store.pos_y.(row) <- rb.pos.y);
+
+                    let center_x = rb_store.pos_x.(row) in
+                    let center_y = rb_store.pos_y.(row) in
+
+                    rb_store.min_x.(row) <- center_x -. half_size.x;
+                    rb_store.max_x.(row) <- center_x +. half_size.x;
+                    rb_store.min_y.(row) <- center_y -. half_size.y;
+                    rb_store.max_y.(row) <- center_y +. half_size.y;
                     ()))
           e;
 
