@@ -191,9 +191,11 @@ let clear s = s.len <- 0
 (* Helpers *)
 let is_active s row = s.active.(row) = 1
 let is_static s row = s.body_type.(row) = 0 (* Static=0, Dynamic=1, Kinematic=2 *)
+let is_dynamic s row = s.body_type.(row) = 1
+let is_kinematic s row = s.body_type.(row) = 2
 
 let apply_impulse_at s ~row ~ix ~iy =
-  if is_active s row && not (is_static s row) then (
+  if is_active s row && is_dynamic s row then (
     let inv = s.inv_mass.(row) in
     s.vel_x.(row) <- s.vel_x.(row) +. (ix *. inv);
     s.vel_y.(row) <- s.vel_y.(row) +. (iy *. inv))
@@ -208,7 +210,7 @@ let apply_force_at s ~row ~fx ~fy =
     s.force_acc_y.(row) <- s.force_acc_y.(row) +. fy)
 
 let apply_gravity_at s ~row ~gx ~gy =
-  if is_active s row && not (is_static s row) then
+  if is_active s row && is_dynamic s row then
     let inv = s.inv_mass.(row) in
     if inv > 0. then
       let m = 1. /. inv in
@@ -218,7 +220,7 @@ let apply_gravity_at s ~row ~gx ~gy =
 
 (* Semi-implicit Euler with damping expressed per-second: vel *= damping ** dt *)
 let integrate_linear_motion_at s ~row ~dt =
-  if dt > 0. && is_active s row && not (is_static s row) then (
+  if dt > 0. && is_active s row && is_dynamic s row then (
     let inv = s.inv_mass.(row) in
 
     let ax = s.force_acc_x.(row) *. inv in
