@@ -31,10 +31,6 @@ module Make (L : Luma.S) = struct
                 let open L.Math.Bounded2d in
                 rb_store.inv_mass.(row) <- rb.inv_mass;
                 rb_store.damping.(row) <- rb.damping;
-                rb_store.vel_x.(row) <- rb.vel.x;
-                rb_store.vel_y.(row) <- rb.vel.y;
-                rb_store.force_acc_x.(row) <- rb.force_accumulator.x;
-                rb_store.force_acc_y.(row) <- rb.force_accumulator.y;
                 rb_store.body_type.(row) <- Rigid_body.encode_body_type rb.body_type;
                 rb_store.shape.(row) <- Rigid_body.encode_shape rb.shape;
 
