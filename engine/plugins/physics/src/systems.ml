@@ -103,9 +103,50 @@ module Make (L : Luma.S) = struct
             if !i < last then (
               Rb_store.swap_rows rb_store !i last;
               Rb_store.Index.on_swap index ~i:!i ~j:last);
+
             Rb_store.remove rb_store last;
             Rb_store.Index.on_remove index ~row:last)
           else incr i
+        done;
+
+        w)
+
+  let draw_circle store idx queue =
+    let open Rb_store in
+    if store.active.(idx) = 0 then ()
+    else if store.shape.(idx) = 0 then
+      let radius = store.radius.(idx) in
+      let center_x = store.pos_x.(idx) in
+      let center_y = store.pos_y.(idx) in
+      let circle = L.Math.Primitives.Circle.create radius (L.Math.Vec2.create center_x center_y) in
+      let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
+
+      L.Renderer.push_circle_lines ~z:1 ~circle colour queue
+
+  let draw_rectangle store idx queue =
+    let open Rb_store in
+    if store.active.(idx) = 0 then ()
+    else if store.shape.(idx) = 1 then
+      let pos =
+        L.Math.Vec2.create
+          (store.pos_x.(idx) -. store.box_hw.(idx))
+          (store.pos_y.(idx) -. store.box_hh.(idx))
+      in
+      let size = L.Math.Vec2.create (store.box_hw.(idx) *. 2.) (store.box_hh.(idx) *. 2.) in
+      let rect = L.Math.Rect.create ~pos ~size in
+      let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
+
+      L.Renderer.push_rect_lines ~z:1 ~rect colour queue
+
+  let debug_draw () =
+    L.System.make_with_resources ~components:End
+      ~resources:
+        L.Query.Resource.(Resource (module L.Renderer.Queue.R) & Resource (module Rb_store.R) & End)
+      "debug_draw"
+      (fun w e (queue, (store, _)) ->
+        for i = 0 to store.len - 1 do
+          if store.shape.(i) = 0 then draw_circle store i queue
+          else if store.shape.(i) = 1 then draw_rectangle store i queue
         done;
 
         w)

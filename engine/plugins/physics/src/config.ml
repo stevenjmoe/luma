@@ -5,6 +5,7 @@ module type S = sig
     gravity : Vec2.t;
     bounds : Bounded2d.Aabb2d.t;
     max_step_dt : float;
+    debug : bool;
   }
 
   module R : Luma__resource.Resource.S with type t = t
@@ -16,6 +17,7 @@ type t = {
   gravity : Vec2.t;
   bounds : Bounded2d.Aabb2d.t;
   max_step_dt : float;
+  debug : bool;
 }
 
 module R = Luma__resource.Resource.Make (struct
@@ -30,12 +32,21 @@ let default () =
   let min = Vec2.create (-1024.) (-1024.) in
   let max = Vec2.create 1024. 1024. in
   let bounds = Bounded2d.Aabb2d.of_min_max min max in
-  { gravity; max_step_dt; bounds }
 
-let create ~gravity ~max_dt:max_step_dt ~aabb_min_x ~aabb_min_y ~aabb_max_x ~aabb_max_y =
+  { gravity; max_step_dt; bounds; debug = true }
+
+let create
+    ?(debug = false)
+    ~gravity
+    ~max_dt:max_step_dt
+    ~aabb_min_x
+    ~aabb_min_y
+    ~aabb_max_x
+    ~aabb_max_y
+    () =
   let bounds =
     Bounded2d.Aabb2d.of_min_max
       (Vec2.create aabb_min_x aabb_min_y)
       (Vec2.create aabb_max_x aabb_max_y)
   in
-  { gravity; max_step_dt; bounds }
+  { gravity; max_step_dt; bounds; debug }

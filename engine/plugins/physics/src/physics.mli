@@ -1,7 +1,8 @@
 module Make (L : Luma.S) : sig
   open Luma__math
+  open L
 
-  val get_pos : L.World.t -> L.Id.Entity.t -> Vec2.t option
-  val setup : L.App.t -> Config.t option -> L.App.t
-  val plugin : ?world_config:Config.t option -> L.App.t -> L.App.t
+  val pos : World.t -> Id.Entity.t -> Vec2.t option
+  val setup : App.t -> Config.t -> App.t
+  val plugin : ?world_config:Config.t option -> App.t -> App.t
 end
