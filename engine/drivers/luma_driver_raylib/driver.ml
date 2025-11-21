@@ -13,9 +13,6 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   module Draw = struct
     let draw_text text x y size colour = Raylib.draw_text text x y size colour
 
-    let draw_circle center_x center_y radius colour =
-      Raylib.draw_circle center_x center_y radius colour
-
     let draw_rect rect colour =
       let rectangle =
         Raylib.Rectangle.create (Rect.x rect) (Rect.y rect) (Rect.width rect) (Rect.height rect)
@@ -27,6 +24,12 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       Raylib.draw_rectangle_lines_ex
         (Raylib.Rectangle.create (Rect.x rect) (Rect.y rect) (Rect.width rect) (Rect.height rect))
         line colour
+
+    let draw_circle center_x center_y radius colour =
+      Raylib.draw_circle center_x center_y radius colour
+
+    let draw_circle_lines center_x center_y radius colour =
+      Raylib.draw_circle_lines center_x center_y radius colour
   end
 
   module IO = struct

@@ -8,6 +8,7 @@ module Circle = struct
   let create radius center = { radius; center }
 
   let diameter c = 2.0 *. c.radius
+  let radius c = c.radius
   let radius_squared c = c.radius *. c.radius
   let area c = Float.pi *. c.radius *. c.radius
 

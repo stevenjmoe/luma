@@ -14,6 +14,7 @@ module type S = sig
     val draw_rect : Rect.t -> colour -> unit
     val draw_rect_lines : Rect.t -> float -> colour -> unit
     val draw_circle : int -> int -> float -> colour -> unit
+    val draw_circle_lines : int -> int -> float -> colour -> unit
     val draw_text : string -> int -> int -> int -> colour -> unit
   end
 

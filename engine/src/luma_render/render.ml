@@ -36,6 +36,9 @@ module type Renderer = sig
   val draw_circle : float -> float -> float -> colour -> unit
   (** [draw_circle center_x center_y radius color] *)
 
+  val draw_circle_lines : float -> float -> float -> colour -> unit
+  (** [draw_circle_lines center_x center_y radius color] *)
+
   val plugin : ?camera_config:Camera_config.t -> App.t -> App.t
 
   module Queue : sig
@@ -45,7 +48,8 @@ module type Renderer = sig
       | Rect of Rect.t * colour
       | Rect_lines of Rect.t * float * colour
       | ScreenRect of Rect.t * colour
-      | Circle of Luma__math.Primitives.Circle.t * float * float * colour
+      | Circle of Luma__math.Primitives.Circle.t * colour
+      | Circle_lines of Luma__math.Primitives.Circle.t * colour
       | Sprite of sprite
 
     type meta
@@ -67,6 +71,9 @@ module type Renderer = sig
 
   val push_rect : z:int -> rect:Rect.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
 
+  val push_rect_lines :
+    z:int -> rect:Rect.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
+
   val push_circle :
     z:int ->
     circle:Primitives.Circle.t ->
@@ -76,6 +83,9 @@ module type Renderer = sig
     colour ->
     Queue.item list ref ->
     unit
+
+  val push_circle_lines :
+    z:int -> circle:Primitives.Circle.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
 
   val push_texture :
     z:int ->
@@ -113,6 +123,9 @@ module Make (D : Luma__driver.Driver.S) :
 
   let draw_circle center_x center_y radius colour =
     D.Draw.draw_circle (int_of_float center_x) (int_of_float center_y) radius colour
+
+  let draw_circle_lines center_x center_y radius colour =
+    D.Draw.draw_circle_lines (int_of_float center_x) (int_of_float center_y) radius colour
 
   let draw_texture
       texture
@@ -172,7 +185,8 @@ module Make (D : Luma__driver.Driver.S) :
       | Rect of Luma__math.Rect.t * D.colour
       | Rect_lines of Rect.t * float * D.colour
       | ScreenRect of Rect.t * colour
-      | Circle of Luma__math.Primitives.Circle.t * float * float * colour
+      | Circle of Luma__math.Primitives.Circle.t * colour
+      | Circle_lines of Luma__math.Primitives.Circle.t * colour
       | Sprite of sprite
 
     type meta = {
@@ -239,12 +253,17 @@ module Make (D : Luma__driver.Driver.S) :
   let push_rect ~z ~rect ?(layers = 1L) colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Rect (rect, colour) }
 
+  let push_rect_lines ~z ~rect ?(layers = 1L) colour q =
+    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Rect_lines (rect, 1., colour) }
+
   let push_rect_screen ~z ?(layers = 1L) ~rect colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.ScreenRect (rect, colour) }
 
   let push_circle ~z ~circle ~center_x ~center_y ?(layers = 1L) colour q =
-    Queue.push q
-      Queue.{ meta = { z; layers }; cmd = Queue.Circle (circle, center_x, center_y, colour) }
+    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle (circle, colour) }
+
+  let push_circle_lines ~z ~circle ?(layers = 1L) colour q =
+    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle_lines (circle, colour) }
 
   module Draw = struct
     let rect ~rect ~colour q = push_rect ~z:0 ~rect colour q
@@ -287,8 +306,11 @@ module Make (D : Luma__driver.Driver.S) :
                                ~flip_y:s.flip_y ~texture_atlas:s.atlas ~src:s.src ~opacity:s.opacity
                                ~rotation:s.rotation ~origin:s.origin ()
                          | Queue.Rect (r, colour) -> draw_rect r colour
-                         | Queue.Circle (c, center_x, center_y, colour) ->
-                             draw_circle center_x center_y c.radius colour
+                         | Queue.Rect_lines (r, line, colour) -> draw_rect_lines r line colour
+                         | Queue.Circle (c, colour) ->
+                             draw_circle c.center.x c.center.y c.radius colour
+                         | Queue.Circle_lines (c, colour) ->
+                             draw_circle_lines c.center.x c.center.y c.radius colour
                          | _ -> ());
                      ());
                  D.Window.reset_scissor ();

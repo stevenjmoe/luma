@@ -82,6 +82,17 @@ module Js_driver : Luma__driver.Driver.S = struct
       ctx##.fillStyle := Js.string (css_rgba colour);
       ctx##fill
 
+    let draw_circle_lines center_x center_y radius colour =
+      with_ctx @@ fun ctx ->
+      let center_x = Int32.of_int center_x |> Js.int32 in
+      let center_y = Int32.of_int center_y |> Js.int32 in
+      let radius = Js.number_of_float radius in
+
+      ctx##beginPath;
+      ctx##arc center_x center_y radius (Js.number_of_float 0.)
+        (Js.number_of_float (2. *. Float.pi))
+        Js._false
+
     let draw_text text x y size colour =
       with_ctx @@ fun ctx ->
       ctx##.fillStyle := Js.string (css_rgba colour);

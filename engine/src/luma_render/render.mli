@@ -32,6 +32,7 @@ module type Renderer = sig
     unit
 
   val draw_circle : float -> float -> float -> colour -> unit
+  val draw_circle_lines : float -> float -> float -> colour -> unit
   val plugin : ?camera_config:Camera_config.t -> App.t -> App.t
 
   module Queue : sig
@@ -41,7 +42,8 @@ module type Renderer = sig
       | Rect of Rect.t * colour
       | Rect_lines of Rect.t * float * colour
       | ScreenRect of Rect.t * colour
-      | Circle of Luma__math.Primitives.Circle.t * float * float * colour
+      | Circle of Luma__math.Primitives.Circle.t * colour
+      | Circle_lines of Luma__math.Primitives.Circle.t * colour
       | Sprite of sprite
 
     type meta
@@ -63,6 +65,9 @@ module type Renderer = sig
 
   val push_rect : z:int -> rect:Rect.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
 
+  val push_rect_lines :
+    z:int -> rect:Rect.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
+
   val push_circle :
     z:int ->
     circle:Primitives.Circle.t ->
@@ -72,6 +77,9 @@ module type Renderer = sig
     colour ->
     Queue.item list ref ->
     unit
+
+  val push_circle_lines :
+    z:int -> circle:Primitives.Circle.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
 
   val push_texture :
     z:int ->
