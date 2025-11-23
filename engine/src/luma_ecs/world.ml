@@ -135,6 +135,7 @@ let update_component_to_arch world archetype =
         (operation (Archetype.id archetype |> Id.Archetype.to_int) arch_set))
   @@ Archetype.components archetype
 
+(* TODO: find_archetype_exn and a version that returns an option *)
 let find_archetype world entity =
   match Hashtbl.find_opt world.entity_to_archetype entity with
   | Some id -> Hashtbl.find world.archetypes id
@@ -149,6 +150,10 @@ let get_component (type a) world (module C : Component.S with type t = a) entity
   match Archetype.query_table arch entity C.id with
   | Some p -> Component.unpack_opt (module C) p
   | None -> None
+
+let has_component (type a) world (module C : Component.S with type t = a) entity =
+  let arch = find_archetype world entity in
+  match Archetype.query_table arch entity C.id with Some p -> true | None -> false
 
 let move_entity_to_archetype world entity ~old_arch ~new_arch overrides =
   if Archetype.id old_arch = Archetype.id new_arch then (

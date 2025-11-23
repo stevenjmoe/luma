@@ -94,6 +94,9 @@ val query :
 val get_component : t -> (module Component.S with type t = 'a) -> Id.Entity.t -> 'a option
 (** Tries to retrieve the Component. Returns [Some component] if successful, otherwise None. *)
 
+val has_component : t -> (module Component.S with type t = 'a) -> Id.Entity.t -> bool
+(** Returns true if the entity has the given component. *)
+
 module Introspect : sig
   val revision : t -> int
 
