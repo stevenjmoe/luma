@@ -21,6 +21,15 @@ let clear c =
   Dynarray.clear c.ids1;
   Dynarray.clear c.ids2
 
+let update_broad_phase (s : Rb_store.t) (grid : Grid.t) =
+  Grid.clear_grid grid;
+
+  if s.len > 0 then
+    for row = 0 to s.len - 1 do
+      Grid.insert grid row ~min_x:s.min_x.(row) ~min_y:s.min_y.(row) ~max_x:s.max_x.(row)
+        ~max_y:s.max_y.(row)
+    done
+
 let update_potential_collision_pairs c grid =
   clear c;
   let { added_pairs; ids1; ids2 } = c in
@@ -80,15 +89,6 @@ let update_potential_collision_pairs c grid =
             done
       done
   done
-
-let update_broad_phase (s : Rb_store.t) (grid : Grid.t) =
-  Grid.clear_grid grid;
-
-  if s.len > 0 then
-    for row = 0 to s.len - 1 do
-      Grid.insert grid row ~min_x:s.min_x.(row) ~min_y:s.min_y.(row) ~max_x:s.max_x.(row)
-        ~max_y:s.max_y.(row)
-    done
 
 let pairs_view c = (c.ids1, c.ids2)
 

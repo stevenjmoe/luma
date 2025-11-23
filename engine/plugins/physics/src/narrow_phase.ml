@@ -1,9 +1,10 @@
 open Luma__math
 
 type t = {
-  added_pairs : (int64, unit) Hashtbl.t;
   ids1 : int Dynarray.t;
   ids2 : int Dynarray.t;
+  mutable prev_pairs : (int64, unit) Hashtbl.t;
+  mutable curr_pairs : (int64, unit) Hashtbl.t;
 }
 
 let create ?(pairs_cap = 0) ?(set_cap = 16384) () =
@@ -13,38 +14,38 @@ let create ?(pairs_cap = 0) ?(set_cap = 16384) () =
     Dynarray.ensure_capacity ids1 pairs_cap;
     Dynarray.ensure_capacity ids2 pairs_cap);
 
-  { added_pairs = Hashtbl.create set_cap; ids1; ids2 }
+  { ids1; ids2; prev_pairs = Hashtbl.create set_cap; curr_pairs = Hashtbl.create set_cap }
 
 let clear c =
-  Hashtbl.clear c.added_pairs;
+  Hashtbl.clear c.curr_pairs;
   Dynarray.clear c.ids1;
   Dynarray.clear c.ids2
 
 let aabb_aabb_collision (s : Rb_store.t) idx1 idx2 =
-  if s.shape.(idx1) != 1 || s.shape.(idx2) != 1 then failwith "Expected aabb aabb pair";
+  if s.shape.(idx1) <> 1 || s.shape.(idx2) <> 1 then failwith "Expected aabb aabb pair";
   Aabb2d_raw.aabb_intersects_aabb ~a_min_x:s.min_x.(idx1) ~a_min_y:s.min_y.(idx1)
     ~a_max_x:s.max_x.(idx1) ~a_max_y:s.max_y.(idx1) ~b_min_x:s.min_x.(idx2) ~b_min_y:s.min_y.(idx2)
     ~b_max_x:s.max_x.(idx2) ~b_max_y:s.max_y.(idx2)
 
 let aabb_circle_collision (s : Rb_store.t) idx1 idx2 =
-  if s.shape.(idx1) != 1 || s.shape.(idx2) != 0 then failwith "Expected aabb circle pair";
-  Aabb2d_raw.aabbb_intersects_circle ~aabb_min_x:s.min_x.(idx1) ~aabb_min_y:s.min_y.(idx1)
+  if s.shape.(idx1) <> 1 || s.shape.(idx2) <> 0 then failwith "Expected aabb circle pair";
+  Aabb2d_raw.aabb_intersects_circle ~aabb_min_x:s.min_x.(idx1) ~aabb_min_y:s.min_y.(idx1)
     ~aabb_max_x:s.max_x.(idx1) ~aabb_max_y:s.max_y.(idx1) ~circle_center_x:s.pos_x.(idx2)
     ~circle_center_y:s.pos_y.(idx2) ~circle_radius:s.radius.(idx2)
 
 let circle_circle_collision (s : Rb_store.t) idx1 idx2 =
-  if s.shape.(idx1) != 0 || s.shape.(idx2) != 0 then failwith "Expected circle circle pair";
+  if s.shape.(idx1) <> 0 || s.shape.(idx2) <> 0 then failwith "Expected circle circle pair";
   Aabb2d_raw.circle_intersects_circle ~a_center_x:s.pos_x.(idx1) ~a_center_y:s.pos_y.(idx1)
     ~a_radius:s.radius.(idx1) ~b_center_x:s.pos_x.(idx2) ~b_center_y:s.pos_y.(idx2)
     ~b_radius:s.radius.(idx2)
 
 let check_collision (s : Rb_store.t) ~idx1 ~idx2 =
   let open Bounded2d.Aabb2d in
-  let a_body_type = s.shape.(idx1) in
-  let b_body_type = s.shape.(idx2) in
+  let shape_a = s.shape.(idx1) in
+  let shape_b = s.shape.(idx2) in
 
   (* 0: Cirlce, 1: Aabb *)
-  match (a_body_type, b_body_type) with
+  match (shape_a, shape_b) with
   (* Aabb Aabb *)
   | 1, 1 -> aabb_aabb_collision s idx1 idx2
   (* Circle Circle *)
@@ -55,14 +56,19 @@ let check_collision (s : Rb_store.t) ~idx1 ~idx2 =
   | 0, 1 -> aabb_circle_collision s idx2 idx1
   | _ -> false
 
+let pair_key_of_pairs id1 id2 =
+  let a = Int64.of_int (min id1 id2) in
+  let b = Int64.of_int (max id1 id2) in
+  Int64.logor (Int64.shift_left a 32) b
+
+let rows_of_pair_key key =
+  let a = Int64.(to_int (shift_right_logical key 32)) in
+  let b = Int64.(to_int (logand key 0xFFFF_FFFFL)) in
+  (a, b)
+
 let update_actual_collision_pairs c (s : Rb_store.t) (bp : Broad_phase.t) =
   clear c;
-  let { added_pairs; ids1; ids2 } = c in
-
-  let pair_key_of_pairs id1 id2 =
-    let a = Int64.of_int (min id1 id2) and b = Int64.of_int (max id1 id2) in
-    Int64.logor (Int64.shift_left a 32) b
-  in
+  let { curr_pairs; ids1; ids2 } = c in
 
   let bp_ids1, bp_ids2 = Broad_phase.pairs_view bp in
 
@@ -71,8 +77,8 @@ let update_actual_collision_pairs c (s : Rb_store.t) (bp : Broad_phase.t) =
     let idx2 = Dynarray.get bp_ids2 i in
     let pair_key = pair_key_of_pairs idx1 idx2 in
 
-    if check_collision s ~idx1 ~idx2 && not (Hashtbl.mem added_pairs pair_key) then (
-      Hashtbl.add added_pairs pair_key ();
+    if check_collision s ~idx1 ~idx2 && not (Hashtbl.mem curr_pairs pair_key) then (
+      Hashtbl.add curr_pairs pair_key ();
       Dynarray.add_last ids1 idx1;
       Dynarray.add_last ids2 idx2)
   done

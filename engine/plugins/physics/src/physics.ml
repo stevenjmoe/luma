@@ -44,6 +44,10 @@ module Make (L : Luma.S) = struct
     let packed_np = Resource.pack (module Narrow_phase.R) narrow_phase in
     World.add_resource Narrow_phase.R.type_id packed_np world |> ignore;
 
+    let ces = Collision_event.Collision_events_store.create () in
+    let packed_ces = Resource.pack (module Collision_event.Collision_events_store.R) ces in
+    World.add_resource Collision_event.Collision_events_store.R.type_id packed_ces world |> ignore;
+
     app
 
   let plugin ?(world_config = None) app =

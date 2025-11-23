@@ -162,25 +162,28 @@ module Make (L : Luma.S) = struct
           & Resource (module Grid.R)
           & Resource (module Broad_phase.R)
           & Resource (module Narrow_phase.R)
+          & Resource (module Collision_event.Collision_events_store.R)
           & End)
       "step"
-      (fun w e (time, (config, (store, (grid, (bp, (np, _)))))) ->
+      (fun w e r ->
         (* Clamp dt to prevent instability *)
-        let dt = min (L.Time.dt time) config.max_step_dt in
+        L.Query.Tuple.with7 r (fun time config store grid bp np event_store ->
+            let dt = min (L.Time.dt time) config.max_step_dt in
+            if dt > 0. && store.len > 0 then (
+              let gx = config.gravity.x and gy = config.gravity.y in
 
-        if dt > 0. && store.len > 0 then (
-          let gx = config.gravity.x and gy = config.gravity.y in
+              for row = 0 to store.len - 1 do
+                if store.active.(row) = 1 then (
+                  Rb_store.apply_gravity_at store ~row ~gx ~gy;
+                  Rb_store.integrate_linear_motion_at store ~row ~dt)
+              done;
 
-          for row = 0 to store.len - 1 do
-            if store.active.(row) = 1 then (
-              Rb_store.apply_gravity_at store ~row ~gx ~gy;
-              Rb_store.integrate_linear_motion_at store ~row ~dt)
-          done;
+              Broad_phase.update_broad_phase store grid;
+              Broad_phase.update_potential_collision_pairs bp grid;
+              Narrow_phase.update_actual_collision_pairs np store bp;
+              Resolver.resolve_collisions store np;
+              Collision_event.fill_collision_events np event_store;
 
-          Broad_phase.update_broad_phase store grid;
-          Broad_phase.update_potential_collision_pairs bp grid;
-          Narrow_phase.update_actual_collision_pairs np store bp;
-          Resolver.resolve_collisions store np;
-          ());
+              ()));
         w)
 end
