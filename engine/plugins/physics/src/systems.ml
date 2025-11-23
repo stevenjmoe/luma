@@ -166,9 +166,10 @@ module Make (L : Luma.S) = struct
           & End)
       "step"
       (fun w e r ->
-        (* Clamp dt to prevent instability *)
         L.Query.Tuple.with7 r (fun time config store grid bp np event_store ->
+            (* Clamp dt to prevent instability *)
             let dt = min (L.Time.dt time) config.max_step_dt in
+
             if dt > 0. && store.len > 0 then (
               let gx = config.gravity.x and gy = config.gravity.y in
 

@@ -1,4 +1,6 @@
-module Collision_event_flags = struct
+open Luma__id
+
+module Flags = struct
   type t = int
 
   let sensor : t = 0b0001
@@ -10,8 +12,6 @@ end
 
 let log = Luma__core.Log.sub_log "collision_event"
 
-type collider_handle = Luma__id.Id.Entity.t
-
 type phase =
   | Start
   | Stay
@@ -20,14 +20,14 @@ type phase =
 let phase_to_string = function Start -> "Start" | Stay -> "Stay" | Stop -> "Stop"
 
 type t = {
-  a : collider_handle;
-  b : collider_handle;
+  a : Id.Entity.t;
+  b : Id.Entity.t;
   phase : phase;
-  event_flags : Collision_event_flags.t;
+  flags : Flags.t;
 }
 
-let is_sensor c = Collision_event_flags.(has c.event_flags sensor)
-let is_removed c = Collision_event_flags.(has c.event_flags removed)
+let is_sensor c = Flags.(has c.flags sensor)
+let is_removed c = Flags.(has c.flags removed)
 
 module Collision_events_store = struct
   type t = {
@@ -97,7 +97,7 @@ let fill_collision_events narrow events =
       if not (Hashtbl.mem curr_pairs key) then
         let row_a, row_b = rows_of_pair_key key in
         let phase = 2 in
-        let flags = Collision_event_flags.removed in
+        let flags = Flags.removed in
         add events ~row_a ~row_b ~phase ~flags)
     prev_pairs;
 
@@ -105,33 +105,47 @@ let fill_collision_events narrow events =
   narrow.prev_pairs <- narrow.curr_pairs;
   narrow.curr_pairs <- tmp
 
-let iter_events (events : Collision_events_store.t) (world : Luma__ecs.World.t) (f : t -> unit) =
+let iter_events (world : Luma__ecs.World.t) (f : t -> unit) =
   let open Luma__ecs in
   let open Luma__resource in
-  match
+  let index_opt =
     Option.bind (World.get_resource world Rb_store.Index.R.type_id) (fun packed ->
-        Option.bind (Resource.unpack_opt (module Rb_store.Index.R) packed) (fun res -> Some res))
-  with
-  | None ->
+        Option.bind (Resource.unpack_opt (module Rb_store.Index.R) packed) (fun r -> Some r))
+  in
+  let store_opt =
+    Option.bind (World.get_resource world Collision_events_store.R.type_id) (fun packed ->
+        Option.bind (Resource.unpack_opt (module Collision_events_store.R) packed) (fun r -> Some r))
+  in
+  match (index_opt, store_opt) with
+  | None, _ ->
       log.warn (fun l ->
           l
             "[Collision_event.iter_events] `Rb_store.Index` resource has not been added to the \
              world.")
-  | Some index ->
+  | _, None ->
+      log.warn (fun l ->
+          l
+            "[Collision_event.iter_events] `Collision_events_store` resource has not been added to \
+             the world.")
+  | Some index, Some events ->
       for i = 0 to events.len - 1 do
         let row_a = events.rows_a.(i) in
-        let row_b = events.rows_a.(i) in
+        let row_b = events.rows_b.(i) in
         let phase = match events.phase.(i) with 0 -> Start | 1 -> Stay | 2 -> Stop | _ -> Stop in
         let flags = events.flags.(i) in
         let entity_a = index.row_to_ent.(row_a) in
         let entity_b = index.row_to_ent.(row_b) in
         let event =
-          {
-            a = Luma__id.Id.Entity.of_int entity_a;
-            b = Luma__id.Id.Entity.of_int entity_b;
-            phase;
-            event_flags = flags;
-          }
+          { a = Id.Entity.of_int entity_a; b = Id.Entity.of_int entity_b; phase; flags }
         in
         f event
       done
+
+let iter_events_for_entity
+    ~entity
+    (world : Luma__ecs.World.t)
+    (f : other:Id.Entity.t -> phase -> flags:Flags.t -> unit) =
+  iter_events world (fun { a; b; phase; flags } ->
+      if Id.Entity.eq entity a then f ~other:b phase ~flags
+      else if Id.Entity.eq entity b then f ~other:a phase ~flags
+      else ())
