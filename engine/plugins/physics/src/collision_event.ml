@@ -20,8 +20,8 @@ type phase =
 let phase_to_string = function Start -> "Start" | Stay -> "Stay" | Stop -> "Stop"
 
 type t = {
-  a : Id.Entity.t;
-  b : Id.Entity.t;
+  entity_a : Id.Entity.t;
+  entity_b : Id.Entity.t;
   phase : phase;
   flags : Flags.t;
 }
@@ -33,15 +33,22 @@ module Collision_events_store = struct
   type t = {
     mutable len : int;
     mutable cap : int;
-    mutable rows_a : int array;
-    mutable rows_b : int array;
+    mutable entity_a : Id.Entity.t array;
+    mutable entity_b : Id.Entity.t array;
     mutable phase : int array;
     mutable flags : int array;
   }
 
   let create ?(initial = 128) () =
     let f v = Array.make initial v in
-    { len = 0; cap = initial; rows_a = f 0; rows_b = f 0; phase = f 0; flags = f 0 }
+    {
+      len = 0;
+      cap = initial;
+      entity_a = f Utils.sentinel_entity;
+      entity_b = f Utils.sentinel_entity;
+      phase = f 0;
+      flags = f 0;
+    }
 
   let ensure_capacity s need =
     if need <= s.cap then ()
@@ -52,20 +59,25 @@ module Collision_events_store = struct
         Array.blit a 0 b 0 s.len;
         b
       in
+      let grow_entity a =
+        let b = Array.make new_cap Utils.sentinel_entity in
+        Array.blit a 0 b 0 s.len;
+        b
+      in
       s.cap <- new_cap;
-      s.rows_a <- grow_int s.rows_a;
-      s.rows_b <- grow_int s.rows_b;
+      s.entity_a <- grow_entity s.entity_a;
+      s.entity_b <- grow_entity s.entity_b;
       s.phase <- grow_int s.phase;
       s.flags <- grow_int s.flags;
       ()
 
   let clear s = s.len <- 0
 
-  let add s ~row_a ~row_b ~phase ~flags =
+  let add s ~entity_a ~entity_b ~phase ~flags =
     ensure_capacity s (s.len + 1);
     let i = s.len in
-    s.rows_a.(i) <- row_a;
-    s.rows_b.(i) <- row_b;
+    s.entity_a.(i) <- entity_a;
+    s.entity_b.(i) <- entity_b;
     s.phase.(i) <- phase;
     s.flags.(i) <- flags;
     s.len <- s.len + 1
@@ -77,7 +89,7 @@ module Collision_events_store = struct
   end)
 end
 
-let fill_collision_events narrow events =
+let fill_collision_events narrow events (index : Rb_store.Index.t) =
   let open Narrow_phase in
   let open Collision_events_store in
   clear events;
@@ -85,20 +97,22 @@ let fill_collision_events narrow events =
 
   Hashtbl.iter
     (fun key _ ->
-      let row_a, row_b = rows_of_pair_key key in
-      (* 0 = Start. 1 = Stay *)
-      let phase = if Hashtbl.mem prev_pairs key then 1 else 0 in
-      let flags = 0 in
-      add events ~row_a ~row_b ~phase ~flags)
+      let entity_a, entity_b = entities_of_pair_key key in
+      if entity_a <> Utils.sentinel_entity && entity_b <> Utils.sentinel_entity then
+        (* 0 = Start. 1 = Stay *)
+        let phase = if Hashtbl.mem prev_pairs key then 1 else 0 in
+        let flags = 0 in
+        add events ~entity_a ~entity_b ~phase ~flags)
     curr_pairs;
 
   Hashtbl.iter
     (fun key _ ->
       if not (Hashtbl.mem curr_pairs key) then
-        let row_a, row_b = rows_of_pair_key key in
-        let phase = 2 in
-        let flags = Flags.removed in
-        add events ~row_a ~row_b ~phase ~flags)
+        let entity_a, entity_b = entities_of_pair_key key in
+        if entity_a <> Utils.sentinel_entity && entity_b <> Utils.sentinel_entity then
+          let phase = 2 in
+          let flags = Flags.removed in
+          add events ~entity_a ~entity_b ~phase ~flags)
     prev_pairs;
 
   let tmp = narrow.prev_pairs in
@@ -108,44 +122,34 @@ let fill_collision_events narrow events =
 let iter_events (world : Luma__ecs.World.t) (f : t -> unit) =
   let open Luma__ecs in
   let open Luma__resource in
-  let index_opt =
-    Option.bind (World.get_resource world Rb_store.Index.R.type_id) (fun packed ->
-        Option.bind (Resource.unpack_opt (module Rb_store.Index.R) packed) (fun r -> Some r))
-  in
   let store_opt =
     Option.bind (World.get_resource world Collision_events_store.R.type_id) (fun packed ->
         Option.bind (Resource.unpack_opt (module Collision_events_store.R) packed) (fun r -> Some r))
   in
-  match (index_opt, store_opt) with
-  | None, _ ->
-      log.warn (fun l ->
-          l
-            "[Collision_event.iter_events] `Rb_store.Index` resource has not been added to the \
-             world.")
-  | _, None ->
+  match store_opt with
+  | None ->
       log.warn (fun l ->
           l
             "[Collision_event.iter_events] `Collision_events_store` resource has not been added to \
              the world.")
-  | Some index, Some events ->
+  | Some events ->
       for i = 0 to events.len - 1 do
-        let row_a = events.rows_a.(i) in
-        let row_b = events.rows_b.(i) in
-        let phase = match events.phase.(i) with 0 -> Start | 1 -> Stay | 2 -> Stop | _ -> Stop in
-        let flags = events.flags.(i) in
-        let entity_a = index.row_to_ent.(row_a) in
-        let entity_b = index.row_to_ent.(row_b) in
-        let event =
-          { a = Id.Entity.of_int entity_a; b = Id.Entity.of_int entity_b; phase; flags }
-        in
-        f event
+        let entity_a = events.entity_a.(i) in
+        let entity_b = events.entity_b.(i) in
+        if entity_a <> Utils.sentinel_entity && entity_b <> Utils.sentinel_entity then
+          let phase =
+            match events.phase.(i) with 0 -> Start | 1 -> Stay | 2 -> Stop | _ -> Stop
+          in
+          let flags = events.flags.(i) in
+          let event = { entity_a; entity_b; phase; flags } in
+          f event
       done
 
 let iter_events_for_entity
     ~entity
     (world : Luma__ecs.World.t)
     (f : other:Id.Entity.t -> phase -> flags:Flags.t -> unit) =
-  iter_events world (fun { a; b; phase; flags } ->
-      if Id.Entity.eq entity a then f ~other:b phase ~flags
-      else if Id.Entity.eq entity b then f ~other:a phase ~flags
+  iter_events world (fun { entity_a; entity_b; phase; flags } ->
+      if Id.Entity.eq entity entity_a then f ~other:entity_b phase ~flags
+      else if Id.Entity.eq entity entity_b then f ~other:entity_a phase ~flags
       else ())

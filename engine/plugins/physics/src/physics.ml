@@ -14,7 +14,7 @@ module Make (L : Luma.S) = struct
     let* index_packed = World.get_resource world Rb_store.Index.R.type_id in
     let* index = Resource.unpack_opt (module Rb_store.Index.R) index_packed in
 
-    match Rb_store.Index.row_of_entity index (Id.Entity.to_int entity) with
+    match Rb_store.Index.row_of_entity index entity with
     | Some row -> Some (Vec2.create store.pos_x.(row) store.pos_y.(row))
     | None -> None
 

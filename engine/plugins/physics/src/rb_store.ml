@@ -1,5 +1,6 @@
 open Luma__math
 open Rigid_body
+open Utils
 
 type rigid_body = Rigid_body.t
 
@@ -272,10 +273,23 @@ let integrate_linear_motion_at s ~row ~dt =
 
     ())
 
+(** [bounding_box store idx] returns the [Bounded2d.Aabb2d] representation of the raw store values
+    from the given index. *)
+let bounding_box store i =
+  let min_x = store.min_x.(i) in
+  let min_y = store.min_y.(i) in
+  let max_x = store.max_x.(i) in
+  let max_y = store.max_y.(i) in
+  let min = Vec2.create min_x min_y in
+  let max = Vec2.create max_x max_y in
+  Bounded2d.Aabb2d.of_min_max min max
+
 module Index = struct
+  open Luma__id
+
   type t = {
-    ent_to_row : (int, int) Hashtbl.t;
-    mutable row_to_ent : int array;
+    ent_to_row : (Id.Entity.t, int) Hashtbl.t;
+    mutable row_to_ent : Id.Entity.t array;
     mutable len : int;
     mutable cap : int;
   }
@@ -289,7 +303,7 @@ module Index = struct
   let create ~initial =
     {
       ent_to_row = Hashtbl.create (initial * 2);
-      row_to_ent = Array.make initial (-1);
+      row_to_ent = Array.make initial sentinel_entity;
       len = 0;
       cap = initial;
     }
@@ -298,7 +312,7 @@ module Index = struct
     if need <= s.cap then ()
     else
       let cap = max need (max 8 (s.cap * 2)) in
-      let r = Array.make cap (-1) in
+      let r = Array.make cap sentinel_entity in
       Array.blit s.row_to_ent 0 r 0 s.len;
       s.row_to_ent <- r;
       s.cap <- cap
@@ -312,11 +326,12 @@ module Index = struct
   let on_swap s ~i ~j =
     if i = j then ()
     else
-      let ei = s.row_to_ent.(i) and ej = s.row_to_ent.(j) in
+      let ei = s.row_to_ent.(i) in
+      let ej = s.row_to_ent.(j) in
       s.row_to_ent.(i) <- ej;
       s.row_to_ent.(j) <- ei;
-      if ej <> -1 then Hashtbl.replace s.ent_to_row ej i;
-      if ei <> -1 then Hashtbl.replace s.ent_to_row ei j
+      if ej <> sentinel_entity then Hashtbl.replace s.ent_to_row ej i;
+      if ei <> sentinel_entity then Hashtbl.replace s.ent_to_row ei j
 
   let on_remove s ~row =
     let last = s.len - 1 in
@@ -325,14 +340,14 @@ module Index = struct
     let e_removed = s.row_to_ent.(row) in
     let e_last = s.row_to_ent.(last) in
 
-    if row < last then (
+    if row < last && e_last <> sentinel_entity then (
       Hashtbl.replace s.ent_to_row e_last row;
       (* Move last's entry into removed slot *)
       s.row_to_ent.(row) <- e_last);
 
     (* Clean up last entry and removed entity *)
     Hashtbl.remove s.ent_to_row e_removed;
-    s.row_to_ent.(last) <- -1;
+    s.row_to_ent.(last) <- sentinel_entity;
     s.len <- last
 
   let row_of_entity s entity = Hashtbl.find_opt s.ent_to_row entity

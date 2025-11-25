@@ -39,48 +39,54 @@ let circle_circle_collision (s : Rb_store.t) idx1 idx2 =
     ~a_radius:s.radius.(idx1) ~b_center_x:s.pos_x.(idx2) ~b_center_y:s.pos_y.(idx2)
     ~b_radius:s.radius.(idx2)
 
-let check_collision (s : Rb_store.t) ~idx1 ~idx2 =
+let check_collision (s : Rb_store.t) ~row_a ~row_b =
   let open Bounded2d.Aabb2d in
-  let shape_a = s.shape.(idx1) in
-  let shape_b = s.shape.(idx2) in
+  let shape_a = s.shape.(row_a) in
+  let shape_b = s.shape.(row_b) in
 
   (* 0: Cirlce, 1: Aabb *)
   match (shape_a, shape_b) with
   (* Aabb Aabb *)
-  | 1, 1 -> aabb_aabb_collision s idx1 idx2
+  | 1, 1 -> aabb_aabb_collision s row_a row_b
   (* Circle Circle *)
-  | 0, 0 -> circle_circle_collision s idx1 idx2
+  | 0, 0 -> circle_circle_collision s row_a row_b
   (* Aabb Circle *)
-  | 1, 0 -> aabb_circle_collision s idx1 idx2
+  | 1, 0 -> aabb_circle_collision s row_a row_b
   (* Circle Aabb *)
-  | 0, 1 -> aabb_circle_collision s idx2 idx1
+  | 0, 1 -> aabb_circle_collision s row_b row_a
   | _ -> false
 
-let pair_key_of_pairs id1 id2 =
+let pair_key_of_pairs ~entity_a ~entity_b =
+  let open Luma__id in
+  let id1 = Id.Entity.to_int entity_a in
+  let id2 = Id.Entity.to_int entity_b in
   let a = Int64.of_int (min id1 id2) in
   let b = Int64.of_int (max id1 id2) in
   Int64.logor (Int64.shift_left a 32) b
 
-let rows_of_pair_key key =
-  let a = Int64.(to_int (shift_right_logical key 32)) in
-  let b = Int64.(to_int (logand key 0xFFFF_FFFFL)) in
+let entities_of_pair_key key =
+  let a = Int64.(to_int (shift_right_logical key 32)) |> Luma__id.Id.Entity.of_int in
+  let b = Int64.(to_int (logand key 0xFFFF_FFFFL)) |> Luma__id.Id.Entity.of_int in
   (a, b)
 
-let update_actual_collision_pairs c (s : Rb_store.t) (bp : Broad_phase.t) =
+let update_actual_collision_pairs c (s : Rb_store.t) (bp : Broad_phase.t) (index : Rb_store.Index.t)
+    =
   clear c;
   let { curr_pairs; ids1; ids2 } = c in
 
   let bp_ids1, bp_ids2 = Broad_phase.pairs_view bp in
 
   for i = 0 to Dynarray.length bp_ids1 - 1 do
-    let idx1 = Dynarray.get bp_ids1 i in
-    let idx2 = Dynarray.get bp_ids2 i in
-    let pair_key = pair_key_of_pairs idx1 idx2 in
+    let row_a = Dynarray.get bp_ids1 i in
+    let row_b = Dynarray.get bp_ids2 i in
+    let entity_a = index.row_to_ent.(row_a) in
+    let entity_b = index.row_to_ent.(row_b) in
+    let pair_key = pair_key_of_pairs ~entity_a ~entity_b in
 
-    if check_collision s ~idx1 ~idx2 && not (Hashtbl.mem curr_pairs pair_key) then (
+    if check_collision s ~row_a ~row_b && not (Hashtbl.mem curr_pairs pair_key) then (
       Hashtbl.add curr_pairs pair_key ();
-      Dynarray.add_last ids1 idx1;
-      Dynarray.add_last ids2 idx2)
+      Dynarray.add_last ids1 row_a;
+      Dynarray.add_last ids2 row_b)
   done
 
 let collisions_view c = (c.ids1, c.ids2)

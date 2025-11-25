@@ -1,9 +1,7 @@
 module Make (L : Luma.S) = struct
   let get_rigid_body entity index =
     let open Rigid_body in
-    let eid = L.Id.Entity.to_int entity in
-
-    match Rb_store.Index.row_of_entity index eid with None -> None | Some row -> Some row
+    match Rb_store.Index.row_of_entity index entity with None -> None | Some row -> Some row
 
   let derive_kinematic_velocity (store : Rb_store.t) ~row ~curr_x ~curr_y ~dt =
     if dt > 0. then (
@@ -27,19 +25,16 @@ module Make (L : Luma.S) = struct
       (fun w e (rb_store, (index, (time, _))) ->
         let current = Hashtbl.create 1024 in
 
-        List.iter
-          (fun (entity, (rb, _)) -> Hashtbl.replace current (L.Id.Entity.to_int entity) true)
-          e;
+        List.iter (fun (entity, (rb, _)) -> Hashtbl.replace current entity true) e;
 
         (* Add to or update rigid body store *)
         List.iter
           (fun (entity, ((rb : Rigid_body.t), _)) ->
             let open Rigid_body in
-            let eid = L.Id.Entity.to_int entity in
             match get_rigid_body entity index with
             | None ->
                 let row = Rb_store.add rb_store rb in
-                Rb_store.Index.on_add index ~entity:eid ~row
+                Rb_store.Index.on_add index ~entity ~row
             | Some row -> (
                 let open L.Math.Bounded2d in
                 rb_store.inv_mass.(row) <- rb.inv_mass;
@@ -97,8 +92,8 @@ module Make (L : Luma.S) = struct
 
         let i = ref 0 in
         while !i < rb_store.len do
-          let eid = index.row_to_ent.(!i) in
-          if eid = -1 || not (Hashtbl.mem current eid) then (
+          let entity = index.row_to_ent.(!i) in
+          if entity = Utils.sentinel_entity || not (Hashtbl.mem current entity) then (
             let last = rb_store.len - 1 in
             if !i < last then (
               Rb_store.swap_rows rb_store !i last;
@@ -163,10 +158,11 @@ module Make (L : Luma.S) = struct
           & Resource (module Broad_phase.R)
           & Resource (module Narrow_phase.R)
           & Resource (module Collision_event.Collision_events_store.R)
+          & Resource (module Rb_store.Index.R)
           & End)
       "step"
       (fun w e r ->
-        L.Query.Tuple.with7 r (fun time config store grid bp np event_store ->
+        L.Query.Tuple.with8 r (fun time config store grid bp np event_store index ->
             (* Clamp dt to prevent instability *)
             let dt = min (L.Time.dt time) config.max_step_dt in
 
@@ -181,9 +177,9 @@ module Make (L : Luma.S) = struct
 
               Broad_phase.update_broad_phase store grid;
               Broad_phase.update_potential_collision_pairs bp grid;
-              Narrow_phase.update_actual_collision_pairs np store bp;
+              Narrow_phase.update_actual_collision_pairs np store bp index;
               Resolver.resolve_collisions store np;
-              Collision_event.fill_collision_events np event_store;
+              Collision_event.fill_collision_events np event_store index;
 
               ()));
         w)
