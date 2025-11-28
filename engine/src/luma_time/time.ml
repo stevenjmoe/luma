@@ -34,7 +34,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   let update_time () =
     let open Luma__id in
-    System.make ~components:End "update_time" (fun (world : World.t) _ ->
+    System.make ~components:End "update_time" (fun (world : World.t) _ _ ->
         match World.get_resource world R.type_id with
         | Some r -> (
             match Luma__resource.Resource.unpack (module R) r with

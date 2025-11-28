@@ -114,14 +114,14 @@ module Make (D : Luma__driver.Driver.S) = struct
     System.make_with_resources ~components:Query.Component.End
       ~resources:Query.Resource.(Resource (module State.R) & End)
       "debug_toggle_overlay"
-      (fun w _ (state, _) ->
+      (fun w _ _ (state, _) ->
         if D.Input.Keyboard.is_key_pressed Luma__types.Input_types.Key.F1 then (
           state.open_ <- not state.open_;
           if state.open_ then state.page <- 0);
         w)
 
   let setup_state () =
-    System.make ~components:End "" (fun w _ ->
+    System.make ~components:End "" (fun w _ _ ->
         let state = State.default () in
         (* Ensure initial compact size is large enough to fit headings and a short preview. *)
         if state.w < 460. then state.w <- 460.;
@@ -133,7 +133,7 @@ module Make (D : Luma__driver.Driver.S) = struct
     System.make_with_resources ~components:Query.Component.End
       ~resources:Query.Resource.(Resource (module State.R) & End)
       "debug.draw_overlay"
-      (fun world _ (state, _) ->
+      (fun world _ _ (state, _) ->
         if not state.open_ then world
         else (
           if D.Input.Keyboard.is_key_pressed Luma__types.Input_types.Key.F2 then

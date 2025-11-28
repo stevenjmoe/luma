@@ -76,7 +76,7 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Audio.Music.t = 
     Luma__ecs.System.make_with_resources ~components:End
       ~resources:Luma__ecs.Query.Resource.(Resource (module Luma__asset.Assets.R) & End)
       "music.cleanup"
-      (fun world _ (assets, _) ->
+      (fun world _ _ (assets, _) ->
         let music = Luma__asset.Assets.get_all (module A) assets in
         music |> List.iter (fun s -> D.Audio.Music.unload_music_stream s.stream);
         world)
@@ -85,7 +85,7 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Audio.Music.t = 
     Luma__ecs.System.make_with_resources ~components:End
       ~resources:Luma__ecs.Query.Resource.(Resource (module Luma__asset.Assets.R) & End)
       "music.stream"
-      (fun world _ (assets, _) ->
+      (fun world _ _ (assets, _) ->
         let update_music m =
           D.Audio.Music.update_music_stream m.stream;
           if m.state = `Playing && not m.loop then

@@ -10,12 +10,12 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Music = Music.Make (D)
 
   let init () =
-    Luma__ecs.System.make ~components:End "audio.init" (fun world _ ->
+    Luma__ecs.System.make ~components:End "audio.init" (fun world _ _ ->
         D.Audio.init_audio_device ();
         world)
 
   let cleanup () =
-    Luma__ecs.System.make ~components:End "audio.cleanup" (fun world _ ->
+    Luma__ecs.System.make ~components:End "audio.cleanup" (fun world _ _ ->
         D.Audio.close_audio_device ();
         world)
 

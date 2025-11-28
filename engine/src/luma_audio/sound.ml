@@ -33,7 +33,7 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Audio.Sound.t = stru
     Luma__ecs.System.make_with_resources ~components:End
       ~resources:Luma__ecs.Query.Resource.(Resource (module Luma__asset.Assets.R) & End)
       "sound.cleanup"
-      (fun world _ (assets, _) ->
+      (fun world _ _ (assets, _) ->
         let sounds = Luma__asset.Assets.get_all (module A) assets in
         sounds |> List.iter (fun s -> D.Audio.Sound.unload_sound s);
         world)

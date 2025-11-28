@@ -12,6 +12,7 @@
   (modules 
     Archetype
     Component 
+    Command
     Entity
     Query 
     Scheduler 

@@ -279,7 +279,7 @@ module Make (D : Luma__driver.Driver.S) :
         ~components:Query.Component.(Required (module C) & End)
         ~resources:Query.Resource.(Resource (module Queue.R) & End)
         "render_cameras"
-        (fun world entities (queue, _) ->
+        (fun world _ entities (queue, _) ->
           let win_w, win_h = (D.Window.screen_width (), D.Window.screen_height ()) in
           entities
           |> List.filter (fun (_, (cam, _)) -> active cam)
@@ -322,7 +322,7 @@ module Make (D : Luma__driver.Driver.S) :
       System.make_with_resources ~components:Query.Component.End
         ~resources:Query.Resource.(Resource (module Queue.R) & End)
         "render_queue_begin_frame"
-        (fun world _ (queue, _) ->
+        (fun world _ _ (queue, _) ->
           Queue.clear queue;
           world)
 

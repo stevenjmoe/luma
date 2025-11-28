@@ -51,7 +51,7 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Texture.t = struct
     System.make_with_resources ~components:End
       ~resources:Query.Resource.(Resource (module Server.R) & End)
       "register_texture_loader"
-      (fun w _ (server, _) ->
+      (fun w _ _ (server, _) ->
         Server.register_loader server
           (module Texture_loader)
           ~ctx_provider:Loader.Context_provider.no_ctx;

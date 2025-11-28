@@ -67,7 +67,7 @@ module Make (L : Luma.S) = struct
     System.make_with_resources ~components:End
       ~resources:Query.Resource.(Resource (module Asset_server.R) & End)
       "register_map_loader"
-      (fun w _ (server, _) ->
+      (fun w _ _ (server, _) ->
         Asset_server.register_loader server
           (module Loader.Tilemap_loader)
           ~ctx_provider:Asset_loader.Context_provider.no_ctx;
@@ -143,7 +143,7 @@ module Make (L : Luma.S) = struct
         Query.Resource.(
           Resource (module Assets.R) & Resource (module Asset_server.R) & Resource (module R) & End)
       "resolve_tilemaps"
-      (fun w e r ->
+      (fun w _ e r ->
         Query.Tuple.with3 r (fun assets server tilemap_map ->
             Hashtbl.iter
               (fun tilemap_handle (render_map : map_inner) ->
@@ -181,7 +181,7 @@ module Make (L : Luma.S) = struct
           & Resource (module Renderer.Queue.R)
           & End)
       "render_tilemap"
-      (fun w cams res ->
+      (fun w _ cams res ->
         let draw_plan_for_camera
             (assets : Assets.t)
             (cam : Camera.t)
@@ -253,7 +253,7 @@ module Make (L : Luma.S) = struct
         w)
 
   let setup_register () =
-    System.make ~components:End "setup_tilemap_register" (fun world _ ->
+    System.make ~components:End "setup_tilemap_register" (fun world _ _ ->
         if World.has_resource R.type_id world then world
         else
           let map = create () in
@@ -265,7 +265,7 @@ module Make (L : Luma.S) = struct
     System.make_with_resources ~components:End
       ~resources:Query.Resource.(Resource (module Window_config.R) & Resource (module R) & End)
       "update_background"
-      (fun world _ (wc, (maps, _)) ->
+      (fun world _ _ (wc, (maps, _)) ->
         let min_kv =
           Hashtbl.fold
             (fun k p acc ->

@@ -19,7 +19,7 @@ let input_system () =
     ~components:Query.Component.(Required (module Velocity.C) & End)
     ~resources:Query.Resource.(Resource (module Time.R) & End)
     "input_system"
-    (fun world entities (time, _) ->
+    (fun world _ entities (time, _) ->
       let open Math in
       let open Luma.Input.Keyboard in
       entities
@@ -51,7 +51,7 @@ let movement_system () =
         & End)
     ~resources:Query.Resource.(Resource (module Time.R) & End)
     "movement_system"
-    (fun world entities (time, _) ->
+    (fun world _ entities (time, _) ->
       let open Math in
       let open Luma.Camera in
       entities
@@ -66,7 +66,7 @@ let render_system () =
   System.make
     ~components:Query.Component.(Required (module Rectangle.C) & End)
     "render_system"
-    (fun world entities ->
+    (fun world _ entities ->
       let open Raylib in
       entities
       |> List.iter (fun (_, (rectangle, _)) ->
@@ -89,7 +89,7 @@ let setup_rectangle () =
     ~components:Query.(End)
     ~resources:Query.Resource.(Resource (module Asset_server.R) & Resource (module Assets.R) & End)
     "setup_rectangle"
-    (fun world entities res ->
+    (fun world _ entities res ->
       Query.Tuple.with2 res (fun asset_server assets ->
           let open World in
           let open Math in
@@ -151,7 +151,7 @@ let execute_animations () =
       Query.Component.(Required (module Animation_config.C) & Required (module Sprite.C) & End)
     ~resources:Query.Resource.(Resource (module Assets.R) & Resource (module Time.R) & End)
     "execute_animations"
-    (fun world entities (assets, (time, _)) ->
+    (fun world _ entities (assets, (time, _)) ->
       let dt = Time.dt time in
       entities
       |> Query.Tuple.iter2 (fun animation_config sprite ->
@@ -173,7 +173,7 @@ let setup_other_rectangle () =
   System.make
     ~components:Query.(End)
     "setup_other_rectangle"
-    (fun world entities ->
+    (fun world _ entities ->
       let open World in
       let open Math in
       let rect = Rect.create ~pos:(Vec2.create 100. 50.) ~size:(Vec2.create 20. 50.) in

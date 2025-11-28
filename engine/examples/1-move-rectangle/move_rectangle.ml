@@ -18,7 +18,7 @@ let input_system () =
     ?filter:(Some Query.Component.Filter.(With Player_tag.C.id))
     ~components:Query.Component.(Required (module Velocity.C) & End)
     "input_system"
-    (fun world entities ->
+    (fun world _ entities ->
       let open Math in
       let open Luma.Input.Keyboard in
       Query.Tuple.iter1
@@ -50,7 +50,7 @@ let movement_system () =
         & End)
     ~resources:Query.Resource.(Resource (module Time.R) & End)
     "movement_system"
-    (fun world entities (time, _) ->
+    (fun world _ entities (time, _) ->
       let open Math in
       let open Luma.Camera in
       let dt = Time.dt time in
@@ -67,7 +67,7 @@ let setup_rectangle () =
   System.make
     ~components:Query.(End)
     "setup_rectangle"
-    (fun world _ ->
+    (fun world _ _ ->
       let open World in
       let open Math in
       let player_tag = () in
@@ -96,7 +96,7 @@ let setup_other_rectangle () =
   System.make
     ~components:Query.(End)
     "setup_other_rectangle"
-    (fun world entities ->
+    (fun world _ entities ->
       let open World in
       let open Math in
       let rect = Rect.create ~pos:(Vec2.create 100. 50.) ~size:(Vec2.create 359. 100.) in
@@ -109,7 +109,7 @@ let draw_rects () =
     ~components:Query.Component.(Required (module Rectangle.C) & End)
     ~resources:Query.Resource.(Resource (module Renderer.Queue.R) & End)
     "draw_rects"
-    (fun world entities (queue, _) ->
+    (fun world _ entities (queue, _) ->
       Query.Tuple.iter1
         (fun rect ->
           Renderer.Draw.rect ~rect ~colour:(Colour.rgb ~r:50 ~g:50 ~b:50) queue;

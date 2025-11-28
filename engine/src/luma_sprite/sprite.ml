@@ -110,7 +110,7 @@ struct
       ~resources:
         Query.Resource.(Resource (module Assets.R) & Resource (module Renderer.Queue.R) & End)
       "extract_sprites"
-      (fun world entities (assets, (queue, _)) ->
+      (fun world _ entities (assets, (queue, _)) ->
         Query.Tuple.iter2
           (fun sprite transform ->
             match Assets.get (module Texture.A) assets (Sprite.image sprite) with

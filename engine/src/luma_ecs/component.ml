@@ -14,6 +14,8 @@ module type S = sig
   val to_base : t -> base
 end
 
+type component = Component : (module S with type t = 'a) * 'a -> component
+
 module Make (B : sig
   type inner
 

@@ -142,6 +142,7 @@ module type S = sig
   module State : module type of Luma__state.State
   module Scene : Scene.S
   module IO : module type of Luma__driver.Driver.IO
+  module Command : module type of Command
 
   val screen_width : unit -> int
   val screen_height : unit -> int
@@ -298,6 +299,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Mouse_button = Types.Input_types.Mouse_button
   module State = State
   module IO = D.IO
+  module Command = Command
 
   let screen_width = D.Window.screen_width
   let screen_height = D.Window.screen_height

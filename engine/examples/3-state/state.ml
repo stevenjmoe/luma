@@ -31,7 +31,7 @@ let execute_animations () =
       Query.Component.(Required (module Animation_config.C) & Required (module Sprite.C) & End)
     ~resources:Query.Resource.(Resource (module Assets.R) & Resource (module Time.R) & End)
     "execute_animations"
-    (fun world entities res ->
+    (fun world _ entities res ->
       Query.Tuple.with2 res (fun assets time ->
           let dt = Time.dt time in
           entities
@@ -58,7 +58,7 @@ let input_system () =
     ~resources:
       Query.Resource.(Resource (module Assets.R) & Resource (module Luma.State.State_res.R) & End)
     "input_system"
-    (fun world entities (assets, (state, _)) ->
+    (fun world _ entities (assets, (state, _)) ->
       match state with
       | { current = Some current_state; previous = _; next = _ } ->
           if Luma.Input.Keyboard.is_key_pressed @@ Luma.Key.Space then
@@ -72,7 +72,7 @@ let setup_player () =
   System.make_with_resources ~components:End
     ~resources:Query.Resource.(Resource (module Asset_server.R) & Resource (module Assets.R) & End)
     "setup_player"
-    (fun world entities (asset_server, (assets, _)) : World.t ->
+    (fun world _ entities (asset_server, (assets, _)) : World.t ->
       let texture =
         Asset_server.load
           (module Image.Texture.A)

@@ -19,7 +19,7 @@ let execute_animations () =
       Query.Component.(Required (module Animation_config.C) & Required (module Sprite.C) & End)
     ~resources:Query.Resource.(Resource (module Assets.R) & Resource (module Time.R) & End)
     "execute_animations"
-    (fun world entities (assets, (time, _)) ->
+    (fun world _ entities (assets, (time, _)) ->
       let dt = Time.dt time in
       entities
       |> Query.Tuple.iter2 (fun animation_config sprite ->
@@ -41,7 +41,7 @@ let setup_player () =
   System.make_with_resources ~components:End
     ~resources:Query.Resource.(Resource (module Asset_server.R) & Resource (module Assets.R) & End)
     "setup_player"
-    (fun world entities (asset_server, (assets, _)) : World.t ->
+    (fun world _ entities (asset_server, (assets, _)) : World.t ->
       let texture =
         Asset_server.load
           (module Image.Texture.A)

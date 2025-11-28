@@ -22,7 +22,7 @@ module Make (L : Luma.S) = struct
           & Resource (module L.Time.R)
           & End)
       "sync_rigid_bodies"
-      (fun w e (rb_store, (index, (time, _))) ->
+      (fun w _ e (rb_store, (index, (time, _))) ->
         let current = Hashtbl.create 1024 in
 
         List.iter (fun (entity, (rb, _)) -> Hashtbl.replace current entity true) e;
@@ -138,7 +138,7 @@ module Make (L : Luma.S) = struct
       ~resources:
         L.Query.Resource.(Resource (module L.Renderer.Queue.R) & Resource (module Rb_store.R) & End)
       "debug_draw"
-      (fun w e (queue, (store, _)) ->
+      (fun w _ e (queue, (store, _)) ->
         for i = 0 to store.len - 1 do
           if store.shape.(i) = 0 then draw_circle store i queue
           else if store.shape.(i) = 1 then draw_rectangle store i queue
@@ -161,7 +161,7 @@ module Make (L : Luma.S) = struct
           & Resource (module Rb_store.Index.R)
           & End)
       "step"
-      (fun w e r ->
+      (fun w _ e r ->
         L.Query.Tuple.with8 r (fun time config store grid bp np event_store index ->
             (* Clamp dt to prevent instability *)
             let dt = min (L.Time.dt time) config.max_step_dt in

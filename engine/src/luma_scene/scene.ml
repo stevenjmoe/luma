@@ -138,7 +138,7 @@ module Make (D : Driver.S) : S = struct
     System.make_with_resources ~components:End
       ~resources:Query.Resource.(Resource (module Server.R) & End)
       "register_scene_loader"
-      (fun w _ (server, _) ->
+      (fun w _ _ (server, _) ->
         Server.register_loader server
           (module Scene_loader)
           ~ctx_provider:(Loader.Context_provider.from_world ctx_of_world);

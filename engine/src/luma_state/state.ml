@@ -141,7 +141,7 @@ let is (type a) (module S : STATE with type t = a) (v : a) (st : state) : bool =
 let transition_system () =
   let open Luma__ecs in
   let open Luma__resource in
-  Luma__ecs.System.make ~components:End "transition_system" (fun w e ->
+  Luma__ecs.System.make ~components:End "transition_system" (fun w _ e ->
       let ( >>= ) = Option.bind in
       match
         World.get_resource w State_res.R.type_id >>= fun s ->

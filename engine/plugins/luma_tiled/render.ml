@@ -33,7 +33,7 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
           & Resource (module Renderer.Queue.R)
           & End)
       "render_tilemap"
-      (fun w cams res ->
+      (fun w _ cams res ->
         let draw_plan_for_camera
             (assets : Assets.t)
             (cam : Camera.t)
