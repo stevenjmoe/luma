@@ -13,7 +13,7 @@ type command =
   | Insert of Id.Entity.t * Component.packed
   | Remove of Id.Entity.t * Id.Component.t
   | Insert_resource of Resource.packed
-  | Remove_resource
+  | Remove_resource of Id.Resource.t
 
 type t = { mutable commands : command list }
 
@@ -38,6 +38,8 @@ let insert_resource (type a) buf (module R : Resource.S with type t = a) res =
   let packed = Resource.pack (module R) res in
   buf.commands <- Insert_resource packed :: buf.commands
 
+let remove_resource buf res = buf.commands <- Remove_resource res :: buf.commands
+
 let flush world buf =
   List.iter
     (fun cmd ->
@@ -50,5 +52,5 @@ let flush world buf =
       | Insert (e, c) -> World.add_component world c e
       | Remove (e, c) -> World.remove_component world c e
       | Insert_resource r -> ignore (World.add_resource (Resource.type_id r) r world)
-      | Remove_resource -> ())
+      | Remove_resource r -> World.remove_resource r world)
     buf.commands
