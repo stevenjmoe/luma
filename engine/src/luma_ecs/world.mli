@@ -87,6 +87,9 @@ val add_resource : Luma__id.Id.Resource.t -> Resource.packed -> t -> t
 val set_resource : Id.Resource.t -> Resource.packed -> t -> t
 (** [set_resource id packed world] adds or replaces a resource by id. *)
 
+val remove_resource : Id.Resource.t -> t -> unit
+(** [remove_resource id world] *)
+
 val has_resource : Id.Resource.t -> t -> bool
 (** [has_resource id world] returns true if a resource with the given id has been added to the
     world. *)

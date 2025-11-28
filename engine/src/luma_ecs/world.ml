@@ -69,18 +69,19 @@ let create () =
 let entities w = w.entity_to_archetype |> Hashtbl.to_seq_keys |> List.of_seq
 let resources w = w.resources
 
-let add_resource key res w =
-  if Hashtbl.mem w.resources key then (
+let add_resource id res w =
+  if Hashtbl.mem w.resources id then (
     let res_pp = Resource.show res in
     log.error (fun l -> l "Attempted to add resource %s more than once." res_pp);
     failwith @@ Printf.sprintf "Attempted to add resource %s more than once." res_pp)
-  else Hashtbl.add w.resources key res;
+  else Hashtbl.add w.resources id res;
   w
 
-let set_resource key res w =
-  Hashtbl.replace w.resources key res;
+let set_resource id res w =
+  Hashtbl.replace w.resources id res;
   w
 
+let remove_resource id w = Hashtbl.remove w.resources id
 let has_resource key w = Hashtbl.mem w.resources key
 let get_resource w key = Hashtbl.find_opt w.resources key
 let archetypes w = w.archetypes
