@@ -99,12 +99,11 @@ let get_or_create_archetype_by_sig world components =
 let entity_uuid_exists world uuid =
   match uuid with Some uuid -> Hashtbl.mem world.entity_guid_to_entity_id uuid | None -> false
 
-let add_entity ?(name = "") ?(uuid = None) world =
-  let entity = Entity.make ~uuid name in
-
-  if entity_uuid_exists world uuid then (
+let register_entity world entity name =
+  let uuid = Entity.uuid entity in
+  if entity_uuid_exists world (Some uuid) then (
     let message =
-      Printf.sprintf "The uuid %s already exists in the world." (Uuidm.to_string @@ Option.get uuid)
+      Printf.sprintf "The uuid %s already exists in the world." (Uuidm.to_string uuid)
     in
     log.error (fun l -> l "%s" message);
     failwith message)
@@ -119,6 +118,10 @@ let add_entity ?(name = "") ?(uuid = None) world =
 
     incr_revision world;
     e_id
+
+let add_entity ?(name = "") ?(uuid = None) world =
+  let entity = Entity.make ~uuid name in
+  register_entity world entity name
 
 let update_component_to_arch world archetype =
   let operation =
@@ -140,6 +143,19 @@ let find_archetype world entity =
   match Hashtbl.find_opt world.entity_to_archetype entity with
   | Some id -> Hashtbl.find world.archetypes id
   | None -> raise @@ Error.entity_not_found_exn (Id.Entity.to_int entity) "World.find_archetype"
+
+let remove_entity world entity =
+  match Hashtbl.find_opt world.entity_to_archetype entity with
+  | None -> ()
+  | Some a ->
+      (match Hashtbl.find_opt world.entity_id_to_metadata entity with
+      | Some m -> Hashtbl.remove world.entity_guid_to_entity_id m.uuid
+      | None -> ());
+      let a = Hashtbl.find world.archetypes a in
+      Archetype.remove_entity a entity;
+      Hashtbl.remove world.entity_to_archetype entity;
+      Hashtbl.remove world.entity_id_to_metadata entity;
+      incr_revision world
 
 let query world ?(filter = Query.Component.Filter.Any) query =
   let archetypes = world.archetypes |> Hashtbl.to_seq_values |> List.of_seq in

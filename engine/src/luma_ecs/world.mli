@@ -14,9 +14,15 @@ val create : unit -> t
 val entities : t -> Id.Entity.t list
 (** [entities world] returns the ids of all entities in the world. *)
 
+val register_entity : t -> Entity.t -> string -> Id.Entity.t
+(** [register_entity world entity name] *)
+
 val add_entity : ?name:string -> ?uuid:Uuidm.t option -> t -> Id.Entity.t
 (** [add_entity ?name ?uuid world] returns the next entity id from [Id.Entity]. Fails if the
     optional uuid is provided and it already exists within the world. *)
+
+val remove_entity : t -> Id.Entity.t -> unit
+(** [remove entity world entity] *)
 
 val entity_metadata : t -> Id.Entity.t -> entity_metadata
 val has_entity_uuid : t -> Uuidm.t -> bool
