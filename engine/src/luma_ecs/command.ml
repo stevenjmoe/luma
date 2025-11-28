@@ -10,7 +10,7 @@ type spawn_request = {
 type command =
   | Spawn of spawn_request
   | Despawn of Id.Entity.t
-  | Insert
+  | Insert of Id.Entity.t * Component.packed
   | Remove
   | Insert_resource
   | Remove_resource
@@ -28,6 +28,10 @@ let spawn ?(name = "") ?uuid buf comps =
   buf.commands <- Spawn { entity; name; components } :: buf.commands;
   Entity.id entity
 
+let insert (type a) buf entity (module C : Component.S with type t = a) c =
+  let packed = Component.pack (module C) c in
+  buf.commands <- Insert (entity, packed) :: buf.commands
+
 let flush world buf =
   List.iter
     (fun cmd ->
@@ -36,8 +40,8 @@ let flush world buf =
           let e_id = World.register_entity world entity name in
           World.add_components world e_id components;
           ()
-      | Despawn _ -> ()
-      | Insert -> ()
+      | Despawn e -> World.remove_entity world e
+      | Insert (e, c) -> World.add_component world c e
       | Remove -> ()
       | Insert_resource -> ()
       | Remove_resource -> ())
