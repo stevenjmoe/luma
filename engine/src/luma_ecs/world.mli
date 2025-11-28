@@ -34,6 +34,9 @@ val add_component : t -> Component.packed -> Id.Entity.t -> unit
     @raise Luma__core.Error.Entity_not_found if the entity hasn't been added to the game world.
     @raise Luma__core.Error.Component_not_found *)
 
+val remove_component : t -> Id.Component.t -> Id.Entity.t -> unit
+(** [remove_component world component entity]*)
+
 val with_component :
   'a. t -> (module Component.S with type t = 'a) -> 'a -> Id.Entity.t -> Luma__id.Id.Entity.t
 (** [with_component world component_module component entity] provides a convenient way to add

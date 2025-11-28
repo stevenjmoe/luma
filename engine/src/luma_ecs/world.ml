@@ -209,6 +209,19 @@ let add_component world component entity =
     Hashtbl.replace overrides cid component;
     move_entity_to_archetype world entity ~old_arch ~new_arch overrides
 
+let remove_component world component entity =
+  let old_arch = find_archetype world entity in
+  let old_sig = Archetype.components old_arch in
+
+  if Id.ComponentSet.mem component old_sig then
+    let target_sig = Id.ComponentSet.remove component old_sig in
+    let new_arch =
+      if Id.ComponentSet.is_empty target_sig then world.empty_archetype
+      else get_or_create_archetype_by_sig world target_sig
+    in
+    let overrides = Hashtbl.create 0 in
+    move_entity_to_archetype world entity ~old_arch ~new_arch overrides
+
 let with_component (type a) w (module C : Component.S with type t = a) component entity =
   let packed = Component.pack (module C) component in
   add_component w packed entity;
