@@ -11,7 +11,7 @@ type command =
   | Spawn of spawn_request
   | Despawn of Id.Entity.t
   | Insert of Id.Entity.t * Component.packed
-  | Remove
+  | Remove of Id.Entity.t * Id.Component.t
   | Insert_resource
   | Remove_resource
 
@@ -32,6 +32,8 @@ let insert (type a) buf entity (module C : Component.S with type t = a) c =
   let packed = Component.pack (module C) c in
   buf.commands <- Insert (entity, packed) :: buf.commands
 
+let remove buf entity component = buf.commands <- Remove (entity, component) :: buf.commands
+
 let flush world buf =
   List.iter
     (fun cmd ->
@@ -42,7 +44,7 @@ let flush world buf =
           ()
       | Despawn e -> World.remove_entity world e
       | Insert (e, c) -> World.add_component world c e
-      | Remove -> ()
+      | Remove (e, c) -> World.remove_component world c e
       | Insert_resource -> ()
       | Remove_resource -> ())
     buf.commands
