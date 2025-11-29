@@ -25,8 +25,8 @@
    ocaml 
    ppxlib
    ppx_inline_test
-   (raylib (>= 1.4.0))
-   (raygui (>= 1.4.0))
+   (raylib (= 1.4.0))
+   (raygui (= 1.4.0))
    ptime
    fmt
    uuidm

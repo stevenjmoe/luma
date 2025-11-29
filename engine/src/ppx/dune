@@ -3,5 +3,4 @@
  (public_name luma.ppx_component)
  (kind ppx_rewriter)
  (libraries ppxlib)
- (preprocess (pps ppxlib.metaquot))
-)
+ (preprocess (pps ppxlib.metaquot)))
