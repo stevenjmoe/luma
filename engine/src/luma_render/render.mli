@@ -6,7 +6,7 @@ module Camera_config : sig
   type t
 
   val default : unit -> t
-  val make : default_camera:bool -> t
+  val create : default_camera:bool -> t
   val default_camera : t -> bool
 end
 

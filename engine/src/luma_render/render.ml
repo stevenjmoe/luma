@@ -8,7 +8,7 @@ module Camera_config = struct
   type t = { default_camera : bool }
 
   let default () = { default_camera = true }
-  let make ~default_camera = { default_camera }
+  let create ~default_camera = { default_camera }
   let default_camera c = c.default_camera
 end
 
@@ -284,37 +284,37 @@ module Make (D : Luma__driver.Driver.S) :
           entities
           |> List.filter (fun (_, (cam, _)) -> active cam)
           |> List.sort (fun (e1, (camera1, _)) (e2, (camera2, _)) ->
-                 compare (order camera1, e1) (order camera2, e2))
+              compare (order camera1, e1) (order camera2, e2))
           |> Query.Tuple.iter1 (fun cam ->
-                 let vp =
-                   match viewport cam with
-                   | None -> Viewport.full win_w win_h
-                   | Some view ->
-                       Viewport.clamp_to_window (float_of_int win_w) (float_of_int win_h) view
-                 in
-                 let x, y, w, h = Viewport.to_rect vp in
-                 D.Window.set_viewport_scissor x y w h;
+              let vp =
+                match viewport cam with
+                | None -> Viewport.full win_w win_h
+                | Some view ->
+                    Viewport.clamp_to_window (float_of_int win_w) (float_of_int win_h) view
+              in
+              let x, y, w, h = Viewport.to_rect vp in
+              D.Window.set_viewport_scissor x y w h;
 
-                 Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
-                     match cmd with Queue.ScreenRect (r, c) -> draw_rect r c | _ -> ());
+              Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
+                  match cmd with Queue.ScreenRect (r, c) -> draw_rect r c | _ -> ());
 
-                 D.Window.with_2d (camera cam) (fun () ->
-                     Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
-                         match cmd with
-                         | Queue.Sprite s ->
-                             draw_texture s.tex ~position:s.pos ~size:s.size ~flip_x:s.flip_x
-                               ~flip_y:s.flip_y ~texture_atlas:s.atlas ~src:s.src ~opacity:s.opacity
-                               ~rotation:s.rotation ~origin:s.origin ()
-                         | Queue.Rect (r, colour) -> draw_rect r colour
-                         | Queue.Rect_lines (r, line, colour) -> draw_rect_lines r line colour
-                         | Queue.Circle (c, colour) ->
-                             draw_circle c.center.x c.center.y c.radius colour
-                         | Queue.Circle_lines (c, colour) ->
-                             draw_circle_lines c.center.x c.center.y c.radius colour
-                         | _ -> ());
-                     ());
-                 D.Window.reset_scissor ();
-                 ());
+              D.Window.with_2d (camera cam) (fun () ->
+                  Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
+                      match cmd with
+                      | Queue.Sprite s ->
+                          draw_texture s.tex ~position:s.pos ~size:s.size ~flip_x:s.flip_x
+                            ~flip_y:s.flip_y ~texture_atlas:s.atlas ~src:s.src ~opacity:s.opacity
+                            ~rotation:s.rotation ~origin:s.origin ()
+                      | Queue.Rect (r, colour) -> draw_rect r colour
+                      | Queue.Rect_lines (r, line, colour) -> draw_rect_lines r line colour
+                      | Queue.Circle (c, colour) ->
+                          draw_circle c.center.x c.center.y c.radius colour
+                      | Queue.Circle_lines (c, colour) ->
+                          draw_circle_lines c.center.x c.center.y c.radius colour
+                      | _ -> ());
+                  ());
+              D.Window.reset_scissor ();
+              ());
           world)
 
     (* clear the queue at the beginning of the frame *)

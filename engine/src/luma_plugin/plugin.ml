@@ -12,6 +12,16 @@ open Luma__audio
 open Luma__sprite
 open Luma__debug
 
+module type Config = sig
+  type t
+  type window
+
+  val default : unit -> t
+  val window : t -> window
+  val camera : t -> Render.Camera_config.t
+  val create : ?window:window -> ?camera:Render.Camera_config.t -> unit -> t
+end
+
 module Make
     (D : Driver.S)
     (Window : Window.S)
@@ -24,14 +34,25 @@ module Make
     (Scene : Scene.S)
     (Debug : Debug.S) =
 struct
-  module Config = struct
+  module Config : Config with type window = Window.Window_config.t = struct
+    type window = Window.Window_config.t
+
     type t = {
-      window : Window.Window_config.t;
+      window : window;
       camera : Render.Camera_config.t;
     }
 
     let default () : t =
       { window = Window.Window_config.default (); camera = Render.Camera_config.default () }
+
+    let create
+        ?(window = Window.Window_config.default ())
+        ?(camera = Render.Camera_config.default ())
+        () =
+      { window; camera }
+
+    let window c = c.window
+    let camera c = c.camera
   end
 
   let asset_plugin = Luma__asset.Plugin.plugin
@@ -61,14 +82,14 @@ struct
       [
         input_plugin;
         audio_plugin;
-        window_plugin ~config:config.window;
+        window_plugin ~config:(Config.window config);
         time_plugin;
         asset_plugin;
         sprite_plugin;
         transform_plugin;
         texture_plugin;
         scene_plugin;
-        render_plugin ~camera_config:config.camera;
+        render_plugin ~camera_config:(Config.camera config);
       ]
       @ plugins
     in

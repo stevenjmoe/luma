@@ -19,7 +19,7 @@ module type Window_config = sig
   val default : unit -> t
 
   val create : int -> int -> colour option -> string option -> bool -> t
-  (** [create width height colour title] *)
+  (** [create width height colour title resizeable] *)
 end
 
 module type S = sig

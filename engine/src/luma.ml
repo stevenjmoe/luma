@@ -78,14 +78,7 @@ module type S = sig
   module Ui : Luma__ui.Ui.S
 
   module Plugin : sig
-    module Config : sig
-      type t = {
-        window : Window_config.t;
-        camera : Luma__render.Render.Camera_config.t;
-      }
-
-      val default : unit -> t
-    end
+    module Config : Plugin.Config with type window = Window_config.t
 
     val add_default_plugins : ?config:Config.t -> App.t -> App.t
     val window_plugin : ?config:Window_config.t -> App.t -> App.t

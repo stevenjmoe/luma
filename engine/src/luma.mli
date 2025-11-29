@@ -1,7 +1,6 @@
 module type S = sig
   open Luma__app
   open Luma__ecs
-  open Luma__asset
   open Luma__image
   open Luma__sprite
   open Luma__transform
@@ -17,6 +16,7 @@ module type S = sig
   open Luma__window
   open Luma__input
   open Luma__ui
+  open Luma__plugin
   module Types = Luma__types
 
   module App : sig
@@ -140,14 +140,7 @@ module type S = sig
   module Ui : Ui.S
 
   module Plugin : sig
-    module Config : sig
-      type t = {
-        window : Window_config.t;
-        camera : Luma__render.Render.Camera_config.t;
-      }
-
-      val default : unit -> t
-    end
+    module Config : Plugin.Config with type window = Window_config.t
 
     val add_default_plugins : ?config:Config.t -> App.t -> App.t
     val window_plugin : ?config:Window_config.t -> App.t -> App.t
@@ -176,6 +169,7 @@ module type S = sig
     val from_string : string -> (t, Luma__core.Error.error) result
   end
 
+  open Luma__asset
   module Camera : Luma__render.Camera.S
   module Asset : module type of Asset
   module Assets : module type of Assets
