@@ -68,6 +68,8 @@ let create () =
 
 let entities w = w.entity_to_archetype |> Hashtbl.to_seq_keys |> List.of_seq
 let resources w = w.resources
+let has_resource key w = Hashtbl.mem w.resources key
+let get_resource w key = Hashtbl.find_opt w.resources key
 
 let add_resource id res w =
   if Hashtbl.mem w.resources id then (
@@ -77,13 +79,7 @@ let add_resource id res w =
   else Hashtbl.add w.resources id res;
   w
 
-let set_resource id res w =
-  Hashtbl.replace w.resources id res;
-  w
-
 let remove_resource id w = Hashtbl.remove w.resources id
-let has_resource key w = Hashtbl.mem w.resources key
-let get_resource w key = Hashtbl.find_opt w.resources key
 let archetypes w = w.archetypes
 let entity_metadata w e = Hashtbl.find w.entity_id_to_metadata e
 let has_entity_uuid w uuid = Hashtbl.mem w.entity_guid_to_entity_id uuid
@@ -99,30 +95,6 @@ let get_or_create_archetype_by_sig world components =
 
 let entity_uuid_exists world uuid =
   match uuid with Some uuid -> Hashtbl.mem world.entity_guid_to_entity_id uuid | None -> false
-
-let register_entity world entity name =
-  let uuid = Entity.uuid entity in
-  if entity_uuid_exists world (Some uuid) then (
-    let message =
-      Printf.sprintf "The uuid %s already exists in the world." (Uuidm.to_string uuid)
-    in
-    log.error (fun l -> l "%s" message);
-    failwith message)
-  else
-    (* these calls "should" never raise *)
-    let e_id = Entity.id entity in
-    let metadata = { uuid = Entity.uuid entity; name } in
-    Archetype.add world.empty_archetype e_id [];
-    Hashtbl.replace world.entity_to_archetype e_id (Archetype.id world.empty_archetype);
-    Hashtbl.replace world.entity_id_to_metadata e_id metadata;
-    Hashtbl.replace world.entity_guid_to_entity_id (Entity.uuid entity) e_id;
-
-    incr_revision world;
-    e_id
-
-let add_entity ?(name = "") ?(uuid = None) world =
-  let entity = Entity.make ~uuid name in
-  register_entity world entity name
 
 let update_component_to_arch world archetype =
   let operation =
@@ -144,19 +116,6 @@ let find_archetype world entity =
   match Hashtbl.find_opt world.entity_to_archetype entity with
   | Some id -> Hashtbl.find world.archetypes id
   | None -> raise @@ Error.entity_not_found_exn (Id.Entity.to_int entity) "World.find_archetype"
-
-let remove_entity world entity =
-  match Hashtbl.find_opt world.entity_to_archetype entity with
-  | None -> ()
-  | Some a ->
-      (match Hashtbl.find_opt world.entity_id_to_metadata entity with
-      | Some m -> Hashtbl.remove world.entity_guid_to_entity_id m.uuid
-      | None -> ());
-      let a = Hashtbl.find world.archetypes a in
-      Archetype.remove_entity a entity;
-      Hashtbl.remove world.entity_to_archetype entity;
-      Hashtbl.remove world.entity_id_to_metadata entity;
-      incr_revision world
 
 let query world ?(filter = Query.Component.Filter.Any) query =
   let archetypes = world.archetypes |> Hashtbl.to_seq_values |> List.of_seq in
@@ -194,6 +153,47 @@ let move_entity_to_archetype world entity ~old_arch ~new_arch overrides =
     update_component_to_arch world new_arch;
     incr_revision world
 
+let set_resource id res w =
+  Hashtbl.replace w.resources id res;
+  w
+
+let register_entity world entity name =
+  let uuid = Entity.uuid entity in
+  if entity_uuid_exists world (Some uuid) then (
+    let message =
+      Printf.sprintf "The uuid %s already exists in the world." (Uuidm.to_string uuid)
+    in
+    log.error (fun l -> l "%s" message);
+    failwith message)
+  else
+    (* these calls "should" never raise *)
+    let e_id = Entity.id entity in
+    let metadata = { uuid = Entity.uuid entity; name } in
+    Archetype.add world.empty_archetype e_id [];
+    Hashtbl.replace world.entity_to_archetype e_id (Archetype.id world.empty_archetype);
+    Hashtbl.replace world.entity_id_to_metadata e_id metadata;
+    Hashtbl.replace world.entity_guid_to_entity_id (Entity.uuid entity) e_id;
+
+    incr_revision world;
+    e_id
+
+let add_entity ?(name = "") ?(uuid = None) world =
+  let entity = Entity.make ~uuid name in
+  register_entity world entity name
+
+let remove_entity world entity =
+  match Hashtbl.find_opt world.entity_to_archetype entity with
+  | None -> ()
+  | Some a ->
+      (match Hashtbl.find_opt world.entity_id_to_metadata entity with
+      | Some m -> Hashtbl.remove world.entity_guid_to_entity_id m.uuid
+      | None -> ());
+      let a = Hashtbl.find world.archetypes a in
+      Archetype.remove_entity a entity;
+      Hashtbl.remove world.entity_to_archetype entity;
+      Hashtbl.remove world.entity_id_to_metadata entity;
+      incr_revision world
+
 (*TODO: check dupes*)
 let add_component world component entity =
   let old_arch = find_archetype world entity in
@@ -228,20 +228,6 @@ let with_component (type a) w (module C : Component.S with type t = a) component
   add_component w packed entity;
   entity
 
-let add_components world entity components =
-  if components = [] then ()
-  else
-    let old_arch = find_archetype world entity in
-    let overrides = Hashtbl.create (List.length components) in
-    let target_sig =
-      List.fold_left
-        (fun s packed -> Id.ComponentSet.add (Component.id packed) s)
-        (Archetype.components old_arch) components
-    in
-    let new_arch = get_or_create_archetype_by_sig world target_sig in
-    List.iter (fun p -> Hashtbl.replace overrides (Component.id p) p) components;
-    move_entity_to_archetype world entity ~old_arch ~new_arch overrides
-
 let add_entity_with_components world ?(name = "") ?(uuid = None) components =
   if entity_uuid_exists world uuid then (
     let message =
@@ -268,6 +254,20 @@ let add_entity_with_components world ?(name = "") ?(uuid = None) components =
     update_component_to_arch world arch;
     incr_revision world;
     e_id
+
+let add_components world entity components =
+  if components = [] then ()
+  else
+    let old_arch = find_archetype world entity in
+    let overrides = Hashtbl.create (List.length components) in
+    let target_sig =
+      List.fold_left
+        (fun s packed -> Id.ComponentSet.add (Component.id packed) s)
+        (Archetype.components old_arch) components
+    in
+    let new_arch = get_or_create_archetype_by_sig world target_sig in
+    List.iter (fun p -> Hashtbl.replace overrides (Component.id p) p) components;
+    move_entity_to_archetype world entity ~old_arch ~new_arch overrides
 
 module Introspect = struct
   let revision w = w.revision

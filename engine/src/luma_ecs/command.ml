@@ -20,13 +20,16 @@ type t = { mutable commands : command list }
 let create () = { commands = [] }
 let commands c = c.commands
 
-let spawn ?(name = "") ?uuid buf comps =
+let spawn_packed ?(name = "") ?uuid buf comps =
   let entity = Entity.make name ~uuid in
+  buf.commands <- Spawn { entity; name; components = comps } :: buf.commands;
+  Entity.id entity
+
+let spawn ?(name = "") ?uuid buf comps =
   let components =
     List.map (fun (Component.Component ((module C), v)) -> Component.pack (module C) v) comps
   in
-  buf.commands <- Spawn { entity; name; components } :: buf.commands;
-  Entity.id entity
+  spawn_packed ~name ?uuid buf components
 
 let despawn buf entity = buf.commands <- Despawn entity :: buf.commands
 
