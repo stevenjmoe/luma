@@ -28,6 +28,8 @@ let spawn ?(name = "") ?uuid buf comps =
   buf.commands <- Spawn { entity; name; components } :: buf.commands;
   Entity.id entity
 
+let despawn buf entity = buf.commands <- Despawn entity :: buf.commands
+
 let insert (type a) buf entity (module C : Component.S with type t = a) c =
   let packed = Component.pack (module C) c in
   buf.commands <- Insert (entity, packed) :: buf.commands
