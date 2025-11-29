@@ -69,7 +69,7 @@ module Make (L : Luma.S) = struct
     | Some row -> Some (Vec2.create store.pos_x.(row) store.pos_y.(row))
     | None -> None
 
-  let plugin ?(world_config = None) app =
+  let plugin ?world_config app =
     let config = match world_config with None -> Config.default () | Some c -> c in
     let app = setup app config in
 
