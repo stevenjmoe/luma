@@ -4,7 +4,9 @@ type t = {
   z : float;
 }
 
+(** [create x y z] *)
 let create x y z = { x; y; z }
+
 let x v = v.x
 let y v = v.y
 let z v = v.z

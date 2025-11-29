@@ -162,14 +162,14 @@ let run_system (world : World.t) cmd (System { sys = system; run_if }) : World.t
             | Ok resource_value -> s.run world cmd matching_entities resource_value
             | Error e ->
                 let msg =
-                  Format.asprintf "Failed evaluate Resource query for system: %s. %a" s.name
+                  Format.asprintf "Failed to evaluate Resource query for system: %s. %a" s.name
                     Luma__core.Error.pp e
                 in
                 log.error (fun l -> l "%s" msg);
                 Luma__core.Error.system_run_exn s.name msg)
         | Error e ->
             let msg =
-              Format.asprintf "Failed evaluate Component query for system: %s. %a" s.name
+              Format.asprintf "Failed to evaluate Component query for system: %s. %a" s.name
                 Luma__core.Error.pp e
             in
             log.error (fun l -> l "%s" msg);

@@ -3,6 +3,10 @@ open Luma__ecs
 open Luma__resource
 open Luma__math
 open Luma__image
+open Luma__sprite
+open Luma__transform
+open Luma__asset
+open Luma__image
 
 module Camera_config = struct
   type t = { default_camera : bool }
@@ -42,7 +46,7 @@ module type Renderer = sig
   val plugin : ?camera_config:Camera_config.t -> App.t -> App.t
 
   module Queue : sig
-    type sprite
+    type sprite_cmd
 
     type cmd =
       | Rect of Rect.t * colour
@@ -50,16 +54,16 @@ module type Renderer = sig
       | ScreenRect of Rect.t * colour
       | Circle of Luma__math.Primitives.Circle.t * colour
       | Circle_lines of Luma__math.Primitives.Circle.t * colour
-      | Sprite of sprite
+      | Sprite of sprite_cmd
 
     type meta
     type item
     type t = item list ref
 
-    val make : unit -> 'a list ref
-    val clear : 'a list ref -> unit
-    val push : 'a list ref -> 'a -> unit
-    val iter_sorted : item list ref -> camera_layers:int64 -> f:(item -> unit) -> unit
+    val make : unit -> t
+    val clear : t -> unit
+    val push : t -> item -> unit
+    val iter_sorted : t -> camera_layers:int64 -> f:(item -> unit) -> unit
 
     module R : Luma__resource.Resource.S with type t = t
   end
@@ -110,10 +114,12 @@ module type Renderer = sig
   module Camera : Camera.S
 end
 
-module Make (D : Luma__driver.Driver.S) :
+module Make
+    (D : Luma__driver.Driver.S)
+    (Sprite : Sprite.S)
+    (Texture : Texture.S with type t = D.texture) :
   Renderer with type texture = D.texture and type colour = D.colour = struct
   open Luma__math
-  open Luma__image
 
   type texture = D.Texture.t
   type colour = D.colour
@@ -168,7 +174,7 @@ module Make (D : Luma__driver.Driver.S) :
   module Queue = struct
     open Luma__math
 
-    type sprite = {
+    type sprite_cmd = {
       tex : D.texture;
       pos : Vec2.t;
       size : Vec2.t;
@@ -182,12 +188,12 @@ module Make (D : Luma__driver.Driver.S) :
     }
 
     type cmd =
-      | Rect of Luma__math.Rect.t * D.colour
+      | Rect of Rect.t * D.colour
       | Rect_lines of Rect.t * float * D.colour
       | ScreenRect of Rect.t * colour
-      | Circle of Luma__math.Primitives.Circle.t * colour
-      | Circle_lines of Luma__math.Primitives.Circle.t * colour
-      | Sprite of sprite
+      | Circle of Primitives.Circle.t * colour
+      | Circle_lines of Primitives.Circle.t * colour
+      | Sprite of sprite_cmd
 
     type meta = {
       z : int;
@@ -272,7 +278,8 @@ module Make (D : Luma__driver.Driver.S) :
 
   (* render specific logic and systems for the camera module *)
   module Camera = struct
-    include Camera.Make (D)
+    module Base = Camera.Make (D)
+    include Base
 
     let render_cameras () =
       System.make_with_resources
@@ -317,23 +324,59 @@ module Make (D : Luma__driver.Driver.S) :
               ());
           world)
 
-    (* clear the queue at the beginning of the frame *)
-    let begin_frame () =
-      System.make_with_resources ~components:Query.Component.End
-        ~resources:Query.Resource.(Resource (module Queue.R) & End)
-        "render_queue_begin_frame"
-        (fun world _ _ (queue, _) ->
-          Queue.clear queue;
-          world)
-
-    (*TODO: make the mix of combination of render/camera plugins clearer*)
     let plugin default_camera app =
-      let app = app |> App.on PreRender @@ begin_frame () |> App.on Render @@ render_cameras () in
+      let app = app |> App.on Render @@ render_cameras () in
 
       (* apply camera plugin *)
-      let app = plugin default_camera app in
+      let app = Base.plugin default_camera app in
       app
   end
+
+  (* clear the queue at the beginning of the frame *)
+  let begin_frame () =
+    System.make_with_resources ~components:Query.Component.End
+      ~resources:Query.Resource.(Resource (module Queue.R) & End)
+      "render_queue_begin_frame"
+      (fun world _ _ (queue, _) ->
+        Queue.clear queue;
+        world)
+
+  let extract_sprite () =
+    System.make_with_resources
+      ~components:Query.Component.(Required (module Sprite.C) & Required (module Transform.C) & End)
+      ~resources:Query.Resource.(Resource (module Assets.R) & Resource (module Queue.R) & End)
+      "extract_sprites"
+      (fun world _ entities (assets, (queue, _)) ->
+        Query.Tuple.iter2
+          (fun sprite transform ->
+            match Assets.get (module Texture.A) assets (Sprite.image sprite) with
+            | None -> ()
+            | Some tex ->
+                let open Transform in
+                let texture_atlas = Sprite.texture_atlas sprite in
+                let texture_width = D.Texture.width tex |> float
+                and texture_height = D.Texture.height tex |> float in
+
+                let src =
+                  match texture_atlas with Some ta -> Texture_atlas.get_frame ta | None -> None
+                in
+
+                let size =
+                  match src with
+                  | Some r -> Vec2.create (Rect.width r) (Rect.height r)
+                  | None -> Vec2.create texture_width texture_height
+                in
+
+                let flip_x = Sprite.flip_x sprite in
+                let flip_y = Sprite.flip_y sprite in
+                let z = int_of_float transform.position.z in
+                let position = Vec2.create transform.position.x transform.position.y in
+                let rotation = transform.rotation in
+
+                push_texture ~z ~tex ~position ~size ?texture_atlas ~flip_x ~flip_y ?src ~rotation
+                  queue ())
+          entities;
+        world)
 
   let plugin ?(camera_config = Camera_config.default ()) app =
     let app = Camera.plugin camera_config.default_camera app in
@@ -341,5 +384,7 @@ module Make (D : Luma__driver.Driver.S) :
       (Resource.pack (module Queue.R) (Queue.make ()))
       (App.world app)
     |> ignore;
+
+    let app = app |> App.on PreRender (begin_frame ()) |> App.on PreRender (extract_sprite ()) in
     app
 end

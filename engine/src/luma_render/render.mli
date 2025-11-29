@@ -1,6 +1,7 @@
 open Luma__app
 open Luma__math
 open Luma__image
+open Luma__sprite
 
 module Camera_config : sig
   type t
@@ -36,7 +37,7 @@ module type Renderer = sig
   val plugin : ?camera_config:Camera_config.t -> App.t -> App.t
 
   module Queue : sig
-    type sprite
+    type sprite_cmd
 
     type cmd =
       | Rect of Rect.t * colour
@@ -44,16 +45,16 @@ module type Renderer = sig
       | ScreenRect of Rect.t * colour
       | Circle of Luma__math.Primitives.Circle.t * colour
       | Circle_lines of Luma__math.Primitives.Circle.t * colour
-      | Sprite of sprite
+      | Sprite of sprite_cmd
 
     type meta
     type item
     type t = item list ref
 
-    val make : unit -> 'a list ref
-    val clear : 'a list ref -> unit
-    val push : 'a list ref -> 'a -> unit
-    val iter_sorted : item list ref -> camera_layers:int64 -> f:(item -> unit) -> unit
+    val make : unit -> t
+    val clear : t -> unit
+    val push : t -> item -> unit
+    val iter_sorted : t -> camera_layers:int64 -> f:(item -> unit) -> unit
 
     module R : Luma__resource.Resource.S with type t = t
   end
@@ -104,5 +105,8 @@ module type Renderer = sig
   module Camera : Camera.S
 end
 
-module Make : functor (D : Luma__driver.Driver.S) ->
-  Renderer with type texture = D.texture and type colour = D.colour
+module Make : functor
+  (D : Luma__driver.Driver.S)
+  (Sprite : Sprite.S)
+  (Texture : Texture.S with type t = D.texture)
+  -> Renderer with type texture = D.texture and type colour = D.colour

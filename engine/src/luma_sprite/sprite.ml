@@ -1,33 +1,31 @@
 open Luma__image
+open Luma__asset
 open Luma__serialize
 open Luma__core
 open Luma__math
 
 module type S = sig
-  type texture
   type t
 
-  val image : t -> Luma__asset__Assets.handle
+  val image : t -> Assets.handle
   val texture_atlas : t -> Texture_atlas.t option
-  val set_image : t -> Luma__asset__Assets.handle -> unit
+  val set_image : t -> Assets.handle -> unit
   val set_texture_atlas : t -> Texture_atlas.t -> unit
-  val sized : Luma__asset__Assets.handle -> Luma__math__Vec2.t -> t
-  val from_image : Luma__asset__Assets.handle -> t
-  val from_atlas_image : Luma__asset__Assets.handle -> Texture_atlas.t -> t
+  val sized : Assets.handle -> Luma__math__Vec2.t -> t
+  val from_image : Assets.handle -> t
+  val from_atlas_image : Assets.handle -> Texture_atlas.t -> t
   val flip_x : t -> bool
   val flip_y : t -> bool
-  val custom_size : t -> Luma__math__Vec2.t option
+  val custom_size : t -> Vec2.t option
   val set_flip_x : t -> bool -> unit
   val set_flip_y : t -> bool -> unit
 
   module C : Luma__ecs.Component.S with type t = t
 end
 
-module Make (D : Luma__driver.Driver.S) : S with type texture = D.texture = struct
-  type texture = D.Texture.t
-
+module Make (D : Luma__driver.Driver.S) : S = struct
   type t = {
-    mutable image : Luma__asset.Assets.handle;
+    mutable image : Assets.handle;
     mutable texture_atlas : Texture_atlas.t option;
     mutable flip_x : bool;
     mutable flip_y : bool;
@@ -67,82 +65,13 @@ module Make (D : Luma__driver.Driver.S) : S with type texture = D.texture = stru
 end
 
 module type Sprite_plugin = sig
-  open Luma__app
-
-  type texture
-  type queue
-
-  module R : Luma__resource.Resource.S
-
-  val add_plugin : App.t -> App.t
+  val add_plugin : Luma__app__App.t -> Luma__app__App.t
 end
 
-module Sprite_plugin
-    (D : Luma__driver.Driver.S)
-    (Texture : Texture.S with type t = D.Texture.t)
-    (Renderer : Luma__render.Render.Renderer with type texture = D.Texture.t)
-    (Sprite : S with type texture = D.Texture.t) : Sprite_plugin with type texture = D.Texture.t =
-struct
-  open Luma__ecs
-  open Luma__transform
-  open Luma__resource
-  open Luma__ecs
-  open Luma__app
-  open Luma__asset
-  open Luma__math
+module Sprite_plugin (D : Luma__driver.Driver.S) (Sprite : S) : Sprite_plugin = struct
   open Luma__id
-  open Luma__render
-
-  type texture = D.Texture.t
-  type queue = Id.Entity.t List.t
-
-  module R = Luma__resource.Resource.Make (struct
-    type inner = queue
-
-    let name = "sprite_render_queue"
-  end)
 
   let log = Luma__core.Log.sub_log "sprite"
-
-  let extract_sprites () =
-    System.make_with_resources
-      ~components:Query.Component.(Required (module Sprite.C) & Required (module Transform.C) & End)
-      ~resources:
-        Query.Resource.(Resource (module Assets.R) & Resource (module Renderer.Queue.R) & End)
-      "extract_sprites"
-      (fun world _ entities (assets, (queue, _)) ->
-        Query.Tuple.iter2
-          (fun sprite transform ->
-            match Assets.get (module Texture.A) assets (Sprite.image sprite) with
-            | None -> ()
-            | Some tex ->
-                let open Transform in
-                let texture_atlas = Sprite.texture_atlas sprite in
-                let texture_width = D.Texture.width tex |> float
-                and texture_height = D.Texture.height tex |> float in
-
-                let src =
-                  match Sprite.texture_atlas sprite with
-                  | Some ta -> Texture_atlas.get_frame ta
-                  | None -> None
-                in
-
-                let size =
-                  match src with
-                  | Some r -> Vec2.create (Rect.width r) (Rect.height r)
-                  | None -> Vec2.create texture_width texture_height
-                in
-
-                let flip_x = Sprite.flip_x sprite in
-                let flip_y = Sprite.flip_y sprite in
-                let z = int_of_float transform.position.z in
-                let position = Vec2.create transform.position.x transform.position.y in
-                let rotation = transform.rotation in
-
-                Renderer.push_texture ~z ~tex ~position ~size ?texture_atlas ~flip_x ~flip_y ?src
-                  ~rotation queue ())
-          entities;
-        world)
 
   module Sprite_serializer =
     Serialize.Make_serializer
@@ -180,11 +109,9 @@ struct
       end)
 
   let add_plugin app =
-    let packed = Resource.pack (module R) [] in
-    World.add_resource R.type_id packed (App.world app) |> ignore;
-
+    let open Luma__app in
     let packed_serializer = Luma__serialize.Serialize.pack_json (module Sprite_serializer) in
     App.register_component Sprite.C.name (module Sprite.C) [ packed_serializer ] app |> ignore;
 
-    app |> App.on PreRender @@ extract_sprites ()
+    app
 end
