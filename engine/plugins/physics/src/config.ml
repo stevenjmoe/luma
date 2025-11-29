@@ -35,18 +35,5 @@ let default () =
 
   { gravity; max_step_dt; bounds; debug = true }
 
-let create
-    ?(debug = false)
-    ~gravity
-    ~max_dt:max_step_dt
-    ~aabb_min_x
-    ~aabb_min_y
-    ~aabb_max_x
-    ~aabb_max_y
-    () =
-  let bounds =
-    Bounded2d.Aabb2d.of_min_max
-      (Vec2.create aabb_min_x aabb_min_y)
-      (Vec2.create aabb_max_x aabb_max_y)
-  in
+let create ?(debug = false) ~gravity ~max_dt:max_step_dt ~bounds () =
   { gravity; max_step_dt; bounds; debug }
