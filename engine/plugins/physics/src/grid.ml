@@ -42,7 +42,7 @@ let create world_bound cell_size =
   let world_size = Vec2.sub world_max world_min in
 
   if cell_size > world_size.x || cell_size > world_size.y then
-    failwith "cell_size is greater than world size";
+    failwith "[Luma.Physics.Grid] cell_size is greater than world size";
 
   let cols = int_of_float (ceil (world_size.x /. cell_size)) in
   let rows = int_of_float (ceil (world_size.y /. cell_size)) in
