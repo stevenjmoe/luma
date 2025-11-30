@@ -11,6 +11,7 @@ module Circle = struct
   let radius c = c.radius
   let radius_squared c = c.radius *. c.radius
   let area c = Float.pi *. c.radius *. c.radius
+  let center c = c.center
 
   let closest_point c (point : Vec2.t) =
     let dist = (point.x *. point.x) +. (point.y *. point.y) in
