@@ -16,6 +16,8 @@ end
 
 type component = Component : (module S with type t = 'a) * 'a -> component
 
+let component (type a) (module S : S with type t = a) value = Component ((module S), value)
+
 module Make (B : sig
   type inner
 

@@ -15,6 +15,8 @@ end
 
 type component = Component : (module S with type t = 'a) * 'a -> component
 
+val component : (module S with type t = 'a) -> 'a -> component
+
 (** Creates a component module for a given type [B.inner]. The resulting module implements the [S]
     signature, allowing [B.inner] to be added as a component to the game world. Example:
     {[

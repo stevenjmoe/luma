@@ -20,6 +20,8 @@ module type Renderer = sig
   type texture
   type colour
 
+  module Shape : Shape.S with type colour = colour
+
   val draw_rect : Luma__math.Rect.t -> colour -> unit
   val draw_rect_lines : Luma__math.Rect.t -> float -> colour -> unit
 
@@ -37,10 +39,11 @@ module type Renderer = sig
     unit ->
     unit
 
-  val draw_circle : float -> float -> float -> colour -> unit
+  val draw_circle : center_x:float -> center_y:float -> radius:float -> colour -> unit
   (** [draw_circle center_x center_y radius color] *)
 
-  val draw_circle_lines : float -> float -> float -> colour -> unit
+  val draw_circle_lines :
+    center_x:float -> center_y:float -> radius:float -> line_thickness:float -> colour -> unit
   (** [draw_circle_lines center_x center_y radius color] *)
 
   val plugin : ?camera_config:Camera_config.t -> App.t -> App.t
@@ -53,7 +56,7 @@ module type Renderer = sig
       | Rect_lines of Rect.t * float * colour
       | ScreenRect of Rect.t * colour
       | Circle of Luma__math.Primitives.Circle.t * colour
-      | Circle_lines of Luma__math.Primitives.Circle.t * colour
+      | Circle_lines of Primitives.Circle.t * float * colour
       | Sprite of sprite_cmd
 
     type meta
@@ -76,7 +79,13 @@ module type Renderer = sig
   val push_rect : z:int -> rect:Rect.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
 
   val push_rect_lines :
-    z:int -> rect:Rect.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
+    z:int ->
+    rect:Rect.t ->
+    ?layers:int64 ->
+    ?line_thickness:float ->
+    colour ->
+    Queue.item list ref ->
+    unit
 
   val push_circle :
     z:int ->
@@ -89,7 +98,13 @@ module type Renderer = sig
     unit
 
   val push_circle_lines :
-    z:int -> circle:Primitives.Circle.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
+    z:int ->
+    circle:Primitives.Circle.t ->
+    ?layers:int64 ->
+    ?line_thickness:float ->
+    colour ->
+    Queue.item list ref ->
+    unit
 
   val push_texture :
     z:int ->
@@ -120,6 +135,7 @@ module Make
     (Texture : Texture.S with type t = D.texture) :
   Renderer with type texture = D.texture and type colour = D.colour = struct
   open Luma__math
+  module Shape = Shape.Make (D)
 
   type texture = D.Texture.t
   type colour = D.colour
@@ -127,10 +143,10 @@ module Make
   let draw_rect rect colour = D.Draw.draw_rect rect colour
   let draw_rect_lines rect line colour = D.Draw.draw_rect_lines rect line colour
 
-  let draw_circle center_x center_y radius colour =
+  let draw_circle ~center_x ~center_y ~radius colour =
     D.Draw.draw_circle (int_of_float center_x) (int_of_float center_y) radius colour
 
-  let draw_circle_lines center_x center_y radius colour =
+  let draw_circle_lines ~center_x ~center_y ~radius ~line_thickness colour =
     D.Draw.draw_circle_lines (int_of_float center_x) (int_of_float center_y) radius colour
 
   let draw_texture
@@ -192,7 +208,7 @@ module Make
       | Rect_lines of Rect.t * float * D.colour
       | ScreenRect of Rect.t * colour
       | Circle of Primitives.Circle.t * colour
-      | Circle_lines of Primitives.Circle.t * colour
+      | Circle_lines of Primitives.Circle.t * float * colour
       | Sprite of sprite_cmd
 
     type meta = {
@@ -259,8 +275,9 @@ module Make
   let push_rect ~z ~rect ?(layers = 1L) colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Rect (rect, colour) }
 
-  let push_rect_lines ~z ~rect ?(layers = 1L) colour q =
-    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Rect_lines (rect, 1., colour) }
+  let push_rect_lines ~z ~rect ?(layers = 1L) ?(line_thickness = 1.) colour q =
+    Queue.push q
+      Queue.{ meta = { z; layers }; cmd = Queue.Rect_lines (rect, line_thickness, colour) }
 
   let push_rect_screen ~z ?(layers = 1L) ~rect colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.ScreenRect (rect, colour) }
@@ -268,8 +285,9 @@ module Make
   let push_circle ~z ~circle ~center_x ~center_y ?(layers = 1L) colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle (circle, colour) }
 
-  let push_circle_lines ~z ~circle ?(layers = 1L) colour q =
-    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle_lines (circle, colour) }
+  let push_circle_lines ~z ~circle ?(layers = 1L) ?(line_thickness = 1.) colour q =
+    Queue.push q
+      Queue.{ meta = { z; layers }; cmd = Queue.Circle_lines (circle, line_thickness, colour) }
 
   module Draw = struct
     let rect ~rect ~colour q = push_rect ~z:0 ~rect colour q
@@ -315,9 +333,11 @@ module Make
                       | Queue.Rect (r, colour) -> draw_rect r colour
                       | Queue.Rect_lines (r, line, colour) -> draw_rect_lines r line colour
                       | Queue.Circle (c, colour) ->
-                          draw_circle c.center.x c.center.y c.radius colour
-                      | Queue.Circle_lines (c, colour) ->
-                          draw_circle_lines c.center.x c.center.y c.radius colour
+                          draw_circle ~center_x:c.center.x ~center_y:c.center.y ~radius:c.radius
+                            colour
+                      | Queue.Circle_lines (c, line_thickness, colour) ->
+                          draw_circle_lines ~center_x:c.center.x ~center_y:c.center.y
+                            ~radius:c.radius colour ~line_thickness
                       | _ -> ());
                   ());
               D.Window.reset_scissor ();
@@ -339,6 +359,24 @@ module Make
       "render_queue_begin_frame"
       (fun world _ _ (queue, _) ->
         Queue.clear queue;
+        world)
+
+  let extract_shapes () =
+    System.make_with_resources
+      ~components:Query.Component.(Required (module Shape.C) & End)
+      ~resources:Query.Resource.(Resource (module Queue.R) & End)
+      "extract_sprites"
+      (fun world _ entities (queue, _) ->
+        let open Shape in
+        Query.Tuple.iter1
+          (fun shape ->
+            match shape with
+            | Rect { rect; z; layer; colour; style = Fill } ->
+                push_rect ~z ~rect ~layers:layer colour queue
+            | Rect { rect; layer; style = Lines l; colour; z } ->
+                push_rect_lines ~z ~rect ~layers:layer ~line_thickness:l colour queue
+            | Circle c -> ())
+          entities;
         world)
 
   let extract_sprite () =
@@ -385,6 +423,11 @@ module Make
       (App.world app)
     |> ignore;
 
-    let app = app |> App.on PreRender (begin_frame ()) |> App.on PreRender (extract_sprite ()) in
+    let app =
+      app
+      |> App.on PreRender (begin_frame ())
+      |> App.on PreRender (extract_sprite ())
+      |> App.on PreRender (extract_shapes ())
+    in
     app
 end
