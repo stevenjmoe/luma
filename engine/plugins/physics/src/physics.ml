@@ -1,10 +1,23 @@
 open Luma__core
 open Luma__math
-open Luma__storage
+open Luma__resource
+open Luma__ecs
 
-module Make (L : Luma.S) = struct
+module type S = sig
+  type app
+
+  module Rigid_body = Rigid_body
+
+  val setup : app -> Config.t -> app
+  val pos : Luma__ecs.World.t -> Luma__id.Id.EntitySet.elt -> Vec2.t option
+  val plugin : ?world_config:Config.t -> app -> app
+end
+
+module Make (L : Luma.S) : S with type app = L.App.t = struct
   module S = Systems.Make (L)
-  open L
+  module Rigid_body = Rigid_body
+
+  type app = L.App.t
 
   (* Private *)
 
@@ -52,7 +65,7 @@ module Make (L : Luma.S) = struct
     |> add_event_store
 
   let setup app config =
-    App.world app |> add_resources config |> ignore;
+    L.App.world app |> add_resources config |> ignore;
     app
 
   (* Public *)
@@ -74,7 +87,7 @@ module Make (L : Luma.S) = struct
     let app = setup app config in
 
     app
-    |> App.on PreUpdate (S.sync_rigid_bodies ())
-    |> App.on Update (S.step ())
-    |> App.on PreRender ~run_if:(fun w -> config.debug = true) (S.debug_draw ())
+    |> L.App.on PreUpdate (S.sync_rigid_bodies ())
+    |> L.App.on Update (S.step ())
+    |> L.App.on PreRender ~run_if:(fun w -> config.debug = true) (S.debug_draw ())
 end

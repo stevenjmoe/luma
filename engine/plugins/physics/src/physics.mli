@@ -1,8 +1,12 @@
-module Make (L : Luma.S) : sig
+module type S = sig
   open Luma__math
-  open L
+  module Rigid_body = Rigid_body
 
-  val pos : World.t -> Id.Entity.t -> Vec2.t option
-  val setup : App.t -> Config.t -> App.t
-  val plugin : ?world_config:Config.t -> App.t -> App.t
+  type app
+
+  val setup : app -> Config.t -> app
+  val pos : Luma__ecs.World.t -> Luma__id.Id.EntitySet.elt -> Vec2.t option
+  val plugin : ?world_config:Config.t -> app -> app
 end
+
+module Make (L : Luma.S) : S with type app = L.App.t
