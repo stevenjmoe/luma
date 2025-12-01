@@ -116,7 +116,7 @@ module Make (L : Luma.S) = struct
       let circle = L.Math.Primitives.Circle.create radius (L.Math.Vec2.create center_x center_y) in
       let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
 
-      L.Renderer.push_circle_lines ~z:1 ~circle colour queue
+      L.Renderer.push_circle_lines ~z:1000 ~circle colour queue
 
   let draw_rectangle store idx queue =
     let open Rb_store in
@@ -131,7 +131,7 @@ module Make (L : Luma.S) = struct
       let rect = L.Math.Rect.create ~pos ~size in
       let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
 
-      L.Renderer.push_rect_lines ~z:1 ~rect colour queue
+      L.Renderer.push_rect_lines ~z:1000 ~rect colour queue
 
   let debug_draw () =
     L.System.make_with_resources ~components:End
