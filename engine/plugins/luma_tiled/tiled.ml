@@ -1,9 +1,10 @@
 open Luma__math
 open Luma__core
+open Luma__resource
+open Luma__ecs
 
 module Make (L : Luma.S) = struct
   include Types
-  open L
 
   let log = Luma__core.Log.sub_log "tiled_plugin"
 
@@ -13,12 +14,13 @@ module Make (L : Luma.S) = struct
   open Tiled_render
 
   (* Internal assets. Public facing API should only see the final Tilemap type and the resource. *)
-  module Tilemap_asset = Asset.Make (struct
+  module Tilemap_asset = Luma__asset.Asset.Make (struct
     type inner = Map.t
   end)
 
-  module Tilemap_assets = Assets.For (Tilemap_asset)
+  module Tilemap_assets = Luma__asset.Assets.For (Tilemap_asset)
   module Loader = Loader.Make (L) (Map) (Tilemap_asset)
+  module Collision = Collision.Collision (L) (Map)
 
   type maps = Tiled_render.map_tbl
 
@@ -30,12 +32,12 @@ module Make (L : Luma.S) = struct
 
   let add world path origin scale z tilemaps =
     let server =
-      Option.bind (World.get_resource world Asset_server.R.type_id) (fun p ->
-          Resource.unpack_opt (module Asset_server.R) p)
+      Option.bind (World.get_resource world L.Asset_server.R.type_id) (fun p ->
+          Resource.unpack_opt (module L.Asset_server.R) p)
     in
     match server with
     | Some server -> (
-        match Asset_server.load (module Tilemap_asset) server path world with
+        match L.Asset_server.load (module Tilemap_asset) server path world with
         | Ok handle ->
             let r =
               { origin; scale; layers = None; z_base = z; phase = Init; background_colour = None }
@@ -65,18 +67,18 @@ module Make (L : Luma.S) = struct
 
   let register_map_loader () =
     System.make_with_resources ~components:End
-      ~resources:Query.Resource.(Resource (module Asset_server.R) & End)
+      ~resources:Query.Resource.(Resource (module L.Asset_server.R) & End)
       "register_map_loader"
       (fun w _ _ (server, _) ->
-        Asset_server.register_loader server
+        L.Asset_server.register_loader server
           (module Loader.Tilemap_loader)
-          ~ctx_provider:Asset_loader.Context_provider.no_ctx;
+          ~ctx_provider:L.Asset_loader.Context_provider.no_ctx;
         w)
 
   let start_loading_textures server (map : Map.t) world =
     let textures_by_tileset = Hashtbl.create (List.length map.tilesets) in
     let load path =
-      match Asset_server.load (module Image.Texture.A) server path world with
+      match L.Asset_server.load (module L.Image.Texture.A) server path world with
       | Ok h -> Some h
       | _ -> None
     in
@@ -107,16 +109,17 @@ module Make (L : Luma.S) = struct
       map.tilesets;
     textures_by_tileset
 
-  let all_textures_loaded (assets : Assets.t) (by_ts : (int, tileset_texture) Hashtbl.t) : bool =
+  let all_textures_loaded (assets : L.Assets.t) (by_ts : (int, tileset_texture) Hashtbl.t) : bool =
     Hashtbl.to_seq by_ts
     |> Seq.for_all (function
-         | _ts, Image h -> Assets.is_loaded assets h
-         | _ts, Collection_of_images id2h ->
-             Hashtbl.to_seq id2h
-             |> Seq.for_all (fun (_, { size; pos; handle }) -> Assets.is_loaded assets handle))
+      | _ts, Image h -> L.Assets.is_loaded assets h
+      | _ts, Collection_of_images id2h ->
+          Hashtbl.to_seq id2h
+          |> Seq.for_all (fun (_, { size; pos; handle }) -> L.Assets.is_loaded assets handle))
 
   let finalize_maps (map : Map.t) (textures_by_tileset : (int, tileset_texture) Hashtbl.t) =
     let finalized_tilesets = Hashtbl.create (List.length map.tilesets) in
+
     List.iteri
       (fun idx (ts : Tileset.t) ->
         match Hashtbl.find_opt textures_by_tileset idx with
@@ -141,9 +144,12 @@ module Make (L : Luma.S) = struct
     System.make_with_resources ~components:End
       ~resources:
         Query.Resource.(
-          Resource (module Assets.R) & Resource (module Asset_server.R) & Resource (module R) & End)
+          Resource (module L.Assets.R)
+          & Resource (module L.Asset_server.R)
+          & Resource (module R)
+          & End)
       "resolve_tilemaps"
-      (fun w _ e r ->
+      (fun w cmd e r ->
         Query.Tuple.with3 r (fun assets server tilemap_map ->
             Hashtbl.iter
               (fun tilemap_handle (render_map : map_inner) ->
@@ -162,7 +168,10 @@ module Make (L : Luma.S) = struct
                           let tilesets = finalize_maps map textures_by_tileset in
                           let z_base = render_map.z_base in
                           let plan = Plan.make_plan ~z_base map tilesets in
+
                           render_map.background_colour <- map.background_colour;
+                          Collision.extract_colliders map None cmd;
+
                           render_map.phase <- Ready { tilesets; plan }
                       | None -> ()
                     else ()
@@ -172,22 +181,22 @@ module Make (L : Luma.S) = struct
 
   let render () =
     System.make_with_resources
-      ~components:Query.Component.(Required (module Camera.C) & End)
+      ~components:Query.Component.(Required (module L.Camera.C) & End)
       ~resources:
         Query.Resource.(
-          Resource (module Asset_server.R)
+          Resource (module L.Asset_server.R)
           & Resource (module R)
-          & Resource (module Assets.R)
-          & Resource (module Renderer.Queue.R)
+          & Resource (module L.Assets.R)
+          & Resource (module L.Renderer.Queue.R)
           & End)
       "render_tilemap"
       (fun w _ cams res ->
         let draw_plan_for_camera
-            (assets : Assets.t)
-            (cam : Camera.t)
+            (assets : L.Assets.t)
+            (cam : L.Camera.t)
             (tm : map_inner)
             (plan : Plan.t)
-            (queue : Renderer.Queue.t) =
+            (queue : L.Renderer.Queue.t) =
           let map_origin_world =
             Vec2.(
               tm.origin
@@ -196,7 +205,7 @@ module Make (L : Luma.S) = struct
                       (Vec2.create (x plan.map_parallax_origin) (y plan.map_parallax_origin))
                       tm.scale))
           in
-          let cam_center_world = Camera.center cam in
+          let cam_center_world = L.Camera.center cam in
           let d = Vec2.sub cam_center_world map_origin_world in
 
           Array.iteri
@@ -210,7 +219,7 @@ module Make (L : Luma.S) = struct
 
               Array.iter
                 (fun (cmd : Plan.draw_cmd) ->
-                  match Image.Texture.Assets.get assets cmd.texture with
+                  match L.Image.Texture.Assets.get assets cmd.texture with
                   | None -> ()
                   | Some tex ->
                       let dst_pos_map = Vec2.create (Rect.x cmd.dest) (Rect.y cmd.dest) in
@@ -226,7 +235,7 @@ module Make (L : Luma.S) = struct
                           tm.scale
                       in
 
-                      Renderer.push_texture ~z:cmd.z ~tex ~position:base_world ~size:size_world
+                      L.Renderer.push_texture ~z:cmd.z ~tex ~position:base_world ~size:size_world
                         ?src:(Some cmd.source) ~rotation:cmd.rotation ~opacity:meta.opacity
                         ~origin:cmd.origin ~flip_x:cmd.flip.h ~flip_y:cmd.flip.v queue ())
                 layer)
@@ -234,12 +243,12 @@ module Make (L : Luma.S) = struct
         in
 
         Query.Tuple.with4 res
-          (fun _server (maps : map_tbl) (assets : Assets.t) (queue : Renderer.Queue.t) ->
+          (fun _server (maps : map_tbl) (assets : L.Assets.t) (queue : L.Renderer.Queue.t) ->
             let cams_sorted =
               cams
               |> List.filter_map (fun (_e, (cam, ())) ->
-                     if Camera.active cam then Some cam else None)
-              |> List.stable_sort (fun a b -> Int.compare (Camera.order a) (Camera.order b))
+                  if L.Camera.active cam then Some cam else None)
+              |> List.stable_sort (fun a b -> Int.compare (L.Camera.order a) (L.Camera.order b))
             in
             List.iter
               (fun cam ->
@@ -263,7 +272,7 @@ module Make (L : Luma.S) = struct
   (** Selects a background colour based on z-index once all maps are finalised*)
   let set_background () =
     System.make_with_resources ~components:End
-      ~resources:Query.Resource.(Resource (module Window_config.R) & Resource (module R) & End)
+      ~resources:Query.Resource.(Resource (module L.Window_config.R) & Resource (module R) & End)
       "update_background"
       (fun world _ _ (wc, (maps, _)) ->
         let min_kv =
@@ -278,7 +287,7 @@ module Make (L : Luma.S) = struct
         | Some (_, map) -> (
             match map.background_colour with
             | Some bc -> (
-                match Colour.from_string bc with
+                match L.Colour.from_string bc with
                 | Ok c ->
                     wc.colour <- Some c;
                     world
@@ -286,11 +295,12 @@ module Make (L : Luma.S) = struct
             | None -> world)
         | None -> world)
 
-  let plugin (app : App.t) =
+  (*TODO: check if physics plugin has already been added? (not currently possible though) *)
+  let plugin app =
     app
-    |> App.on Startup (setup_register ())
-    |> App.on Startup (register_map_loader ())
-    |> App.on Update (resolve ())
-    |> App.once Update (set_background ()) ~run_if:tilemaps_loaded
-    |> App.on PreRender (render ())
+    |> L.App.on Startup (setup_register ())
+    |> L.App.on Startup (register_map_loader ())
+    |> L.App.on Update (resolve ())
+    |> L.App.once Update (set_background ()) ~run_if:tilemaps_loaded
+    |> L.App.on PreRender (render ())
 end
