@@ -22,45 +22,8 @@ module type S = sig
   module Types = Luma__types
 
   module App : sig
-    type t
-    type placement = App.placement
+    include module type of App
 
-    val create : unit -> t
-    val world : t -> World.t
-    val init_state : (module Luma__state__State.STATE with type t = 'a) -> 'a -> t -> t
-    val on : 'a. Scheduler.stage -> (World.t, 'a) System.t -> ?run_if:(World.t -> bool) -> t -> t
-
-    val once :
-      Scheduler.stage ->
-      (World.t, 'b) System.t ->
-      ?placement:placement ->
-      ?run_if:(World.t -> bool) ->
-      t ->
-      t
-
-    val register_component :
-      string -> (module Component.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
-
-    val register_resource :
-      string -> (module Resource.S with type t = 'a) -> 'a Serialize.serializer_pack list -> t -> t
-
-    val while_in :
-      (module Luma__state__State.STATE with type t = 's) ->
-      's ->
-      stage:Scheduler.stage ->
-      system:(World.t, 'a) System.t ->
-      t ->
-      t
-
-    val on_enter :
-      (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
-
-    val on_exit :
-      (module Luma__state__State.STATE with type t = 's) -> 's -> (World.t, 'a) System.t -> t -> t
-
-    val add_plugin : (t -> t) -> t -> t
-    val step : t -> t
-    val run_with_driver : t -> (t -> t Lwt.t) -> unit Lwt.t
     val run : t -> unit
   end
 
@@ -209,27 +172,8 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Window_config = Window.Window_config
 
   module App = struct
-    open App
-    open Luma__type_register
+    include App
 
-    type nonrec t = t
-    type nonrec placement = placement
-
-    let world = world
-    let step = step
-    let run_with_driver = run_with_driver
-    let create = create
-    let plugins = plugins
-    let scheduler = scheduler
-    let init_state = init_state
-    let on = on
-    let once = once
-    let while_in = while_in
-    let on_enter = on_enter
-    let on_exit = on_exit
-    let add_plugin = add_plugin
-    let register_component = register_component
-    let register_resource = register_resource
     let run app = run (module D) app
   end
 
