@@ -76,19 +76,7 @@ module type S = sig
   module Camera_config : module type of Luma__render.Render.Camera_config
   module Input : Luma__input.Input.S
   module Ui : Luma__ui.Ui.S
-
-  module Plugin : sig
-    module Config : Plugin.Config with type window = Window_config.t
-
-    val add_default_plugins : ?config:Config.t -> App.t -> App.t
-    val window_plugin : ?config:Window_config.t -> App.t -> App.t
-    val asset_plugin : App.t -> App.t
-    val time_plugin : App.t -> App.t
-    val input_plugin : App.t -> App.t
-    val audio_plugin : App.t -> App.t
-    val sprite_plugin : App.t -> App.t
-    val debug_plugin : App.t -> App.t
-  end
+  module Plugin : Plugin.S with type app = App.t and type window = Window_config.t
 
   module Image : sig
     module Texture : Texture.S with type t = texture

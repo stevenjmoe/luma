@@ -22,6 +22,28 @@ module type Config = sig
   val create : ?window:window -> ?camera:Render.Camera_config.t -> unit -> t
 end
 
+module type S = sig
+  type window
+  type config
+  type app
+
+  module Config : Config with type window = window and type t = config
+
+  val asset_plugin : app -> app
+  val window_plugin : ?config:window -> app -> app
+  val time_plugin : app -> app
+  val input_plugin : app -> app
+  val audio_plugin : app -> app
+  val sprite_plugin : app -> app
+  val debug_plugin : app -> app
+  val transform_plugin : app -> app
+  val texture_plugin : app -> app
+  val scene_plugin : app -> app
+  val render_plugin : ?camera_config:Render.Camera_config.t -> app -> app
+  val default_config : unit -> config
+  val add_default_plugins : ?config:config -> app -> app
+end
+
 module Make
     (D : Driver.S)
     (Window : Window.S)
@@ -32,7 +54,7 @@ module Make
     (Sprite_plugin : Sprite.Sprite_plugin)
     (Texture : Texture.S)
     (Scene : Scene.S)
-    (Debug : Debug.S) =
+    (Debug : Debug.S) : S with type window = Window.Window_config.t and type app = Luma__app.App.t =
 struct
   module Config : Config with type window = Window.Window_config.t = struct
     type window = Window.Window_config.t
@@ -55,6 +77,10 @@ struct
     let camera c = c.camera
   end
 
+  type config = Config.t
+  type window = Config.window
+  type app = Luma__app.App.t
+
   let asset_plugin = Luma__asset.Plugin.plugin
   let window_plugin = Window.plugin
   let time_plugin = Time.plugin
@@ -66,17 +92,9 @@ struct
   let texture_plugin = Texture.add_plugin
   let scene_plugin = Scene.add_plugin
   let render_plugin = Renderer.plugin
-  let default_config () : Config.t = Config.default ()
+  let default_config () : config = Config.default ()
 
-  (** [add_default_plugins ?config app] installs the engine’s core plugins (input, audio, window,
-      camera, time, asset).
-
-      Call order matters. Any plugins the caller has already added via [add_plugin] are preserved
-      and executed before the engine defaults. Plugins added after [add_default_plugins] are
-      executed later from [App.run].
-
-      [config] – optional engine-level settings. Use [default_config ()] when unsure. *)
-  let add_default_plugins ?(config : Config.t = default_config ()) app =
+  let add_default_plugins ?(config : config = default_config ()) app =
     let plugins = Luma__app.App.plugins app in
     let plugins =
       [
