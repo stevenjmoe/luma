@@ -31,6 +31,17 @@ let decode_body_type = function
   | 2 -> Kinematic
   | other -> failwith (Printf.sprintf "unsupported body type %d" other)
 
+let body_type_to_string = function
+  | Static -> "Static"
+  | Dynamic -> "Dynamic"
+  | Kinematic -> "Kinematic"
+
+let body_type_of_string = function
+  | "Static" | "static" -> Static
+  | "Dynamic" | "dynamic" -> Dynamic
+  | "Kinematic" | "kinematic" -> Kinematic
+  | other -> failwith (Printf.sprintf "unsupported body type %s" other)
+
 let encode_shape = function Circle _ -> 0 | Aabb _ -> 1
 
 let bounding_box body =

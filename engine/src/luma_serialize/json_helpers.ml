@@ -8,6 +8,8 @@ let of_vec3 label (v : Vec3.t) =
 let of_vec2 label (v : Vec2.t) = (label, `Assoc [ ("x", `Float v.x); ("y", `Float v.y) ])
 let of_float label f = (label, `Float f)
 let of_bool label f = (label, `Bool f)
+let of_int label i = (label, `Int i)
+let of_string label s = (label, `String s)
 
 let field name = function
   | `Assoc kv -> ( match List.assoc_opt name kv with Some v -> v | None -> `Null)

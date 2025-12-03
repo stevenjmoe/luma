@@ -8,6 +8,12 @@ module type S = sig
 
   module Rigid_body = Rigid_body
 
+  module Colliders : sig
+    type t = Rigid_body.t list
+
+    module C : Component.S with type t = Rigid_body.t list
+  end
+
   val setup : app -> Config.t -> app
   val pos : Luma__ecs.World.t -> Luma__id.Id.EntitySet.elt -> Vec2.t option
   val plugin : ?world_config:Config.t -> app -> app
@@ -16,6 +22,16 @@ end
 module Make (L : Luma.S) : S with type app = L.App.t = struct
   module S = Systems.Make (L)
   module Rigid_body = Rigid_body
+
+  module Colliders = struct
+    type t = Rigid_body.t list
+
+    module C = Component.Make (struct
+      type inner = t
+
+      let name = "Colliders"
+    end)
+  end
 
   type app = L.App.t
 
@@ -85,6 +101,18 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
   let plugin ?world_config app =
     let config = match world_config with None -> Config.default () | Some c -> c in
     let app = setup app config in
+    let packed_rb_serializer =
+      Luma__serialize.Serialize.pack_json (module Serialize.Rigid_body_serializer)
+    in
+    L.App.register_component Rigid_body.C.name (module Rigid_body.C) [ packed_rb_serializer ] app
+    |> ignore;
+    let packed_collider_serializer =
+      Luma__serialize.Serialize.pack_json (module Serialize.Colliders_serializer)
+    in
+    L.App.register_component Colliders.C.name
+      (module Colliders.C)
+      [ packed_collider_serializer ] app
+    |> ignore;
 
     app
     |> L.App.on PreUpdate (S.sync_rigid_bodies ())

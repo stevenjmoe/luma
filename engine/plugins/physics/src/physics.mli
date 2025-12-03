@@ -2,6 +2,12 @@ module type S = sig
   open Luma__math
   module Rigid_body = Rigid_body
 
+  module Colliders : sig
+    type t = Rigid_body.t list
+
+    module C : Luma__ecs.Component.S with type t = Rigid_body.t list
+  end
+
   type app
 
   val setup : app -> Config.t -> app
