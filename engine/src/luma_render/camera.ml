@@ -110,7 +110,7 @@ module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
           world)
         else world)
 
-  module Camera_serializer =
+  (*module Camera_serializer =
     Serialize.Make_serializer
       (Serialize.Json_format)
       (struct
@@ -144,8 +144,11 @@ module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
 
   let register_component app =
     let packed_serializer = Luma__serialize.Serialize.pack_json (module Camera_serializer) in
-    App.register_component C.name (module C) [ packed_serializer ] app
+    App.register_component C.name (module C) [ packed_serializer ] app*)
 
   let plugin default_camera app =
-    app |> register_component |> App.on PostStartup (add_camera default_camera ())
+    app
+    |>
+    (*register_component |>*)
+    App.on PostStartup (add_camera default_camera ())
 end

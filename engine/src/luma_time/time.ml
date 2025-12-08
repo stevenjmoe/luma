@@ -50,7 +50,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
             log.error (fun log -> log "error");
             world)
 
-  module Time_json_serializer =
+  (*module Time_json_serializer =
     Serialize.Make_serializer
       (Serialize.Json_format)
       (struct
@@ -71,17 +71,17 @@ module Make (D : Luma__driver.Driver.S) : S = struct
               let* elapsed = parse_float "elapsed" data in
               Ok { dt = 0.0016; elapsed }
           | _ -> Error (Error.parse_json (Json (Yojson.Safe.pretty_to_string repr)))
-      end)
+      end)*)
 
   let plugin app =
     let open Luma__app in
     let world = App.world app in
     let time = { dt = 0.0016; elapsed = 0. } in
     let packed_time = Luma__resource.Resource.pack (module R) time in
-    let serializer = Serialize.pack_json (module Time_json_serializer) in
+    (*let serializer = Serialize.pack_json (module Time_json_serializer) in*)
 
     world |> World.add_resource R.type_id packed_time |> ignore;
     app
-    |> App.register_resource R.name (module R) [ serializer ]
+    (*|> App.register_resource R.name (module R) [ serializer ]*)
     |> App.on Scheduler.Update (update_time ())
 end
