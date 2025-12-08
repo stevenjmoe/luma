@@ -2,130 +2,202 @@ open Luma__serialize
 open Luma__core
 open Luma__math
 open Rigid_body
-open Json_helpers
 
+let ( let* ) = Result.bind
 let normalize s = s |> String.trim |> String.lowercase_ascii
 
-let rigid_body_to_json body =
-  let body_type =
-    Rigid_body.body_type_to_string body.body_type |> normalize |> of_string "body_type"
-  in
-  let pos = of_vec2 "pos" body.pos in
-  let vel = of_vec2 "vel" body.vel in
-  let acc = of_vec2 "acc" body.acc in
-  let force_acc = of_vec2 "force_accumulator" body.force_accumulator in
-  let mass = of_float "mass" body.mass in
-  let inv_mass = of_float "inv_mass" body.inv_mass in
-  let damping = of_float "damping" body.damping in
-  let angle = of_float "angle" body.angle in
-  let active = of_bool "active" body.active in
+let rigid_body_to_value rb =
+  let open Serialize.Serialize_value in
+  let open Luma__codecs in
+  let body_type = Rigid_body.body_type_to_string rb.body_type |> normalize in
+  let body_type = ("body_type", String body_type) in
+  let pos = ("pos", Codecs.Math.Vec2.to_value rb.pos) in
+  let vel = ("vel", Codecs.Math.Vec2.to_value rb.vel) in
+  let acc = ("acc", Codecs.Math.Vec2.to_value rb.acc) in
+  let force_accumulator = ("force_accumulator", Codecs.Math.Vec2.to_value rb.force_accumulator) in
+  let mass = ("mass", Float rb.mass) in
+  let inv_mass = ("inv_mass", Float rb.inv_mass) in
+  let damping = ("damping", Float rb.damping) in
+  let angle = ("angle", Float rb.angle) in
+  let active = ("active", Bool rb.active) in
   let shape =
-    match body.shape with
+    match rb.shape with
     | Circle c ->
         ( "shape",
-          `Assoc
+          Obj
             [
-              of_string "type" "circle";
-              of_float "radius" (Bounded2d.Bounding_circle.radius c);
-              of_vec2 "center" (Bounded2d.Bounding_circle.center c);
+              ("type", String "circle");
+              ("radius", Float (Bounded2d.Bounding_circle.radius c));
+              ("center", Codecs.Math.Vec2.to_value (Bounded2d.Bounding_circle.center c));
             ] )
     | Aabb a ->
         ( "shape",
-          `Assoc
+          Obj
             [
-              ("type", `String "aabb");
-              of_vec2 "min" (Bounded2d.Aabb2d.min a);
-              of_vec2 "max" (Bounded2d.Aabb2d.max a);
+              ("type", String "aabb");
+              ("min", Codecs.Math.Vec2.to_value (Bounded2d.Aabb2d.min a));
+              ("max", Codecs.Math.Vec2.to_value (Bounded2d.Aabb2d.max a));
             ] )
   in
-  `Assoc [ body_type; shape; pos; vel; acc; force_acc; mass; inv_mass; damping; angle; active ]
 
-(*module Rigid_body_serializer =
-  Serialize.Make_serializer
-    (Serialize.Json_format)
-    (struct
-      type nonrec t = t
+  Obj [ body_type; pos; vel; acc; force_accumulator; mass; inv_mass; damping; angle; active; shape ]
 
-      let to_repr body : Yojson.Safe.t = `Assoc [ (C.name, rigid_body_to_json body) ]
+module Codecs = struct
+  open Luma__codecs
 
-      let of_repr (repr : Yojson.Safe.t) =
-        let ( let* ) = Result.bind in
+  module Rigid_body : Luma__serialize.Serialize.Codec with type t = t = struct
+    type nonrec t = t
 
-        let json_error () = Error (Error.parse_json (Json (Yojson.Safe.pretty_to_string repr))) in
+    let of_value_inner fields =
+      let open Serialize.Serialize_value in
+      let open Codecs in
+      let* body_type_v =
+        get_field "body_type" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* body_type = string body_type_v in
+      let body_type = Rigid_body.body_type_of_string body_type in
 
-        match repr with
-        | `Assoc _ as obj ->
-            let* name, data = parse_single_assoc obj in
-            if normalize name <> normalize C.name then json_error ()
-            else
-              let* body_type_str = parse_string "body_type" data in
-              let body_type = body_type_str |> normalize |> Rigid_body.body_type_of_string in
+      let* pos_v =
+        get_field "pos" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* pos = Codecs.Math.Vec2.of_value pos_v in
 
-              let* pos = parse_vec2 "pos" data in
-              let* vel = parse_vec2 "vel" data in
-              let* acc = parse_vec2 "acc" data in
-              let* force_accumulator = parse_vec2 "force_accumulator" data in
+      let* vel_v =
+        get_field "vel" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* vel = Codecs.Math.Vec2.of_value vel_v in
 
-              let* mass = parse_float "mass" data in
-              let* inv_mass = parse_float "inv_mass" data in
-              let* damping = parse_float "damping" data in
-              let* angle = parse_float "angle" data in
-              let* active = parse_bool "active" data in
+      let* acc_v =
+        get_field "acc" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* acc = Codecs.Math.Vec2.of_value acc_v in
 
-              let shape_json = Yojson.Safe.Util.member "shape" data in
-              let* shape_type = parse_string "type" shape_json in
-              let shape_type = normalize shape_type in
+      let* force_acc_v =
+        get_field "force_accumulator"
+          ~on_missing:(fun s -> Error.expected_string [ Field s ])
+          fields
+      in
+      let* force_acc = Codecs.Math.Vec2.of_value force_acc_v in
 
-              let* shape =
-                match shape_type with
-                | "circle" ->
-                    let* radius = parse_float "radius" shape_json in
-                    let* center = parse_vec2 "center" shape_json in
-                    let c = Bounded2d.Bounding_circle.create center radius in
-                    Ok (Circle c)
-                | "aabb" ->
-                    let* min = parse_vec2 "min" shape_json in
-                    let* max = parse_vec2 "max" shape_json in
-                    let a = Bounded2d.Aabb2d.of_min_max min max in
-                    Ok (Aabb a)
-                | _ -> json_error ()
-              in
+      let* mass_v =
+        get_field "mass" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* mass = float mass_v in
 
-              Ok
-                {
-                  body_type;
-                  shape;
-                  pos;
-                  vel;
-                  acc;
-                  force_accumulator;
-                  mass;
-                  inv_mass;
-                  damping;
-                  angle;
-                  active;
-                }
-        | _ -> json_error ()
-    end)
+      let* inv_mass_v =
+        get_field "inv_mass" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* inv_mass = float inv_mass_v in
 
-module Colliders_serializer =
-  Serialize.Make_serializer
-    (Serialize.Json_format)
-    (struct
-      open Json_helpers
+      let* damping_v =
+        get_field "damping" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* damping = float damping_v in
 
-      type nonrec t = t list
+      let* angle_v =
+        get_field "angle" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* angle = float angle_v in
 
-      let to_repr bodies : Yojson.Safe.t =
-        `Assoc [ ("Colliders", `List (List.map (fun body -> rigid_body_to_json body) bodies)) ]
+      let* active_v =
+        get_field "active" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* active = bool active_v in
 
-      let of_repr repr =
-        let ( let* ) = Result.bind in
-        let* colliders_json = parse_list "Colliders" repr in
-        List.fold_right
-          (fun j acc ->
-            let* acc = acc in
-            let* body = Rigid_body_serializer.deserialize j in
-            Ok (body :: acc))
-          colliders_json (Ok [])
-    end)*)
+      let* shape_v =
+        get_field "shape" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
+      in
+      let* shape =
+        match shape_v with
+        | Obj shape_fields -> (
+            let* shape_type_v =
+              get_field "type" ~on_missing:(fun s -> Error.expected_string [ Field s ]) shape_fields
+            in
+            let* shape_type = string shape_type_v in
+            match normalize shape_type with
+            | "circle" ->
+                let* radius_v =
+                  get_field "radius"
+                    ~on_missing:(fun s -> Error.expected_float [ Field s ])
+                    shape_fields
+                in
+                let* radius = float radius_v in
+
+                let* center =
+                  get_field "center"
+                    ~on_missing:(fun s -> Error.expected_float [ Field s ])
+                    shape_fields
+                in
+                let* center = Math.Vec2.of_value center in
+                let c = Bounded2d.Bounding_circle.create center radius in
+
+                Ok (Circle c)
+            | "aabb" ->
+                let* min_v =
+                  get_field "min"
+                    ~on_missing:(fun s -> Error.expected_float [ Field s ])
+                    shape_fields
+                in
+                let* min = Math.Vec2.of_value min_v in
+
+                let* max_v =
+                  get_field "max"
+                    ~on_missing:(fun s -> Error.expected_float [ Field s ])
+                    shape_fields
+                in
+
+                let* max = Math.Vec2.of_value max_v in
+                let a = Bounded2d.Aabb2d.of_min_max min max in
+                Ok (Aabb a)
+            | _ -> Error (Error.expected_obj [ Field "shape" ]))
+        | _ -> Error (Error.expected_obj [ Field "shape" ])
+      in
+      Ok
+        {
+          body_type;
+          shape;
+          pos;
+          vel;
+          acc;
+          force_accumulator = force_acc;
+          mass;
+          inv_mass;
+          damping;
+          angle;
+          active;
+        }
+
+    let to_value rb = Serialize.Serialize_value.Obj [ (C.name, rigid_body_to_value rb) ]
+
+    let of_value v =
+      let open Serialize.Serialize_value in
+      let open Codecs in
+      match v with
+      | Obj [ (name, Obj fields) ] when normalize name = normalize C.name -> of_value_inner fields
+      | Obj fields -> of_value_inner fields
+      | _ -> Error (Error.expected_obj [ Field "Rigid_body" ])
+  end
+
+  module Colliders : Serialize.Codec with type t = Colliders.t = struct
+    type nonrec t = Colliders.t
+
+    let to_value bodies =
+      let open Serialize.Serialize_value in
+      Obj [ ("colliders", List (List.map (fun body -> rigid_body_to_value body) bodies)) ]
+
+    let of_value v =
+      let open Serialize.Serialize_value in
+      match v with
+      | Obj [ (name, Serialize.Serialize_value.List bodies) ] when normalize name = "colliders" ->
+          List.fold_right
+            (fun v acc ->
+              let* acc = acc in
+              let* body = Rigid_body.of_value v in
+              Ok (body :: acc))
+            bodies (Ok [])
+      | _ -> Error (Error.expected_obj [ Field "Colliders" ])
+  end
+end
+
+module Rigid_body_serializer = Serialize.Make_serializer (Serialize.Json_format) (Codecs.Rigid_body)
+module Colliders_serializer = Serialize.Make_serializer (Serialize.Json_format) (Codecs.Colliders)
