@@ -10,6 +10,8 @@ let get_field key ~on_missing fields =
 let get_field_opt key fields =
   match List.assoc_opt key fields with Some v -> Some v | None -> None
 
+let normalize s = s |> String.trim |> String.lowercase_ascii
+
 module Math = struct
   open Luma__math
 
@@ -132,7 +134,33 @@ module Sprite : Serialize.Codec with type t = Luma__sprite.Sprite.spec = struct
     | _ -> Error (Error.expected_obj [])
 end
 
+module Time : Serialize.Codec with type t = Luma__time.Time.t = struct
+  open Luma__time
+
+  type t = Time.t
+
+  let to_value time = Obj [ (Time.R.name, Obj [ ("elapsed", Float time.Time.elapsed) ]) ]
+
+  let of_value v =
+    match v with
+    | Obj fields -> (
+        let* time =
+          get_field Time.R.name ~on_missing:(fun s -> Error.expected_float [ Field s ]) fields
+        in
+        match time with
+        | Obj fields ->
+            let* elapsed =
+              get_field "elapsed" ~on_missing:(fun s -> Error.expected_float [ Field s ]) fields
+            in
+            let* elapsed = float elapsed in
+
+            Ok { Time.dt = 0.0016; elapsed }
+        | _ -> Error (Error.expected_obj [ Field Time.R.name ]))
+    | _ -> Error (Error.expected_obj [ Field Time.R.name ])
+end
+
 module Json = struct
   module Transform = Serialize.Make_serializer (Serialize.Json_format) (Transform)
   module Sprite_spec = Serialize.Make_serializer (Serialize.Json_format) (Sprite)
+  module Time = Serialize.Make_serializer (Serialize.Json_format) (Time)
 end

@@ -3,6 +3,7 @@
   (name luma__codecs)
   (libraries 
     luma.transform
-    luma.sprite)
+    luma.sprite
+    luma.time)
   (preprocess 
    (pps ppx_inline_test ppx_assert)))
