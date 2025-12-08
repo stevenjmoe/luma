@@ -1,4 +1,6 @@
 module Make (L : Luma.S) = struct
+  open Luma__time
+
   let get_rigid_body entity index =
     let open Rigid_body in
     match Rb_store.Index.row_of_entity index entity with None -> None | Some row -> Some row
@@ -19,7 +21,7 @@ module Make (L : Luma.S) = struct
         L.Query.Resource.(
           Resource (module Rb_store.R)
           & Resource (module Rb_store.Index.R)
-          & Resource (module L.Time.R)
+          & Resource (module Luma__time.Time.R)
           & End)
       "sync_rigid_bodies"
       (fun w _ e (rb_store, (index, (time, _))) ->
@@ -51,7 +53,7 @@ module Make (L : Luma.S) = struct
                     if is_kinematic then (
                       let curr_x = rb.pos.x in
                       let curr_y = rb.pos.y in
-                      let dt = L.Time.dt time in
+                      let dt = Time.dt time in
 
                       rb_store.pos_x.(row) <- curr_x;
                       rb_store.pos_y.(row) <- curr_y;
@@ -73,7 +75,7 @@ module Make (L : Luma.S) = struct
                     if is_kinematic then (
                       let curr_x = rb.pos.x in
                       let curr_y = rb.pos.y in
-                      let dt = L.Time.dt time in
+                      let dt = Time.dt time in
 
                       rb_store.pos_x.(row) <- curr_x;
                       rb_store.pos_y.(row) <- curr_y;
@@ -151,7 +153,7 @@ module Make (L : Luma.S) = struct
       ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
         L.Query.Resource.(
-          Resource (module L.Time.R)
+          Resource (module Time.R)
           & Resource (module Config.R)
           & Resource (module Rb_store.R)
           & Resource (module Grid.R)
@@ -164,7 +166,7 @@ module Make (L : Luma.S) = struct
       (fun w _ e r ->
         L.Query.Tuple.with8 r (fun time config store grid bp np event_store index ->
             (* Clamp dt to prevent instability *)
-            let dt = min (L.Time.dt time) config.max_step_dt in
+            let dt = min (Time.dt time) config.max_step_dt in
 
             if dt > 0. && store.len > 0 then (
               let gx = config.gravity.x and gy = config.gravity.y in

@@ -3,34 +3,30 @@ open Luma__serialize
 open Luma__core
 open Luma__app
 
-module type S = sig
+module type PLUGIN = sig
   type t
-
-  val dt : t -> float
-  val elapsed : t -> float
-
-  module R : Luma__resource.Resource.S with type t = t
 
   val update_time : unit -> (World.t, unit) System.t
   val plugin : App.t -> App.t
 end
 
-module Make (D : Luma__driver.Driver.S) : S = struct
-  type t = {
-    mutable dt : float;
-    mutable elapsed : float;
-  }
+type t = {
+  mutable dt : float;
+  mutable elapsed : float;
+}
 
-  let dt t = t.dt
-  let elapsed t = t.elapsed
+module R = Luma__resource.Resource.Make (struct
+  type inner = t
 
-  module R = Luma__resource.Resource.Make (struct
-    type inner = t
+  let name = "Time"
+end)
 
-    let name = "Time"
-  end)
+let dt t = t.dt
+let elapsed t = t.elapsed
+let log = Luma__core.Log.sub_log "luma.time"
 
-  let log = Luma__core.Log.sub_log "luma.time"
+module Plugin (D : Luma__driver.Driver.S) : PLUGIN with type t = t = struct
+  type nonrec t = t
 
   let update_time () =
     let open Luma__id in

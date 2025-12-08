@@ -114,7 +114,7 @@ module Make : functor
   (Window : Luma__window.Window.S)
   (Renderer : Luma__render.Render.Renderer)
   (Input : Luma__input.Input.S)
-  (Time : Luma__time.Time.S)
+  (Time : Luma__time.Time.PLUGIN)
   (Audio : Luma__audio.Audio.S)
   (Texture : Luma__image.Texture.S)
   (Scene : Luma__scene.Scene.S)

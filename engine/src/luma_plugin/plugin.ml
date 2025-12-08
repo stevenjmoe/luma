@@ -45,7 +45,7 @@ module Make
     (Window : Window.S)
     (Renderer : Render.Renderer)
     (Input : Input.S)
-    (Time : Time.S)
+    (Time : Time.PLUGIN)
     (Audio : Audio.S)
     (Texture : Texture.S)
     (Scene : Scene.S)

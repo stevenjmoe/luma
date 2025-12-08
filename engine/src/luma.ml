@@ -69,7 +69,8 @@ module type S = sig
   module Resource : module type of Resource
   module Scheduler : module type of Scheduler
   module System : module type of System
-  module Time : Time.S
+  module Time : module type of Time
+  module Time_plugin : Time.PLUGIN
   module Transform : module type of Transform
   module World : module type of World
   module Math : module type of Luma__math
@@ -146,7 +147,8 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Camera = R.Camera
   module Input = Input.Make (D)
   module Ui = Ui.Make (D)
-  module Time = Time.Make (D)
+  module Time = Time
+  module Time_plugin = Time.Plugin (D)
   module Audio = Audio.Make (D)
   module Debug_plugin = Debug.Make (D)
   module Scene = Scene.Make (D)
@@ -162,7 +164,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   end
 
   module Plugin =
-    Plugin.Make (D) (Window) (Renderer) (Input) (Time) (Audio) (Image.Texture) (Scene)
+    Plugin.Make (D) (Window) (Renderer) (Input) (Time_plugin) (Audio) (Image.Texture) (Scene)
       (Debug_plugin)
 
   module Window_config = Window.Window_config
