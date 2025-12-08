@@ -80,7 +80,6 @@ module type S = sig
   module Renderer :
     Luma__render.Render.Renderer with type texture = texture and type colour = colour
 
-  module Sprite_plugin : Sprite.Sprite_plugin
   module Sprite : Sprite.S
   module Key : module type of Luma__types.Input_types.Key
   module Mouse_button : module type of Types.Input_types.Mouse_button

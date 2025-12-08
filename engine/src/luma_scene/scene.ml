@@ -71,19 +71,19 @@ module Make (D : Driver.S) : S = struct
   let inject_into_world_safe scene world =
     scene.entities
     |> List.iter (fun (e : entity) ->
-           if World.has_entity_uuid world e.uuid then ()
-           else
-             let entity = World.add_entity ~name:e.name ~uuid:(Some e.uuid) world in
-             e.components |> List.iter (fun c -> World.add_component world c entity);
-             ());
+        if World.has_entity_uuid world e.uuid then ()
+        else
+          let entity = World.add_entity ~name:e.name ~uuid:(Some e.uuid) world in
+          e.components |> List.iter (fun c -> World.add_component world c entity);
+          ());
     world
 
   let inject_into_world scene world =
     scene.entities
     |> List.iter (fun (e : entity) ->
-           let entity = World.add_entity ~name:e.name ~uuid:(Some e.uuid) world in
-           e.components |> List.iter (fun c -> World.add_component world c entity);
-           ());
+        let entity = World.add_entity ~name:e.name ~uuid:(Some e.uuid) world in
+        e.components |> List.iter (fun c -> World.add_component world c entity);
+        ());
     world
 
   let to_world scene =

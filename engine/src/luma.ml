@@ -79,7 +79,6 @@ module type S = sig
   module Renderer :
     Luma__render.Render.Renderer with type texture = texture and type colour = colour
 
-  module Sprite_plugin : Sprite.Sprite_plugin
   module Sprite : Sprite.S
   module Key : module type of Luma__types.Input_types.Key
   module Mouse_button : module type of Luma__types.Input_types.Mouse_button
@@ -134,8 +133,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   end
 
   module Camera_config = Luma__render.Render.Camera_config
-  module S = Sprite.Make (D)
-  module R = Luma__render.Render.Make (D) (S) (Image.Texture)
+  module R = Luma__render.Render.Make (D) (Sprite) (Image.Texture)
 
   type texture = Image.Texture.t
 
@@ -150,7 +148,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Ui = Ui.Make (D)
   module Time = Time.Make (D)
   module Audio = Audio.Make (D)
-  module Sprite_plugin = Sprite.Sprite_plugin (D) (S)
   module Debug_plugin = Debug.Make (D)
   module Scene = Scene.Make (D)
 
@@ -165,8 +162,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   end
 
   module Plugin =
-    Plugin.Make (D) (Window) (Renderer) (Input) (Time) (Audio) (Sprite_plugin) (Image.Texture)
-      (Scene)
+    Plugin.Make (D) (Window) (Renderer) (Input) (Time) (Audio) (Image.Texture) (Scene)
       (Debug_plugin)
 
   module Window_config = Window.Window_config
@@ -192,11 +188,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     Fmt_tty.setup_std_outputs ();
     Luma__core.Log.init ()
 
-  module Sprite = struct
-    include S
-
-    type nonrec texture = texture
-  end
+  module Sprite = Sprite
 
   module Colour = struct
     type t = colour

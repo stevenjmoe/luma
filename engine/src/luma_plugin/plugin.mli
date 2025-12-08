@@ -69,16 +69,9 @@ module type S = sig
   (** [audio_plugin app] initialises the audio device, registers audio resources and systems
       responsible for updating streams and cleaning up sounds/music on shutdown. *)
 
-  val sprite_plugin : app -> app
-  (** [sprite_plugin app] registers the sprite component type, and its serializers. *)
-
   val debug_plugin : app -> app
   (** [debug_plugin app] installs debug visualisation: basic GUI panels for inspecting entities,
       components and other engine state. *)
-
-  val transform_plugin : app -> app
-  (** [transform_plugin app] registers the transform components (position, rotation, scale) and
-      their serializers. *)
 
   val texture_plugin : app -> app
   (** [texture_plugin app] registers texture asset types and file loaders so textures can be
@@ -93,6 +86,13 @@ module type S = sig
       per-frame setup systems, and extract systems that pull sprites/shapes into the render queue.
       If [camera_config] is omitted, the default camera from [Config] is used when building a
       default config. *)
+
+  val serializers_plugin : app -> app
+  (** [serializers_plugin app] adds core engine component/resource serializers to the app. *)
+
+  val type_register_plugin : app -> app
+  (** [type_register_plugin app] ensures the component and resource type registries have been
+      created and added to the world. It won't recreate them if they already exist. *)
 
   val default_config : unit -> config
   (** [default_config ()] builds an engine configuration that matches the defaults used by
@@ -116,7 +116,6 @@ module Make : functor
   (Input : Luma__input.Input.S)
   (Time : Luma__time.Time.S)
   (Audio : Luma__audio.Audio.S)
-  (Sprite_plugin : Sprite.Sprite_plugin)
   (Texture : Luma__image.Texture.S)
   (Scene : Luma__scene.Scene.S)
   (Debug : Luma__debug.Debug.S)

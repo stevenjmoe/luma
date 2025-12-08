@@ -72,12 +72,12 @@ let get_all (type a) (module A : Asset.S with type t = a) (assets : t) =
   assets
   |> Hashtbl.to_seq
   |> Seq.filter_map (fun (_, (record : asset_record)) ->
-         if Luma__id.Id.Asset_type.eq record.type_id A.type_id then
-           match record.status with
-           | Ready packed -> (
-               match Asset.unpack (module A) packed with Ok v -> Some v | Error _ -> None)
-           | _ -> None
-         else None)
+      if Luma__id.Id.Asset_type.eq record.type_id A.type_id then
+        match record.status with
+        | Ready packed -> (
+            match Asset.unpack (module A) packed with Ok v -> Some v | Error _ -> None)
+        | _ -> None
+      else None)
   |> List.of_seq
 
 let exists (assets : t) handle =

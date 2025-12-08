@@ -14,6 +14,15 @@ let get_json_serializer : type a.
   let rec find = function [] -> None | Json s :: _ -> Some s in
   find packs
 
+let ensure_resource (type a) (module R : Resource.S with type t = a) ~(create : unit -> a) world =
+  match World.get_resource world R.type_id with
+  | None ->
+      let registry = create () in
+      let packed = Luma__resource.Resource.pack (module R) registry in
+      World.add_resource R.type_id packed world |> ignore;
+      registry
+  | Some r -> Resource.unpack (module R) r |> Result.get_ok
+
 module Component_registry = struct
   type 'a component_entry = {
     id : Id.Component.t;
@@ -55,15 +64,7 @@ module Component_registry = struct
           Hashtbl.add registry.name_to_entry normalized_name entry;
           Hashtbl.add registry.id_to_entry C.id entry
     in
-    match World.get_resource world R.type_id with
-    | None ->
-        let registry = create () in
-        let packed = Resource.pack (module R) registry in
-        World.add_resource R.type_id packed world |> ignore;
-        register registry
-    | Some registry ->
-        let registry = Resource.unpack (module R) registry |> Result.get_ok in
-        register registry
+    ensure_resource (module R) ~create world |> register
 end
 
 module Resource_registry = struct
@@ -105,13 +106,5 @@ module Resource_registry = struct
           Hashtbl.add registry.name_to_entry normalized_name entry;
           Hashtbl.add registry.id_to_entry Res.type_id entry
     in
-    match World.get_resource world R.type_id with
-    | None ->
-        let registry = create () in
-        let packed = Resource.pack (module R) registry in
-        World.add_resource R.type_id packed world |> ignore;
-        register registry
-    | Some registry ->
-        let registry = Resource.unpack (module R) registry |> Result.get_ok in
-        register registry
+    ensure_resource (module R) ~create world |> register
 end
