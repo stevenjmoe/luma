@@ -101,7 +101,7 @@ let parse_list key json =
 let parse_single_assoc obj =
   match obj with
   | `Assoc [ (name, data) ] -> Ok (name, data)
-  | _ -> Error (Error.expected_obj [ Field "" ])
+  | _ -> Error (Error.expected_obj [ Field "Single assoc" ])
 
 let parse_assoc key json =
   match Yojson.Safe.Util.member key json with

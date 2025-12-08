@@ -187,15 +187,18 @@ module Codecs = struct
 
     let of_value v =
       let open Serialize.Serialize_value in
+      let decode_list bodies =
+        List.fold_right
+          (fun v acc ->
+            let* acc = acc in
+            let* body = Rigid_body.of_value v in
+            Ok (body :: acc))
+          bodies (Ok [])
+      in
       match v with
-      | Obj [ (name, Serialize.Serialize_value.List bodies) ] when normalize name = "colliders" ->
-          List.fold_right
-            (fun v acc ->
-              let* acc = acc in
-              let* body = Rigid_body.of_value v in
-              Ok (body :: acc))
-            bodies (Ok [])
-      | _ -> Error (Error.expected_obj [ Field "Colliders" ])
+      | List bodies -> decode_list bodies
+      | Obj [ (name, List bodies) ] when normalize name = "colliders" -> decode_list bodies
+      | _ -> Error (Error.expected_list [ Field "Colliders" ])
   end
 end
 

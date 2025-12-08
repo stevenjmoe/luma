@@ -68,12 +68,16 @@ module Transform : Serialize.Codec with type t = Luma__transform.Transform.t = s
   let to_value (transform : t) : Serialize.Serialize_value.t =
     Obj
       [
-        ("position", Math.Vec3.to_value transform.position);
-        ("rotation", Float transform.rotation);
-        ("scale", Math.Vec3.to_value transform.scale);
+        ( normalize Transform.C.name,
+          Obj
+            [
+              ("position", Math.Vec3.to_value transform.position);
+              ("rotation", Float transform.rotation);
+              ("scale", Math.Vec3.to_value transform.scale);
+            ] );
       ]
 
-  let of_value (v : Serialize.Serialize_value.t) : (t, Error.error) result =
+  let of_value v =
     match v with
     | Obj fields ->
         let field key =
@@ -87,7 +91,7 @@ module Transform : Serialize.Codec with type t = Luma__transform.Transform.t = s
         let* scale = Math.Vec3.of_value scale in
 
         Ok Transform.{ position; rotation; scale }
-    | _ -> Error (Error.expected_obj [])
+    | _ -> Error (Error.expected_obj [ Field "Transform" ])
 end
 
 module Sprite : Serialize.Codec with type t = Luma__sprite.Sprite.spec = struct
@@ -106,7 +110,7 @@ module Sprite : Serialize.Codec with type t = Luma__sprite.Sprite.spec = struct
       | None -> ("custom_suze", Null)
       | Some v -> ("custom_size", Math.Vec2.to_value v)
     in
-    Obj [ image; texture_atlas; flip_x; flip_y; custom_size ]
+    Obj [ (normalize Sprite.C.name, Obj [ image; texture_atlas; flip_x; flip_y; custom_size ]) ]
 
   let of_value v =
     match v with
@@ -131,7 +135,7 @@ module Sprite : Serialize.Codec with type t = Luma__sprite.Sprite.spec = struct
         let* flip_y = bool flip_y_v in
 
         Ok { Sprite.path; flip_x; flip_y; custom_size; texture_atlas = None }
-    | _ -> Error (Error.expected_obj [])
+    | _ -> Error (Error.expected_obj [ Field "Sprite" ])
 end
 
 module Time : Serialize.Codec with type t = Luma__time.Time.t = struct
@@ -139,13 +143,15 @@ module Time : Serialize.Codec with type t = Luma__time.Time.t = struct
 
   type t = Time.t
 
-  let to_value time = Obj [ (Time.R.name, Obj [ ("elapsed", Float time.Time.elapsed) ]) ]
+  let to_value time = Obj [ (normalize Time.R.name, Obj [ ("elapsed", Float time.Time.elapsed) ]) ]
 
   let of_value v =
     match v with
     | Obj fields -> (
         let* time =
-          get_field Time.R.name ~on_missing:(fun s -> Error.expected_float [ Field s ]) fields
+          get_field (normalize Time.R.name)
+            ~on_missing:(fun s -> Error.expected_obj [ Field s ])
+            fields
         in
         match time with
         | Obj fields ->

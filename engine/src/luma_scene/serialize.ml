@@ -25,15 +25,15 @@ module Json = struct
             e.components
             (* For the time being this just skips components that haven't been registered. *)
             |> List.filter_map (fun c ->
-                   let ( let* ) = Option.bind in
+                let ( let* ) = Option.bind in
 
-                   let* (Component { name; serializers; instance = (module C) }) =
-                     Component_registry.get_entry_by_name component_registry (Component.name c)
-                   in
-                   let* unpacked = Component.unpack_opt (module C) c in
-                   let* (module Q) = Type_register.get_json_serializer serializers in
+                let* (Component { name; serializers; instance = (module C) }) =
+                  Component_registry.get_entry_by_name component_registry (Component.name c)
+                in
+                let* unpacked = Component.unpack_opt (module C) c in
+                let* (module Q) = Type_register.get_json_serializer serializers in
 
-                   Some (Q.serialize unpacked))
+                Some (Q.serialize unpacked))
           in
           `Assoc
             [
@@ -153,7 +153,7 @@ module Json = struct
                                   (Component_json_serializer_not_found component_name))
                       in
 
-                      let* repr = S.deserialize component_json in
+                      let* repr = S.deserialize component_data in
                       let packed = Component.pack (module C) repr in
                       Ok packed)
                     components
