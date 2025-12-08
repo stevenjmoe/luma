@@ -101,7 +101,7 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
   let plugin ?world_config app =
     let config = match world_config with None -> Config.default () | Some c -> c in
     let app = setup app config in
-    let packed_rb_serializer =
+    (*let packed_rb_serializer =
       Luma__serialize.Serialize.pack_json (module Serialize.Rigid_body_serializer)
     in
     L.App.register_component Rigid_body.C.name (module Rigid_body.C) [ packed_rb_serializer ] app
@@ -112,7 +112,7 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
     L.App.register_component Colliders.C.name
       (module Colliders.C)
       [ packed_collider_serializer ] app
-    |> ignore;
+    |> ignore;*)
 
     app
     |> L.App.on PreUpdate (S.sync_rigid_bodies ())

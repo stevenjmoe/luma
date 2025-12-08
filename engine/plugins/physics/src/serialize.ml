@@ -40,7 +40,7 @@ let rigid_body_to_json body =
   in
   `Assoc [ body_type; shape; pos; vel; acc; force_acc; mass; inv_mass; damping; angle; active ]
 
-module Rigid_body_serializer =
+(*module Rigid_body_serializer =
   Serialize.Make_serializer
     (Serialize.Json_format)
     (struct
@@ -128,4 +128,4 @@ module Colliders_serializer =
             let* body = Rigid_body_serializer.deserialize j in
             Ok (body :: acc))
           colliders_json (Ok [])
-    end)
+    end)*)
