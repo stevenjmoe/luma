@@ -10,12 +10,11 @@ let of_float label f = (label, `Float f)
 let of_bool label f = (label, `Bool f)
 let of_int label i = (label, `Int i)
 let of_string label s = (label, `String s)
+let int_error key = Error (Error.expected_int key)
 
 let field name = function
   | `Assoc kv -> ( match List.assoc_opt name kv with Some v -> v | None -> `Null)
   | _ -> `Null
-
-let int_error key = Error (Error.parse_json (Int key))
 
 (** Parses an int or float field with the given key as an int.
 
@@ -41,52 +40,52 @@ let parse_int_like_or_default ?(default = 0) key j path =
 let parse_vec2 key json =
   match member key json with
   | `Assoc [ ("x", `Float x); ("y", `Float y) ] -> Ok (Vec2.create x y)
-  | _ -> Error (Error.parse_json (Vec2 key))
+  | _ -> Error (Error.expected_vec2 [ Field key ])
 
 let parse_vec3 key json =
   match member key json with
   | `Assoc [ ("x", `Float x); ("y", `Float y); ("z", `Float z) ] -> Ok (Vec3.create x y z)
-  | _ -> Error (Error.parse_json (Vec3 key))
+  | _ -> Error (Error.expected_vec3 [ Field key ])
 
 let parse_string key json =
-  match member key json with `String v -> Ok v | _ -> Error (Error.parse_json (String key))
+  match member key json with `String v -> Ok v | _ -> Error (Error.expected_string [ Field key ])
 
 let parse_string_opt key json =
   match member key json with
   | `String v -> Ok (Some v)
   | `Null -> Ok None
-  | _ -> Error (Error.parse_json (String key))
+  | _ -> Error (Error.expected_string [ Field key ])
 
 let parse_float key json =
   match member key json with
   | `Float v -> Ok v
   | `Int v -> Ok (float_of_int v)
-  | _ -> Error (Error.parse_json (Float key))
+  | _ -> Error (Error.expected_float [ Field key ])
 
 let parse_float_opt key json =
   match member key json with
   | `Float v -> Ok (Some v)
   | `Int v -> Ok (Some (float_of_int v))
   | `Null -> Ok None
-  | _ -> Error (Error.parse_json (Float key))
+  | _ -> Error (Error.expected_float [ Field key ])
 
 let parse_int key json =
-  match member key json with `Int v -> Ok v | _ -> Error (Error.parse_json (Int key))
+  match member key json with `Int v -> Ok v | _ -> Error (Error.expected_int [ Field key ])
 
 let parse_int_opt key json =
   match member key json with
   | `Int v -> Ok (Some v)
   | `Null -> Ok None
-  | _ -> Error (Error.parse_json (Int key))
+  | _ -> Error (Error.expected_int [ Field key ])
 
 let parse_bool key json =
-  match member key json with `Bool v -> Ok v | _ -> Error (Error.parse_json (Bool key))
+  match member key json with `Bool v -> Ok v | _ -> Error (Error.expected_bool [ Field key ])
 
 let parse_bool_opt key json =
   match member key json with
   | `Bool v -> Ok (Some v)
   | `Null -> Ok None
-  | _ -> Error (Error.parse_json (Bool key))
+  | _ -> Error (Error.expected_bool [ Field key ])
 
 let parse_uuid key json =
   match member key json with
@@ -94,17 +93,17 @@ let parse_uuid key json =
       match Uuidm.of_string v with
       | Some u -> Ok u
       | None -> Error (Error.invalid_uuid { uuid = v }))
-  | _ -> Error (Error.parse_json (Uuid key))
+  | _ -> Error (Error.expected_uuid [ Field key ])
 
 let parse_list key json =
-  match member key json with `List l -> Ok l | _ -> Error (Error.parse_json (List key))
+  match member key json with `List l -> Ok l | _ -> Error (Error.expected_list [ Field key ])
 
 let parse_single_assoc obj =
   match obj with
   | `Assoc [ (name, data) ] -> Ok (name, data)
-  | _ -> Error (Error.parse_json (Assoc ""))
+  | _ -> Error (Error.expected_obj [ Field "" ])
 
 let parse_assoc key json =
   match Yojson.Safe.Util.member key json with
   | `Assoc assoc -> Ok assoc
-  | _ -> Error (Error.parse_json (Assoc key))
+  | _ -> Error (Error.expected_obj [ Field key ])

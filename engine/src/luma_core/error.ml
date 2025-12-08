@@ -29,17 +29,28 @@ type system_run = {
 type asset_load = { msg : string }
 type asset_ext_unsupported = { path : string }
 
-type parse_json =
-  | String of string
-  | Float of string
-  | Int of string
-  | Bool of string
-  | Vec2 of string
-  | Vec3 of string
-  | Uuid of string
-  | List of string
-  | Assoc of string
-  | Json of string
+type value_kind =
+  | String
+  | Float
+  | Int
+  | Bool
+  | Vec2
+  | Vec3
+  | Uuid
+  | List
+  | Obj
+
+type path_step =
+  | Field of string
+  | Index of int
+
+type path = path_step list
+
+type decode_value = {
+  expected : value_kind;
+  path : path;
+  msg : string option;
+}
 
 type invalid_uuid = { uuid : string }
 
@@ -69,12 +80,30 @@ type error =
   | `System_run of system_run
   | `Asset_load of asset_load
   | `Asset_ext_unsupported of asset_ext_unsupported
-  | `Serialize of parse_json
+  | `Serialize of decode_value
   | `Invalid_uuid of invalid_uuid
   | `Type_registration of type_registration
   | `Io of io
   | `Hexcode of hexcode
   ]
+
+let pp_path fmt (p : path) =
+  let pp_step fmt = function
+    | Field f -> Format.fprintf fmt ".%s" f
+    | Index i -> Format.fprintf fmt "[%d]" i
+  in
+  List.iter (pp_step fmt) p
+
+let pp_value_kind fmt = function
+  | String -> Format.pp_print_string fmt "string"
+  | Float -> Format.pp_print_string fmt "float"
+  | Int -> Format.pp_print_string fmt "int"
+  | Bool -> Format.pp_print_string fmt "bool"
+  | Vec2 -> Format.pp_print_string fmt "vec2"
+  | Vec3 -> Format.pp_print_string fmt "vec3"
+  | Uuid -> Format.pp_print_string fmt "uuid"
+  | List -> Format.pp_print_string fmt "list"
+  | Obj -> Format.pp_print_string fmt "object"
 
 let pp fmt (e : error) =
   match e with
@@ -95,17 +124,11 @@ let pp fmt (e : error) =
   | `Asset_load { msg } -> Format.fprintf fmt "Failed to load asset. Msg: %s" msg
   | `Asset_ext_unsupported { path } ->
       Format.fprintf fmt "Incompatible asset extension. Path: %s" path
-  | `Serialize (String s) -> Format.fprintf fmt "Expected string field '%s'" s
-  | `Serialize (Float s) -> Format.fprintf fmt "Expected float field '%s'" s
-  | `Serialize (Int s) -> Format.fprintf fmt "Expected int field '%s'" s
-  | `Serialize (Bool s) -> Format.fprintf fmt "Expected bool field '%s'" s
-  | `Serialize (Vec2 s) -> Format.fprintf fmt "Expected vec2 field '%s'" s
-  | `Serialize (Vec3 s) -> Format.fprintf fmt "Expected vec3 field '%s'" s
-  | `Serialize (Uuid s) -> Format.fprintf fmt "Expected uuid field '%s'" s
-  | `Serialize (List s) -> Format.fprintf fmt "Expected list field '%s'" s
-  | `Serialize (Json s) -> Format.fprintf fmt "Invalid json input:\n'%s'" s
-  | `Serialize (Assoc s) ->
-      Format.fprintf fmt "Expected member '%s' to be a JSON object with named fields" s
+  | `Serialize { expected; path; msg } -> (
+      Format.fprintf fmt "Decode error at";
+      pp_path fmt path;
+      Format.fprintf fmt ": expected %a" pp_value_kind expected;
+      match msg with None -> () | Some m -> Format.fprintf fmt " (%s)" m)
   | `Invalid_uuid { uuid } -> Format.fprintf fmt "Invalid uuid '%s'" uuid
   | `Type_registration (Unregistered_component c) ->
       Format.fprintf fmt "Component '%s' has not been registered." c
@@ -178,9 +201,16 @@ let asset_ext_unsupported path : error = `Asset_ext_unsupported { path }
 (** [asset_ext_unsupported_exn] returns the `Engine_error` exception *)
 let asset_ext_unsupported_exn path = raise_error @@ asset_ext_unsupported path
 
-(** [parse_json field] returns the [`Serialize] error. Field is [parse_json] where the passed in
-    string should be the field name. *)
-let parse_json field : error = `Serialize field
+let decode_error ?(msg = None) ~expected path : error = `Serialize { expected; path; msg }
+let expected_string ?msg path = decode_error ?msg ~expected:String path
+let expected_float ?msg path = decode_error ?msg ~expected:Float path
+let expected_int ?msg path = decode_error ?msg ~expected:Int path
+let expected_bool ?msg path = decode_error ?msg ~expected:Bool path
+let expected_vec2 ?msg path = decode_error ?msg ~expected:Vec2 path
+let expected_vec3 ?msg path = decode_error ?msg ~expected:Vec3 path
+let expected_uuid ?msg path = decode_error ?msg ~expected:Uuid path
+let expected_list ?msg path = decode_error ?msg ~expected:List path
+let expected_obj ?msg path = decode_error ?msg ~expected:Obj path
 
 (** [invalid_uuid uuid] returns the [`Invalid_uuid] error. *)
 let invalid_uuid uuid : error = `Invalid_uuid uuid
