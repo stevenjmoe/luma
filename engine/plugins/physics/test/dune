@@ -1,0 +1,7 @@
+(executable
+ (name unit)
+ (libraries alcotest luma.physics luma.driver.raylib))
+
+(rule
+  (alias runtest)
+  (action (run %{exe:unit.exe})))
