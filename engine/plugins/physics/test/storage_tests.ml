@@ -9,10 +9,10 @@ let ioe e = Id.Entity.to_int e
 
 let test_create_and_basic_ops () =
   let gravity = Vec2.create 0. (-9.81) in
-  let max_dt = 0.0016 in
+  let max_step_dt = 0.0016 in
 
   let bounds = Bounded2d.Aabb2d.of_min_max (Vec2.create 50. 50.) (Vec2.create 50. 50.) in
-  let _cfg = Config.create ~gravity ~max_dt ~bounds in
+  let _cfg = Config.create ~gravity ~max_step_dt ~bounds:(Some bounds) in
   let index = Rb_store.Index.create ~initial:99 in
   let store = Rb_store.create ~initial:99 () in
 

@@ -34,9 +34,9 @@ let broad_phase_pairs bp =
 
 let setup () =
   let gravity = Vec2.create 0. (-9.81) in
-  let max_dt = 0.0016 in
+  let max_step_dt = 0.0016 in
   let bounds = Bounded2d.Aabb2d.of_min_max (Vec2.create 0. 0.) (Vec2.create 1040. 1040.) in
-  let cfg = Config.create ~gravity ~max_dt ~bounds () in
+  let cfg = Config.create ~gravity ~max_step_dt ~bounds:(Some bounds) () in
   let index = Rb_store.Index.create ~initial:100 in
   let store = Rb_store.create ~initial:100 () in
   let bp = Broad_phase.create () in
