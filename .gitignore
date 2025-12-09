@@ -34,4 +34,4 @@ _opam/
 *.png
 *.ini
 editor/
-*/dune.lock/**
+**/dune.lock/**
