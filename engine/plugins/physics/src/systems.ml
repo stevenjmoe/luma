@@ -25,81 +25,98 @@ module Make (L : Luma.S) = struct
           & End)
       "sync_rigid_bodies"
       (fun w _ e (rb_store, (index, (time, _))) ->
-        let current = Hashtbl.create 1024 in
-
-        List.iter (fun (entity, (rb, _)) -> Hashtbl.replace current entity true) e;
+        rb_store.current_generation <- rb_store.current_generation + 1;
+        let gen = rb_store.current_generation in
 
         (* Add to or update rigid body store *)
         List.iter
           (fun (entity, ((rb : Rigid_body.t), _)) ->
             let open Rigid_body in
             match get_rigid_body entity index with
-            | None ->
+            | None -> (
                 let row = Rb_store.add rb_store rb in
-                Rb_store.Index.on_add index ~entity ~row
-            | Some row -> (
-                let open L.Math.Bounded2d in
+                Rb_store.Index.on_add index ~entity ~row;
+                rb_store.last_seen_generation.(row) <- gen;
+
                 rb_store.inv_mass.(row) <- rb.inv_mass;
                 rb_store.damping.(row) <- rb.damping;
                 rb_store.body_type.(row) <- Rigid_body.encode_body_type rb.body_type;
                 rb_store.shape.(row) <- Rigid_body.encode_shape rb.shape;
-                let is_kinematic = rb.body_type = Kinematic in
 
+                let open L.Math.Bounded2d in
                 match rb.shape with
                 | Circle c ->
                     let radius = Bounding_circle.radius c in
                     rb_store.radius.(row) <- radius;
+                    let cx = rb.pos.x in
+                    let cy = rb.pos.y in
+                    rb_store.pos_x.(row) <- cx;
+                    rb_store.pos_y.(row) <- cy;
 
-                    if is_kinematic then (
-                      let curr_x = rb.pos.x in
-                      let curr_y = rb.pos.y in
-                      let dt = Time.dt time in
-
-                      rb_store.pos_x.(row) <- curr_x;
-                      rb_store.pos_y.(row) <- curr_y;
-
-                      derive_kinematic_velocity rb_store ~row ~curr_x ~curr_y ~dt);
-
-                    let center_x = rb_store.pos_x.(row) in
-                    let center_y = rb_store.pos_y.(row) in
-
-                    rb_store.min_x.(row) <- center_x -. radius;
-                    rb_store.min_y.(row) <- center_y -. radius;
-                    rb_store.max_x.(row) <- center_x +. radius;
-                    rb_store.max_y.(row) <- center_y +. radius
+                    rb_store.min_x.(row) <- cx -. radius;
+                    rb_store.max_x.(row) <- cx +. radius;
+                    rb_store.min_y.(row) <- cy -. radius;
+                    rb_store.max_y.(row) <- cy +. radius
                 | Aabb a ->
                     let half_size = Aabb2d.half_size a in
                     rb_store.box_hw.(row) <- half_size.x;
                     rb_store.box_hh.(row) <- half_size.y;
 
-                    if is_kinematic then (
-                      let curr_x = rb.pos.x in
-                      let curr_y = rb.pos.y in
-                      let dt = Time.dt time in
+                    let cx = rb.pos.x in
+                    let cy = rb.pos.y in
+                    rb_store.pos_x.(row) <- cx;
+                    rb_store.pos_y.(row) <- cy;
 
-                      rb_store.pos_x.(row) <- curr_x;
-                      rb_store.pos_y.(row) <- curr_y;
+                    rb_store.min_x.(row) <- cx -. half_size.x;
+                    rb_store.max_x.(row) <- cx +. half_size.x;
+                    rb_store.min_y.(row) <- cy -. half_size.y;
+                    rb_store.max_y.(row) <- cy +. half_size.y)
+            | Some row -> (
+                rb_store.last_seen_generation.(row) <- gen;
+                let is_kinematic = rb_store.body_type.(row) = 2 in
 
-                      derive_kinematic_velocity rb_store ~row ~curr_x ~curr_y ~dt);
+                if is_kinematic then (
+                  let curr_x = rb.pos.x in
+                  let curr_y = rb.pos.y in
+                  let dt = Time.dt time in
+                  rb_store.pos_x.(row) <- curr_x;
+                  rb_store.pos_y.(row) <- curr_y;
+                  derive_kinematic_velocity rb_store ~row ~curr_x ~curr_y ~dt);
 
-                    let center_x = rb_store.pos_x.(row) in
-                    let center_y = rb_store.pos_y.(row) in
-
-                    rb_store.min_x.(row) <- center_x -. half_size.x;
-                    rb_store.max_x.(row) <- center_x +. half_size.x;
-                    rb_store.min_y.(row) <- center_y -. half_size.y;
-                    rb_store.max_y.(row) <- center_y +. half_size.y;
-                    ()))
+                match rb_store.shape.(row) with
+                (* encoded circle *)
+                | 0 ->
+                    let radius = rb_store.radius.(row) in
+                    let cx = rb_store.pos_x.(row) in
+                    let cy = rb_store.pos_y.(row) in
+                    rb_store.min_x.(row) <- cx -. radius;
+                    rb_store.max_x.(row) <- cx +. radius;
+                    rb_store.min_y.(row) <- cy -. radius;
+                    rb_store.max_y.(row) <- cy +. radius
+                (* encoded AABB *)
+                | 1 ->
+                    let hw = rb_store.box_hw.(row) in
+                    let hh = rb_store.box_hh.(row) in
+                    let cx = rb_store.pos_x.(row) in
+                    let cy = rb_store.pos_y.(row) in
+                    rb_store.min_x.(row) <- cx -. hw;
+                    rb_store.max_x.(row) <- cx +. hw;
+                    rb_store.min_y.(row) <- cy -. hh;
+                    rb_store.max_y.(row) <- cy +. hh
+                | _ -> ()))
           e;
 
         let i = ref 0 in
         while !i < rb_store.len do
-          let entity = index.row_to_ent.(!i) in
-          if entity = Utils.sentinel_entity || not (Hashtbl.mem current entity) then (
+          let row = !i in
+          let entity = index.row_to_ent.(row) in
+
+          if entity = Utils.sentinel_entity || rb_store.last_seen_generation.(row) <> gen then (
             let last = rb_store.len - 1 in
-            if !i < last then (
-              Rb_store.swap_rows rb_store !i last;
-              Rb_store.Index.on_swap index ~i:!i ~j:last);
+
+            if row < last then (
+              Rb_store.swap_rows rb_store row last;
+              Rb_store.Index.on_swap index ~i:row ~j:last);
 
             Rb_store.remove rb_store last;
             Rb_store.Index.on_remove index ~row:last)
@@ -179,10 +196,9 @@ module Make (L : Luma.S) = struct
 
               Broad_phase.update_broad_phase store grid;
               Broad_phase.update_potential_collision_pairs bp grid;
+
               Narrow_phase.update_actual_collision_pairs np store bp index;
               Resolver.resolve_collisions store np;
-              Collision_event.fill_collision_events np event_store index;
-
-              ()));
+              Collision_event.fill_collision_events np event_store index));
         w)
 end

@@ -76,7 +76,6 @@ let grid_cell grid ~pos_x ~pos_y =
 
 (** [insert grid body_index ~min_x ~min_y ~max_x ~max_y] *)
 let insert grid body_index ~min_x ~min_y ~max_x ~max_y =
-  let open Bounded2d.Aabb2d in
   let start_col, start_row = grid_cell grid ~pos_x:min_x ~pos_y:min_y in
   let end_col, end_row = grid_cell grid ~pos_x:max_x ~pos_y:max_y in
 

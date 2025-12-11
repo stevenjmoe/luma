@@ -39,7 +39,7 @@ let setup () =
   let cfg = Config.create ~gravity ~max_step_dt ~bounds:(Some bounds) () in
   let index = Rb_store.Index.create ~initial:100 in
   let store = Rb_store.create ~initial:100 () in
-  let bp = Broad_phase.create () in
+  let bp = Broad_phase.create ~max_bodies:1000 () in
   let grid = Grid.create cfg.bounds 32. in
 
   fill_store ~n:100 store index;

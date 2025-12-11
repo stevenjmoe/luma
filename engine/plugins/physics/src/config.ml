@@ -18,6 +18,7 @@ type t = {
   bounds : Bounded2d.Aabb2d.t;
   max_step_dt : float;
   debug : bool;
+  max_bodies : int;
 }
 
 module R = Luma__resource.Resource.Make (struct
@@ -32,10 +33,12 @@ let default () =
   let min = Vec2.create (-1024.) (-1024.) in
   let max = Vec2.create 1024. 1024. in
   let bounds = Bounded2d.Aabb2d.of_min_max min max in
+  let max_bodies = 2048 in
 
-  { gravity; max_step_dt; bounds; debug = true }
+  { gravity; max_step_dt; bounds; debug = true; max_bodies }
 
-let create ?(debug = false) ~gravity ?(max_step_dt = 0.016) ?(bounds = None) () =
+let create ?(debug = false) ~gravity ?(max_step_dt = 0.016) ?(bounds = None) ?(max_bodies = 2048) ()
+    =
   let bounds =
     match bounds with
     | None ->
@@ -44,4 +47,4 @@ let create ?(debug = false) ~gravity ?(max_step_dt = 0.016) ?(bounds = None) () 
         Bounded2d.Aabb2d.of_min_max min max
     | Some b -> b
   in
-  { gravity; max_step_dt; bounds; debug }
+  { gravity; max_step_dt; bounds; debug; max_bodies }

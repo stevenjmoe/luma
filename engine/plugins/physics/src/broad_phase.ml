@@ -1,5 +1,7 @@
 type t = {
-  added_pairs : (int64, unit) Hashtbl.t;
+  max_bodies : int;
+  mutable current_generation : int;
+  pair_generation : int array;
   ids1 : int Dynarray.t;
   ids2 : int Dynarray.t;
 }
@@ -7,19 +9,36 @@ type t = {
 let dx = [| 1; 1; 0; -1 |]
 let dy = [| 0; 1; 1; 1 |]
 
-let create ?(pairs_cap = 0) ?(set_cap = 16384) () =
+let create ~max_bodies ?(pairs_cap = 0) () =
   let ids1 = Dynarray.create () in
   let ids2 = Dynarray.create () in
   if pairs_cap > 0 then (
     Dynarray.ensure_capacity ids1 pairs_cap;
     Dynarray.ensure_capacity ids2 pairs_cap);
 
-  { added_pairs = Hashtbl.create set_cap; ids1; ids2 }
+  let pair_generation = Array.make (max_bodies * max_bodies) 0 in
+
+  { max_bodies; pair_generation; current_generation = 0; ids1; ids2 }
 
 let clear c =
-  Hashtbl.clear c.added_pairs;
   Dynarray.clear c.ids1;
   Dynarray.clear c.ids2
+
+let pair_index ~max_bodies ~id1 ~id2 =
+  assert (id1 < max_bodies && id2 < max_bodies);
+  let a = min id1 id2 in
+  let b = max id1 id2 in
+  (a * max_bodies) + b
+
+let add_pair c id1 id2 =
+  let a = min id1 id2 in
+  let b = max id1 id2 in
+  if a <> b then
+    let idx = pair_index ~max_bodies:c.max_bodies ~id1:a ~id2:b in
+    if c.pair_generation.(idx) <> c.current_generation then (
+      c.pair_generation.(idx) <- c.current_generation;
+      Dynarray.add_last c.ids1 id1;
+      Dynarray.add_last c.ids2 id2)
 
 let update_broad_phase (s : Rb_store.t) (grid : Grid.t) =
   Grid.clear_grid grid;
@@ -31,13 +50,13 @@ let update_broad_phase (s : Rb_store.t) (grid : Grid.t) =
     done
 
 let update_potential_collision_pairs c grid =
+  (* This shouldn't happen but why not check it anyway *)
+  if c.current_generation = Int.max_int then (
+    c.current_generation <- 1;
+    Array.fill c.pair_generation 0 (Array.length c.pair_generation) 0)
+  else c.current_generation <- c.current_generation + 1;
   clear c;
-  let { added_pairs; ids1; ids2 } = c in
 
-  let pair_key_of_pairs id1 id2 =
-    let a = Int64.of_int (min id1 id2) and b = Int64.of_int (max id1 id2) in
-    Int64.logor (Int64.shift_left a 32) b
-  in
   let occ_len = Dynarray.length Grid.(grid.occupied) in
 
   for i = 0 to occ_len - 1 do
@@ -53,12 +72,7 @@ let update_potential_collision_pairs c grid =
         for b = a + 1 to n - 1 do
           let id1 = current_cell.data.(a) in
           let id2 = current_cell.data.(b) in
-          let pair_key = pair_key_of_pairs id1 id2 in
-
-          if not (Hashtbl.mem added_pairs pair_key) then (
-            Hashtbl.add added_pairs pair_key ();
-            Dynarray.add_last ids1 id1;
-            Dynarray.add_last ids2 id2)
+          add_pair c id1 id2
         done
       done;
 
@@ -77,14 +91,7 @@ let update_potential_collision_pairs c grid =
 
               for b = 0 to adjacent_cell.len - 1 do
                 let id2 = adjacent_cell.data.(b) in
-
-                if id1 <> id2 then
-                  let pair_key = pair_key_of_pairs id1 id2 in
-
-                  if not (Hashtbl.mem added_pairs pair_key) then (
-                    Hashtbl.add added_pairs pair_key ();
-                    Dynarray.add_last ids1 id1;
-                    Dynarray.add_last ids2 id2)
+                add_pair c id1 id2
               done
             done
       done

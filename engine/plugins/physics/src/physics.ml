@@ -42,8 +42,8 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
     let packed_grid = Resource.pack (module Grid.R) grid in
     World.add_resource Grid.R.type_id packed_grid world
 
-  let add_broad_phase world =
-    let broad_phase = Broad_phase.create () in
+  let add_broad_phase max_bodies world =
+    let broad_phase = Broad_phase.create ~max_bodies () in
     let packed_bp = Resource.pack (module Broad_phase.R) broad_phase in
     World.add_resource Broad_phase.R.type_id packed_bp world
 
@@ -62,7 +62,7 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
     |> add_rb_store
     |> add_rb_index
     |> add_grid config.bounds
-    |> add_broad_phase
+    |> add_broad_phase config.max_bodies
     |> add_narrow_phase
     |> add_event_store
 

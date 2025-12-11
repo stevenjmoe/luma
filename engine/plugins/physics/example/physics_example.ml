@@ -3,6 +3,20 @@ module Physics_plugin = Luma_physics.Physics.Make (Luma)
 open Luma
 open Luma_physics
 
+let gc_metrics () =
+  let frame = ref 0 in
+  System.make ~components:End "gc_metrics" (fun w _cmd _e ->
+      incr frame;
+      (* Print GC stats every 120 frames (~2s at 60 FPS) *)
+      (if !frame mod 120 = 0 then
+         let s = Gc.quick_stat () in
+         Printf.printf
+           "[GC] minor_words=%f major_words=%f major_collections=%d heap_words=%d top_heap_words=%d\n\
+            %!"
+           s.Gc.minor_words s.Gc.major_words s.Gc.major_collections s.Gc.heap_words
+           s.Gc.top_heap_words);
+      w)
+
 module Player_ref = struct
   type t = Id.Entity.t
 
@@ -112,5 +126,6 @@ let () =
   |> App.add_plugin (Physics_plugin.plugin ~world_config:physics_config)
   |> App.on Startup (setup_rigid_bodies ())
   |> App.on Update (move_rect ())
+  |> App.on Update (gc_metrics ())
   |> App.on Update (print_collision ())
   |> App.run

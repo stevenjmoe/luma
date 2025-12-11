@@ -28,6 +28,8 @@ type t = {
   mutable max_x : float array;
   mutable max_y : float array;
   mutable active : int array;
+  mutable last_seen_generation : int array;
+  mutable current_generation : int;
 }
 
 module R = Luma__resource.Resource.Make (struct
@@ -62,6 +64,8 @@ let create ?(initial = 128) () =
     max_x = f 0.;
     max_y = f 0.;
     active = f 1;
+    last_seen_generation = f 0;
+    current_generation = 0;
   }
 
 let ensure_capacity s need =
@@ -99,7 +103,8 @@ let ensure_capacity s need =
     s.min_x <- grow_float s.min_x;
     s.min_y <- grow_float s.min_y;
     s.max_x <- grow_float s.max_x;
-    s.max_y <- grow_float s.max_y
+    s.max_y <- grow_float s.max_y;
+    s.last_seen_generation <- grow_int s.last_seen_generation
 
 (** [swap_rows store row1 row2] *)
 let swap_rows s i j =
@@ -130,7 +135,8 @@ let swap_rows s i j =
     swap s.min_x;
     swap s.min_y;
     swap s.max_x;
-    swap s.max_y
+    swap s.max_y;
+    swap s.last_seen_generation
 
 (** [add store rigid_body] adds the body to the store and returns the index. *)
 let add s (rb : rigid_body) =
@@ -152,6 +158,7 @@ let add s (rb : rigid_body) =
   s.active.(i) <- (if rb.active then 1 else 0);
   s.shape.(i) <- Rigid_body.encode_shape rb.shape;
   s.len <- i + 1;
+  s.current_generation <- 0;
 
   (match rb.shape with
   | Circle c ->
