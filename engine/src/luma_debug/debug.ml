@@ -310,7 +310,7 @@ module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struc
       (fun w _cmd e (state, _) ->
         let open Luma__math.Vec2 in
         let cameras = List.map (fun (_, (c, _)) -> c) e in
-        let padding = 16 in
+        let padding = -16 in
         let mouse_pos = D.Input.Mouse.get_mouse_position () in
         let mx = mouse_pos.x in
         let my = mouse_pos.y in
@@ -322,7 +322,7 @@ module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struc
           mx >= v_pos.x && mx < v_pos.x +. v_size.x && my >= v_pos.y && my < v_pos.y +. v_size.y
         in
 
-        (* Pick the camera whose viewport contains the mouse, preferring highest order. *)
+        (* Try to find the camera whose viewport contains the mouse *)
         let cam_under_mouse =
           cameras
           |> List.filter_map (fun cam ->
@@ -337,33 +337,38 @@ module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struc
                None
         in
 
-        (* World coords for the selected camera, if any. *)
+        (* If no viewport hit, use the first camera. Single camera games don't typically have a viewport. *)
+        let cam_for_debug =
+          match (cam_under_mouse, cameras) with
+          | Some cam, _ -> Some cam
+          | None, cam :: _ -> Some cam
+          | None, [] -> None
+        in
+
         let mouse_world_opt =
-          match cam_under_mouse with
+          match cam_for_debug with
           | None -> None
           | Some cam -> (
               match Camera.viewport cam with
-              | None -> None
-              | Some vp ->
+              | Some vp when point_in_viewport vp mx my ->
                   let open Luma__render.Viewport in
                   let v_pos = position vp in
                   let local = Luma__math.Vec2.create (mx -. v_pos.x) (my -. v_pos.y) in
-                  Some (Camera.get_screen_to_world_2d local cam))
+                  Some (Camera.get_screen_to_world_2d local cam)
+              | _ -> Some (Camera.get_screen_to_world_2d mouse_pos cam))
         in
 
         let screen_x = int_of_float mx in
         let screen_y = int_of_float my in
-
-        (* Draw slightly above the cursor so it doesn't overlap. *)
         let render_at_x = screen_x in
-        let render_at_y = screen_y - padding in
+        let render_at_y = screen_y + padding in
         let colour = D.Colour.rgb ~r:0 ~g:0 ~b:0 in
 
         (match state.State.mouse_debug_mode with
         | Off -> ()
         | Screen ->
             D.Draw.draw_text
-              (Printf.sprintf "s: %d %d" screen_x screen_y)
+              (Printf.sprintf "s: %d,%d" screen_x screen_y)
               render_at_x render_at_y 20 colour
         | World -> (
             match mouse_world_opt with
@@ -377,7 +382,6 @@ module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struc
         | Both -> (
             match mouse_world_opt with
             | None ->
-                (* No camera under mouse: just show screen coords. *)
                 D.Draw.draw_text
                   (Printf.sprintf "s: %d,%d" screen_x screen_y)
                   render_at_x render_at_y 20 colour
