@@ -3,6 +3,12 @@ open Luma__id
 open Luma__resource
 open Luma__app
 
+type mouse_debug_mode =
+  | Screen
+  | World
+  | Both
+  | Off
+
 type t = {
   mutable open_ : bool;
   mutable filter : string;
@@ -16,6 +22,7 @@ type t = {
   mutable h : float;
   mutable full : bool;
   mutable resizing : bool;
+  mutable mouse_debug_mode : mouse_debug_mode;
 }
 
 let default () =
@@ -32,6 +39,7 @@ let default () =
     h = 200.;
     full = false;
     resizing = false;
+    mouse_debug_mode = Both;
   }
 
 module R = Resource.Make (struct

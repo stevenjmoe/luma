@@ -1,4 +1,4 @@
 (library
   (name luma__debug)
   (public_name luma.debug)
-  (libraries luma.app luma.ecs luma.resource luma.input luma.types))
+  (libraries luma.app luma.ecs luma.resource luma.input luma.types luma.render))

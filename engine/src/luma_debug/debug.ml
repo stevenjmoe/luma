@@ -85,7 +85,7 @@ let clamp_window_size ~min_w ~min_h w h =
   let h' = if h < min_h then min_h else h in
   (w', h')
 
-module Make (D : Luma__driver.Driver.S) = struct
+module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struct
   open State
 
   let current_panel_rect state : Luma__math.Rect.t * float * float * float * float =
@@ -302,10 +302,112 @@ module Make (D : Luma__driver.Driver.S) = struct
 
           world))
 
+  let draw_coords () =
+    System.make_with_resources
+      ~components:Query.Component.(Required (module Camera.C) & End)
+      ~resources:Query.Resource.(Resource (module State.R) & End)
+      "draw_coords"
+      (fun w _cmd e (state, _) ->
+        let open Luma__math.Vec2 in
+        let cameras = List.map (fun (_, (c, _)) -> c) e in
+        let padding = 16 in
+        let mouse_pos = D.Input.Mouse.get_mouse_position () in
+        let mx = mouse_pos.x in
+        let my = mouse_pos.y in
+
+        let point_in_viewport (v : Luma__render.Viewport.t) mx my =
+          let open Luma__render.Viewport in
+          let v_pos = position v in
+          let v_size = size v in
+          mx >= v_pos.x && mx < v_pos.x +. v_size.x && my >= v_pos.y && my < v_pos.y +. v_size.y
+        in
+
+        (* Pick the camera whose viewport contains the mouse, preferring highest order. *)
+        let cam_under_mouse =
+          cameras
+          |> List.filter_map (fun cam ->
+              match Camera.viewport cam with
+              | None -> None
+              | Some vp -> if point_in_viewport vp mx my then Some cam else None)
+          |> List.fold_left
+               (fun acc cam ->
+                 match acc with
+                 | None -> Some cam
+                 | Some best -> if Camera.order cam > Camera.order best then Some cam else acc)
+               None
+        in
+
+        (* World coords for the selected camera, if any. *)
+        let mouse_world_opt =
+          match cam_under_mouse with
+          | None -> None
+          | Some cam -> (
+              match Camera.viewport cam with
+              | None -> None
+              | Some vp ->
+                  let open Luma__render.Viewport in
+                  let v_pos = position vp in
+                  let local = Luma__math.Vec2.create (mx -. v_pos.x) (my -. v_pos.y) in
+                  Some (Camera.get_screen_to_world_2d local cam))
+        in
+
+        let screen_x = int_of_float mx in
+        let screen_y = int_of_float my in
+
+        (* Draw slightly above the cursor so it doesn't overlap. *)
+        let render_at_x = screen_x in
+        let render_at_y = screen_y - padding in
+        let colour = D.Colour.rgb ~r:0 ~g:0 ~b:0 in
+
+        (match state.State.mouse_debug_mode with
+        | Off -> ()
+        | Screen ->
+            D.Draw.draw_text
+              (Printf.sprintf "s: %d %d" screen_x screen_y)
+              render_at_x render_at_y 20 colour
+        | World -> (
+            match mouse_world_opt with
+            | None -> ()
+            | Some world ->
+                let world_x = int_of_float world.x in
+                let world_y = int_of_float world.y in
+                D.Draw.draw_text
+                  (Printf.sprintf "w: %d,%d" world_x world_y)
+                  render_at_x render_at_y 20 colour)
+        | Both -> (
+            match mouse_world_opt with
+            | None ->
+                (* No camera under mouse: just show screen coords. *)
+                D.Draw.draw_text
+                  (Printf.sprintf "s: %d,%d" screen_x screen_y)
+                  render_at_x render_at_y 20 colour
+            | Some world ->
+                let world_x = int_of_float world.x in
+                let world_y = int_of_float world.y in
+                D.Draw.draw_text
+                  (Printf.sprintf "w: %d,%d | s: %d,%d" world_x world_y screen_x screen_y)
+                  render_at_x render_at_y 20 colour));
+        w)
+
+  let toggle_mouse_overlay () =
+    System.make_with_resources ~components:End
+      ~resources:Query.Resource.(Resource (module State.R) & End)
+      "toggle_mouse_overlay"
+      (fun w cmd e (state, _) ->
+        (if D.Input.Keyboard.is_key_pressed Luma__types.Input_types.Key.F3 then
+           match state.mouse_debug_mode with
+           | Both -> state.mouse_debug_mode <- Screen
+           | Screen -> state.mouse_debug_mode <- World
+           | World -> state.mouse_debug_mode <- Off
+           | Off -> state.mouse_debug_mode <- Both);
+        w)
+
   let add_plugin app =
     let open Luma__app in
     app
-    |> App.on Startup @@ setup_state ()
-    |> App.on PreUpdate @@ toggle_overlay ()
-    |> App.on Overlay @@ draw_overlay ()
+    |> App.on Startup (setup_state ())
+    |> App.on PreUpdate (toggle_overlay ())
+    |> App.on PreUpdate (toggle_mouse_overlay ())
+    |> App.on Overlay (draw_overlay ())
+    |> App.on Overlay (draw_coords ())
 end

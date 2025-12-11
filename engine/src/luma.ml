@@ -150,7 +150,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Time = Time
   module Time_plugin = Time.Plugin (D)
   module Audio = Audio.Make (D)
-  module Debug_plugin = Debug.Make (D)
+  module Debug_plugin = Debug.Make (D) (Camera)
   module Scene = Scene.Make (D)
 
   type colour = D.colour
