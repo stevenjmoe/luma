@@ -1,20 +1,12 @@
 module Make (L : Luma.S) = struct
   open Luma__time
+  open Luma__math
 
   let get_rigid_body entity index =
     let open Rigid_body in
     match Rb_store.Index.row_of_entity index entity with None -> None | Some row -> Some row
 
-  let derive_kinematic_velocity (store : Rb_store.t) ~row ~curr_x ~curr_y ~dt =
-    if dt > 0. then (
-      let prev_x = store.prev_pos_x.(row) in
-      let prev_y = store.prev_pos_y.(row) in
-      store.vel_x.(row) <- (curr_x -. prev_x) /. dt;
-      store.vel_y.(row) <- (curr_y -. prev_y) /. dt;
-      store.prev_pos_x.(row) <- curr_x;
-      store.prev_pos_y.(row) <- curr_y)
-
-  let sync_rigid_bodies () =
+  let sync_to_store () =
     L.System.make_with_resources
       ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
@@ -23,7 +15,7 @@ module Make (L : Luma.S) = struct
           & Resource (module Rb_store.Index.R)
           & Resource (module Luma__time.Time.R)
           & End)
-      "sync_rigid_bodies"
+      "sync_to_store"
       (fun w _ e (rb_store, (index, (time, _))) ->
         rb_store.current_generation <- rb_store.current_generation + 1;
         let gen = rb_store.current_generation in
@@ -71,41 +63,10 @@ module Make (L : Luma.S) = struct
                     rb_store.max_x.(row) <- cx +. half_size.x;
                     rb_store.min_y.(row) <- cy -. half_size.y;
                     rb_store.max_y.(row) <- cy +. half_size.y)
-            | Some row -> (
-                rb_store.last_seen_generation.(row) <- gen;
-                let is_kinematic = rb_store.body_type.(row) = 2 in
-
-                if is_kinematic then (
-                  let curr_x = rb.pos.x in
-                  let curr_y = rb.pos.y in
-                  let dt = Time.dt time in
-                  rb_store.pos_x.(row) <- curr_x;
-                  rb_store.pos_y.(row) <- curr_y;
-                  derive_kinematic_velocity rb_store ~row ~curr_x ~curr_y ~dt);
-
-                match rb_store.shape.(row) with
-                (* encoded circle *)
-                | 0 ->
-                    let radius = rb_store.radius.(row) in
-                    let cx = rb_store.pos_x.(row) in
-                    let cy = rb_store.pos_y.(row) in
-                    rb_store.min_x.(row) <- cx -. radius;
-                    rb_store.max_x.(row) <- cx +. radius;
-                    rb_store.min_y.(row) <- cy -. radius;
-                    rb_store.max_y.(row) <- cy +. radius
-                (* encoded AABB *)
-                | 1 ->
-                    let hw = rb_store.box_hw.(row) in
-                    let hh = rb_store.box_hh.(row) in
-                    let cx = rb_store.pos_x.(row) in
-                    let cy = rb_store.pos_y.(row) in
-                    rb_store.min_x.(row) <- cx -. hw;
-                    rb_store.max_x.(row) <- cx +. hw;
-                    rb_store.min_y.(row) <- cy -. hh;
-                    rb_store.max_y.(row) <- cy +. hh
-                | _ -> ()))
+            | Some row -> rb_store.last_seen_generation.(row) <- gen)
           e;
 
+        (* Cull rows whose entities no longer have a rigid body *)
         let i = ref 0 in
         while !i < rb_store.len do
           let row = !i in
@@ -123,6 +84,25 @@ module Make (L : Luma.S) = struct
           else incr i
         done;
 
+        w)
+
+  let sync_from_store () =
+    L.System.make_with_resources
+      ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
+      ~resources:
+        L.Query.Resource.(Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
+      "sync_from_store"
+      (fun w _ e (store, (index, _)) ->
+        List.iter
+          (fun (entity, ((rb : Rigid_body.t), _)) ->
+            match get_rigid_body entity index with
+            | None -> ()
+            | Some row ->
+                rb.pos.x <- store.pos_x.(row);
+                rb.pos.y <- store.pos_y.(row);
+                rb.vel.x <- store.vel_x.(row);
+                rb.vel.y <- store.vel_y.(row))
+          e;
         w)
 
   let draw_circle store idx queue =
