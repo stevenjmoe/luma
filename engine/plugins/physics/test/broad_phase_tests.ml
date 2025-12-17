@@ -50,8 +50,7 @@ let setup () =
 
 let test_broad_phase_has_no_false_negatives () =
   let _cfg, _index, store, grid, bp = setup () in
-  Broad_phase.update_broad_phase store grid;
-  Broad_phase.update_potential_collision_pairs bp grid;
+  Broad_phase.update_broad_phase store grid |> Broad_phase.update_potential_collision_pairs bp;
 
   let expected = naive_pairs store in
   let actual = broad_phase_pairs bp in
