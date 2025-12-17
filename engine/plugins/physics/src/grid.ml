@@ -118,30 +118,6 @@ let insert grid body_index ~min_x ~min_y ~max_x ~max_y =
     done
   done
 
-(* TODO: query filter *)
-let iter_aabb grid ~min_x ~min_y ~max_x ~max_y ~f =
-  let start_col, start_row = grid_cell grid ~pos_x:min_x ~pos_y:min_y in
-  let end_col, end_row = grid_cell grid ~pos_x:max_x ~pos_y:max_y in
-
-  grid.query_generation <- grid.query_generation + 1;
-  if grid.query_generation = max_int then (
-    Array.fill grid.seen 0 (Array.length grid.seen) 0;
-    grid.query_generation <- grid.query_generation + 1);
-
-  for row = start_row to end_row do
-    for col = start_col to end_col do
-      let cell_idx = cell_index grid ~row ~col in
-      let cell = grid.cells.(cell_idx) in
-      for i = 0 to cell.len - 1 do
-        let body = cell.data.(i) in
-        ensure_seen grid body;
-        if grid.seen.(body) <> grid.query_generation then (
-          grid.seen.(body) <- grid.query_generation;
-          f body)
-      done
-    done
-  done
-
 module R = Luma__resource.Resource.Make (struct
   type inner = t
 
