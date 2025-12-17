@@ -7,7 +7,8 @@ module Make (L : Luma.S) = struct
     match Rb_store.Index.row_of_entity index entity with None -> None | Some row -> Some row
 
   let sync_to_store () =
-    L.System.make_with_resources
+    let open Luma__ecs in
+    System.make_with_resources
       ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
         L.Query.Resource.(
@@ -174,8 +175,8 @@ module Make (L : Luma.S) = struct
                   Rb_store.integrate_linear_motion_at store ~row ~dt)
               done;
 
-              Broad_phase.update_broad_phase store grid;
-              Broad_phase.update_potential_collision_pairs bp grid;
+              Broad_phase.update_broad_phase store grid
+              |> Broad_phase.update_potential_collision_pairs bp;
 
               Narrow_phase.update_actual_collision_pairs np store bp index;
               Resolver.resolve_collisions store np;
