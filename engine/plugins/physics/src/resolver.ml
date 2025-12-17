@@ -1,3 +1,4 @@
+(* TODO: Kinematic/static bodies should be guaranteed to have an inv_mass of 0, but there should be guards in place here to check *)
 let squared f1 f2 = (f1 *. f1) +. (f2 *. f2)
 let dot ~ax ~ay ~bx ~by = (ax *. bx) +. (ay *. by)
 
@@ -146,39 +147,43 @@ let resolve_aabb_aabb (store : Rb_store.t) ~a ~b ~restitution ~position_correcti
     let min_velocity = 0.01 in
 
     if normal_velocity > -.min_velocity then (
-      (* Objects moving apart or contact too “soft”: only position correction, no impulse. *)
-      let half_penetration = penetration *. 0.5 in
-
-      (* Move A opposite normal, B along normal, ignoring inv_mass. *)
-      let move_x = normal_x *. half_penetration in
-      let move_y = normal_y *. half_penetration in
-
+      (* Position correction only, but still weighted by inv_mass *)
       let inv_mass_a = store.inv_mass.(a) in
       let inv_mass_b = store.inv_mass.(b) in
+      let inv_mass_sum = inv_mass_a +. inv_mass_b in
+      if inv_mass_sum <= 0. then ()
+      else
+        let correction_amount = position_correction *. penetration /. inv_mass_sum in
+        let correction_x = correction_amount *. normal_x in
+        let correction_y = correction_amount *. normal_y in
 
-      if inv_mass_a > 0. then (
-        let new_a_x = center_a_x -. move_x in
-        let new_a_y = center_a_y -. move_y in
+        if inv_mass_a > 0. then (
+          let dx_a = correction_x *. inv_mass_a in
+          let dy_a = correction_y *. inv_mass_a in
+          let new_a_x = center_a_x -. dx_a in
+          let new_a_y = center_a_y -. dy_a in
 
-        store.pos_x.(a) <- new_a_x;
-        store.pos_y.(a) <- new_a_y;
+          store.pos_x.(a) <- new_a_x;
+          store.pos_y.(a) <- new_a_y;
 
-        store.min_x.(a) <- min_a_x -. move_x;
-        store.max_x.(a) <- max_a_x -. move_x;
-        store.min_y.(a) <- min_a_y -. move_y;
-        store.max_y.(a) <- max_a_y -. move_y);
+          store.min_x.(a) <- min_a_x -. dx_a;
+          store.max_x.(a) <- max_a_x -. dx_a;
+          store.min_y.(a) <- min_a_y -. dy_a;
+          store.max_y.(a) <- max_a_y -. dy_a);
 
-      if inv_mass_b > 0. then (
-        let new_b_x = center_b_x +. move_x in
-        let new_b_y = center_b_y +. move_y in
+        if inv_mass_b > 0. then (
+          let dx_b = correction_x *. inv_mass_b in
+          let dy_b = correction_y *. inv_mass_b in
+          let new_b_x = center_b_x +. dx_b in
+          let new_b_y = center_b_y +. dy_b in
 
-        store.pos_x.(b) <- new_b_x;
-        store.pos_y.(b) <- new_b_y;
+          store.pos_x.(b) <- new_b_x;
+          store.pos_y.(b) <- new_b_y;
 
-        store.min_x.(b) <- min_b_x +. move_x;
-        store.max_x.(b) <- max_b_x +. move_x;
-        store.min_y.(b) <- min_b_y +. move_y;
-        store.max_y.(b) <- max_b_y +. move_y))
+          store.min_x.(b) <- min_b_x +. dx_b;
+          store.max_x.(b) <- max_b_x +. dx_b;
+          store.min_y.(b) <- min_b_y +. dy_b;
+          store.max_y.(b) <- max_b_y +. dy_b))
     else
       (* Full resolution: impulse + positional correction. *)
       let inv_mass_a = store.inv_mass.(a) in
@@ -323,25 +328,32 @@ let resolve_circle_aabb
         let total_inv_mass = circle_inv_mass +. aabb_inv_mass in
         if total_inv_mass <= 0.0 then ()
         else if impact_speed >= 0.0 then (
-          (* Moving apart: position correction only. *)
           let correction_amount = position_correction *. penetration_depth /. total_inv_mass in
           let corr_x = normal_x *. correction_amount in
           let corr_y = normal_y *. correction_amount in
 
+          let new_circle_x =
+            if circle_inv_mass > 0.0 then circle_pos_x +. (corr_x *. circle_inv_mass)
+            else circle_pos_x
+          in
+          let new_circle_y =
+            if circle_inv_mass > 0.0 then circle_pos_y +. (corr_y *. circle_inv_mass)
+            else circle_pos_y
+          in
+
           if circle_inv_mass > 0.0 then (
-            store.pos_x.(circle) <- circle_pos_x +. (corr_x *. circle_inv_mass);
-            store.pos_y.(circle) <- circle_pos_y +. (corr_y *. circle_inv_mass));
+            store.pos_x.(circle) <- new_circle_x;
+            store.pos_y.(circle) <- new_circle_y);
 
           if aabb_inv_mass > 0.0 then (
             store.pos_x.(aabb) <- store.pos_x.(aabb) -. (corr_x *. aabb_inv_mass);
             store.pos_y.(aabb) <- store.pos_y.(aabb) -. (corr_y *. aabb_inv_mass));
 
-          (* Update bounds *)
-          store.min_x.(circle) <- circle_pos_x -. circle_radius;
-          store.max_x.(circle) <- circle_pos_x +. circle_radius;
-          store.min_y.(circle) <- circle_pos_y -. circle_radius;
-          store.max_y.(circle) <- circle_pos_y +. circle_radius;
-
+          (* Update circle bounds using new position *)
+          store.min_x.(circle) <- new_circle_x -. circle_radius;
+          store.max_x.(circle) <- new_circle_x +. circle_radius;
+          store.min_y.(circle) <- new_circle_y -. circle_radius;
+          store.max_y.(circle) <- new_circle_y +. circle_radius;
           let half_w = store.box_hw.(aabb) in
           let half_h = store.box_hh.(aabb) in
           let new_aabb_x = store.pos_x.(aabb) in
@@ -387,12 +399,15 @@ let resolve_circle_aabb
             store.vel_y.(aabb) <- store.vel_y.(aabb) -. (friction_y *. aabb_inv_mass))
 
 let resolve (store : Rb_store.t) ~a ~b ~restitution ~position_correction =
-  match (store.shape.(a), store.shape.(b)) with
-  | 0, 0 -> resolve_circle_circle ~restitution ~position_correction store ~a ~b
-  | 1, 1 -> resolve_aabb_aabb store ~a ~b ~restitution ~position_correction
-  | 0, 1 -> resolve_circle_aabb store ~circle:a ~aabb:b ~restitution ~position_correction
-  | 1, 0 -> resolve_circle_aabb store ~circle:b ~aabb:a ~restitution ~position_correction
-  | _ -> ()
+  let both_immovable = store.inv_mass.(a) = 0. && store.inv_mass.(b) = 0. in
+  if both_immovable then ()
+  else
+    match (store.shape.(a), store.shape.(b)) with
+    | 0, 0 -> resolve_circle_circle ~restitution ~position_correction store ~a ~b
+    | 1, 1 -> resolve_aabb_aabb store ~a ~b ~restitution ~position_correction
+    | 0, 1 -> resolve_circle_aabb store ~circle:a ~aabb:b ~restitution ~position_correction
+    | 1, 0 -> resolve_circle_aabb store ~circle:b ~aabb:a ~restitution ~position_correction
+    | _ -> ()
 
 let resolve_collisions ?(restitution = 0.2) ?(position_correction = 0.8) store np =
   let ids1, ids2 = Narrow_phase.collisions_view np in
