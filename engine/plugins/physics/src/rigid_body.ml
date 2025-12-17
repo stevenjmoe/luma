@@ -1,3 +1,12 @@
+(** The [Rigid_body] component acts as a config and snapshot of a rigid body in the physics world.
+
+    Spawning an entity with [Rigid_body.C] will initialise the body, and querying for it will return
+    a snapshot of it's current position and velocity.
+
+    However, despite [Vec2.t] having mutable x and y fields, the [Rigid_body] component itself is
+    not mutable; directly mutating the component's position or velocity will not affect the
+    underlying store. All changes must go through the [Physics] API. *)
+
 open Luma__math
 
 type body_type =
@@ -12,15 +21,15 @@ type shape =
 type t = {
   body_type : body_type;
   shape : shape;
-  mutable pos : Vec2.t;
-  mutable vel : Vec2.t;
-  mutable acc : Vec2.t;
-  mutable force_accumulator : Vec2.t;
+  pos : Vec2.t;
+  vel : Vec2.t;
+  acc : Vec2.t;
+  force_accumulator : Vec2.t;
   mass : float;
   inv_mass : float;
   damping : float;
-  mutable angle : float;
-  mutable active : bool;
+  angle : float;
+  active : bool;
 }
 
 let encode_body_type = function Static -> 0 | Dynamic -> 1 | Kinematic -> 2
@@ -47,12 +56,15 @@ let encode_shape = function Circle _ -> 0 | Aabb _ -> 1
 let bounding_box body =
   match body.shape with Circle c -> Bounded2d.Bounding_circle.aabb_2d c | Aabb a -> a
 
-let inv_mass mass =
+let compute_inv_mass mass =
   assert (mass >= 0.);
   if mass > 0. then 1. else 0.
 
 (** [create_circle ?mass body_type pos radius] *)
 let create_circle ?(mass = 0.) body_type pos radius =
+  let mass, inv_mass =
+    match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
+  in
   let circle = Bounded2d.Bounding_circle.create pos radius in
   {
     body_type;
@@ -60,7 +72,7 @@ let create_circle ?(mass = 0.) body_type pos radius =
     vel = Vec2.zero;
     acc = Vec2.zero;
     mass;
-    inv_mass = inv_mass mass;
+    inv_mass = compute_inv_mass mass;
     damping = 0.99;
     active = true;
     angle = 0.;
@@ -70,7 +82,9 @@ let create_circle ?(mass = 0.) body_type pos radius =
 
 (** [create_box ?mass body_type pos size] *)
 let create_box ?(mass = 1.) body_type pos size =
-  let mass, inv_mass = if body_type = Static then (0., 0.) else (mass, inv_mass mass) in
+  let mass, inv_mass =
+    match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
+  in
   let aabb = Bounded2d.Aabb2d.of_center_halfsize pos (Vec2.scale size 0.5) in
 
   {
