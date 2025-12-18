@@ -11,9 +11,9 @@ module type S = sig
   val pos : Luma__ecs.World.t -> Luma__id.Id.EntitySet.elt -> Vec2.t option
 
   val move_and_collide :
-    World.t -> Id.Entity.t -> Vec2.t -> float -> (Id.Entity.t * Vec2.t * float) option
+    World.t -> Id.Entity.t -> velocity:Vec2.t -> dt:float -> (Id.Entity.t * Vec2.t * float) option
 
-  val move_and_slide : ?max_iterations:int -> World.t -> Id.Entity.t -> Vec2.t -> float -> unit
+  val move_and_slide : ?max_iterations:int -> World.t -> Id.Entity.t -> Vec2.t -> float -> bool
   val plugin : ?world_config:Config.t -> Luma__app.App.t -> Luma__app.App.t
 end
 
@@ -70,7 +70,7 @@ module Make (L : Luma.S) : S = struct
 
     Option.get r
 
-  let move_and_collide world entity (velocity : Luma__math.Vec2.t) dt =
+  let move_and_collide world entity ~(velocity : Luma__math.Vec2.t) ~dt =
     let store = get_resource (module Rb_store.R) world in
     let grid = get_resource (module Grid.R) world in
     let index = get_resource (module Rb_store.Index.R) world in
@@ -83,9 +83,9 @@ module Make (L : Luma.S) : S = struct
 
         let dx = velocity.x *. dt in
         let dy = velocity.y *. dt in
-        let move_len = Float.sqrt ((dx *. dx) +. (dy *. dy)) in
+        let move_length = Float.sqrt ((dx *. dx) +. (dy *. dy)) in
 
-        if move_len <= Float.epsilon then (
+        if move_length <= Float.epsilon then (
           store.vel_x.(row) <- 0.;
           store.vel_y.(row) <- 0.;
           None)
@@ -105,10 +105,10 @@ module Make (L : Luma.S) : S = struct
           let sweep_max_x = Float.max start_max_x end_max_x in
           let sweep_max_y = Float.max start_max_y end_max_y in
 
-          let best_t = ref 1. in
-          let best_nx = ref 0. in
-          let best_ny = ref 0. in
-          let best_other = ref None in
+          let earliest_collision_fraction = ref 1. in
+          let collision_normal_x = ref 0. in
+          let collision_normal_y = ref 0. in
+          let collided_row = ref None in
 
           Query.iter_aabb grid ~min_x:sweep_min_x ~min_y:sweep_min_y ~max_x:sweep_max_x
             ~max_y:sweep_max_y ~f:(fun other ->
@@ -116,20 +116,23 @@ module Make (L : Luma.S) : S = struct
               then
                 match Query.kinematic_toi store ~row ~other ~dx ~dy with
                 | None -> ()
-                | Some (t_frac, nx, ny) ->
-                    if t_frac >= 0. && t_frac < !best_t then (
-                      best_t := t_frac;
-                      best_nx := nx;
-                      best_ny := ny;
-                      best_other := Some other));
+                | Some (collision_fraction, nx, ny) ->
+                    if collision_fraction >= 0. && collision_fraction < !earliest_collision_fraction
+                    then (
+                      earliest_collision_fraction := collision_fraction;
+                      collision_normal_x := nx;
+                      collision_normal_y := ny;
+                      collided_row := Some other));
 
           let contact_slop = 1e-4 in
-          let safe_t =
-            if !best_t < 1. then Float.max 0. (!best_t -. (contact_slop /. move_len)) else 1.
+          let safe_travel_fraction =
+            if !earliest_collision_fraction < 1. then
+              Float.max 0. (!earliest_collision_fraction -. (contact_slop /. move_length))
+            else 1.
           in
 
-          let actual_dx = dx *. safe_t in
-          let actual_dy = dy *. safe_t in
+          let actual_dx = dx *. safe_travel_fraction in
+          let actual_dy = dy *. safe_travel_fraction in
 
           store.prev_pos_x.(row) <- store.pos_x.(row);
           store.prev_pos_y.(row) <- store.pos_y.(row);
@@ -139,12 +142,12 @@ module Make (L : Luma.S) : S = struct
           store.vel_y.(row) <- actual_dy /. dt;
           update_bounds store row;
 
-          match !best_other with
+          match !collided_row with
           | None -> None
           | Some other ->
               let entity_other = index.row_to_ent.(other) in
-              let hit_normal = L.Math.Vec2.create !best_nx !best_ny in
-              Some (entity_other, hit_normal, !best_t))
+              let hit_normal = L.Math.Vec2.create !collision_normal_x !collision_normal_y in
+              Some (entity_other, hit_normal, !earliest_collision_fraction))
 
   let move_and_slide ?(max_iterations = 4) world entity velocity dt =
     let open Luma__math.Vec2 in
@@ -153,6 +156,7 @@ module Make (L : Luma.S) : S = struct
     let remaining_dt = ref dt in
     let iter = ref 0 in
     let epsilon = 1e-4 in
+    let collided = ref false in
 
     while !iter < max_iterations && !remaining_dt > 0. do
       let rem_len = Float.sqrt ((!remaining_x *. !remaining_x) +. (!remaining_y *. !remaining_y)) in
@@ -161,9 +165,10 @@ module Make (L : Luma.S) : S = struct
         let vel_step =
           L.Math.Vec2.create (!remaining_x /. !remaining_dt) (!remaining_y /. !remaining_dt)
         in
-        match move_and_collide world entity vel_step !remaining_dt with
+        match move_and_collide world entity ~velocity:vel_step ~dt:!remaining_dt with
         | None -> iter := max_iterations
         | Some (_, normal, t_frac) ->
+            collided := true;
             (* advance remaining based on how far we actually went *)
             let travelled_x = !remaining_x *. t_frac in
             let travelled_y = !remaining_y *. t_frac in
@@ -181,5 +186,6 @@ module Make (L : Luma.S) : S = struct
             remaining_dt :=
               if rem_len <= Float.epsilon then 0. else !remaining_dt *. (rest_len /. rem_len);
             iter := !iter + 1
-    done
+    done;
+    !collided
 end
