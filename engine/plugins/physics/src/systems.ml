@@ -182,8 +182,7 @@ module Make (L : Luma.S) = struct
                   Rb_store.integrate_linear_motion_at store ~row ~dt)
               done;
 
-              Broad_phase.update_broad_phase store grid
-              |> Broad_phase.update_potential_collision_pairs bp;
+              Broad_phase.step store grid bp;
 
               Narrow_phase.update_actual_collision_pairs np store bp index;
               Resolver.resolve_collisions store np;
