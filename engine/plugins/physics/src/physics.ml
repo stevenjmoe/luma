@@ -110,7 +110,7 @@ module Make (L : Luma.S) : S = struct
           let collision_normal_y = ref 0. in
           let collided_row = ref None in
 
-          Query.iter_aabb grid ~min_x:sweep_min_x ~min_y:sweep_min_y ~max_x:sweep_max_x
+          Grid.iter_aabb grid ~min_x:sweep_min_x ~min_y:sweep_min_y ~max_x:sweep_max_x
             ~max_y:sweep_max_y ~f:(fun other ->
               if other <> row && store.active.(other) = 1 && not (Rb_store.is_dynamic store other)
               then

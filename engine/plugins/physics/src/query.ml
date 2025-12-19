@@ -1,32 +1,5 @@
 open Grid
 
-(* TODO: query filter *)
-let iter_aabb grid ~min_x ~min_y ~max_x ~max_y ~f =
-  let start_col, start_row = grid_cell grid ~pos_x:min_x ~pos_y:min_y in
-  let end_col, end_row = grid_cell grid ~pos_x:max_x ~pos_y:max_y in
-
-  (* Deduplicate bodies that appear in multiple cells. Uses monotonically
-     increasing generation counter to avoid clearing an array every query. When
-     the counter wraps we clear once. *)
-  grid.query_generation <- grid.query_generation + 1;
-  if grid.query_generation = max_int then (
-    Array.fill grid.seen 0 (Array.length grid.seen) 0;
-    grid.query_generation <- grid.query_generation + 1);
-
-  for row = start_row to end_row do
-    for col = start_col to end_col do
-      let cell_idx = cell_index grid ~row ~col in
-      let cell = grid.cells.(cell_idx) in
-      for i = 0 to cell.len - 1 do
-        let body = cell.data.(i) in
-        ensure_seen grid body;
-        if grid.seen.(body) <> grid.query_generation then (
-          grid.seen.(body) <- grid.query_generation;
-          f body)
-      done
-    done
-  done
-
 let sweep_ray_aabb ~origin_x ~origin_y ~dir_x ~dir_y ~min_x ~min_y ~max_x ~max_y =
   let open Float in
   if abs dir_x < epsilon_float && abs dir_y < epsilon_float then None

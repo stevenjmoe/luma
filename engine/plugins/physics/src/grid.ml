@@ -19,18 +19,19 @@ module Grid_cell = struct
       c.cap <- cap);
     c.data.(c.len) <- v;
     c.len <- c.len + 1
+
+  let len c = c.len
+  let data_at c idx = c.data.(idx)
 end
 
 type t = {
   cells : Grid_cell.t array;  (** 1d array representing 2D grid. *)
   cell_size : float;
-  rows : int;  (** Grid dimensions. *)
+  rows : int;
   cols : int;  (** Grid dimensions. *)
   world_min : Vec2.t;  (** World boundaries for grid mapping. *)
   world_max : Vec2.t;  (** World boundaries for grid mapping. *)
   occupied : int Dynarray.t;
-      (** Cell indices that were written to this frame. Used only for fast clearing between
-          rebuilds. *)
   touched : bool array;
       (** A collection of bools indicating whether the corresponding cell in [cells] has been
           touched this frame. *)
@@ -43,7 +44,6 @@ type t = {
           sized to body store capacity). *)
 }
 
-(** [create world_bound cell_size] *)
 let create world_bound cell_size =
   let open Bounded2d in
   let world_min = Aabb2d.min world_bound in
@@ -74,7 +74,6 @@ let create world_bound cell_size =
     seen;
   }
 
-(** [cell_index grid row col] converts 2D grid coordinates to 1D array index. *)
 let cell_index grid ~row ~col = (row * grid.cols) + col
 
 let ensure_seen grid body =
@@ -85,7 +84,7 @@ let ensure_seen grid body =
     Array.blit grid.seen 0 a 0 (Array.length grid.seen);
     grid.seen <- a)
 
-let clear_grid grid =
+let clear grid =
   for i = 0 to Dynarray.length grid.occupied - 1 do
     let idx = Dynarray.get grid.occupied i in
     Grid_cell.clear grid.cells.(idx);
@@ -103,7 +102,6 @@ let grid_cell grid ~pos_x ~pos_y =
   let row = max 0 (min row (grid.rows - 1)) in
   (col, row)
 
-(** [insert grid body_index ~min_x ~min_y ~max_x ~max_y] *)
 let insert grid body_index ~min_x ~min_y ~max_x ~max_y =
   let start_col, start_row = grid_cell grid ~pos_x:min_x ~pos_y:min_y in
   let end_col, end_row = grid_cell grid ~pos_x:max_x ~pos_y:max_y in
@@ -115,6 +113,41 @@ let insert grid body_index ~min_x ~min_y ~max_x ~max_y =
         grid.touched.(cell_idx) <- true;
         Dynarray.add_last grid.occupied cell_idx);
       Grid_cell.push grid.cells.(cell_idx) body_index
+    done
+  done
+
+let occupied grid = grid.occupied
+let cols grid = grid.cols
+let rows grid = grid.rows
+
+let cell_at grid index =
+  if index > Array.length grid.cells - 1 then failwith "cell_at: Cell index is out of range.";
+  grid.cells.(index)
+
+(* TODO: query filter *)
+let iter_aabb grid ~min_x ~min_y ~max_x ~max_y ~f =
+  let start_col, start_row = grid_cell grid ~pos_x:min_x ~pos_y:min_y in
+  let end_col, end_row = grid_cell grid ~pos_x:max_x ~pos_y:max_y in
+
+  (* Deduplicate bodies that appear in multiple cells. Uses monotonically
+     increasing generation counter to avoid clearing an array every query. When
+     the counter wraps we clear once. *)
+  grid.query_generation <- grid.query_generation + 1;
+  if grid.query_generation = max_int then (
+    Array.fill grid.seen 0 (Array.length grid.seen) 0;
+    grid.query_generation <- grid.query_generation + 1);
+
+  for row = start_row to end_row do
+    for col = start_col to end_col do
+      let cell_idx = cell_index grid ~row ~col in
+      let cell = grid.cells.(cell_idx) in
+      for i = 0 to cell.len - 1 do
+        let body = cell.data.(i) in
+        ensure_seen grid body;
+        if grid.seen.(body) <> grid.query_generation then (
+          grid.seen.(body) <- grid.query_generation;
+          f body)
+      done
     done
   done
 

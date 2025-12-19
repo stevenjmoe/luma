@@ -41,7 +41,7 @@ let add_pair c id1 id2 =
       Dynarray.add_last c.ids2 id2)
 
 let update_broad_phase (s : Rb_store.t) (grid : Grid.t) =
-  Grid.clear_grid grid;
+  Grid.clear grid;
 
   if s.len > 0 then
     for row = 0 to s.len - 1 do
@@ -57,40 +57,44 @@ let update_potential_collision_pairs c grid =
   else c.current_generation <- c.current_generation + 1;
   clear c;
 
-  let occ_len = Dynarray.length Grid.(grid.occupied) in
+  let occupied = Grid.occupied grid in
+  let occ_len = Dynarray.length occupied in
+  let grid_cols = Grid.cols grid in
+  let grid_rows = Grid.rows grid in
 
   for i = 0 to occ_len - 1 do
-    let idx = Dynarray.get grid.occupied i in
-    let row = idx / grid.cols in
-    let col = idx mod grid.cols in
-    let current_cell = grid.cells.(idx) in
-    let n = current_cell.len in
+    let idx = Dynarray.get occupied i in
+    let row = idx / grid_cols in
+    let col = idx mod grid_cols in
+    let current_cell = Grid.cell_at grid idx in
+    let current_cell_len = Grid.Grid_cell.len current_cell in
 
     (* pairs within the same cell *)
-    if n >= 2 then
-      for a = 0 to n - 2 do
-        for b = a + 1 to n - 1 do
-          let id1 = current_cell.data.(a) in
-          let id2 = current_cell.data.(b) in
+    if current_cell_len >= 2 then
+      for a = 0 to current_cell_len - 2 do
+        for b = a + 1 to current_cell_len - 1 do
+          let id1 = Grid.Grid_cell.data_at current_cell a in
+          let id2 = Grid.Grid_cell.data_at current_cell b in
           add_pair c id1 id2
         done
       done;
 
     (* pairs with neighbors *)
-    if n > 0 then
+    if current_cell_len > 0 then
       for dir = 0 to 3 do
         let new_col = col + dx.(dir) in
         let new_row = row + dy.(dir) in
 
-        if new_col >= 0 && new_col < grid.cols && new_row >= 0 && new_row < grid.rows then
-          let adjacent_cell = grid.cells.(Grid.cell_index grid ~row:new_row ~col:new_col) in
+        if new_col >= 0 && new_col < grid_cols && new_row >= 0 && new_row < grid_rows then
+          let adjacent_cell = Grid.cell_at grid (Grid.cell_index grid ~row:new_row ~col:new_col) in
+          let adjacent_cell_len = Grid.Grid_cell.len adjacent_cell in
 
-          if adjacent_cell.len > 0 then
-            for a = 0 to current_cell.len - 1 do
-              let id1 = current_cell.data.(a) in
+          if Grid.Grid_cell.len adjacent_cell > 0 then
+            for a = 0 to current_cell_len - 1 do
+              let id1 = Grid.Grid_cell.data_at current_cell a in
 
-              for b = 0 to adjacent_cell.len - 1 do
-                let id2 = adjacent_cell.data.(b) in
+              for b = 0 to adjacent_cell_len - 1 do
+                let id2 = Grid.Grid_cell.data_at adjacent_cell b in
                 add_pair c id1 id2
               done
             done
