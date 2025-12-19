@@ -168,6 +168,24 @@ module Make (L : Luma.S) : S = struct
     let epsilon = 1e-4 in
     let collided = ref false in
 
+    let k_state =
+      match L.World.get_component world (module Kinematic_state.C) entity with
+      | Some s -> s
+      | None ->
+          L.Log.error (fun l ->
+              l
+                "move_and_slide: missing Kinematic_state. Expected Kinematic_state to exist before \
+                 any call to move_and_slide. Ensure movement logic does not run before PreUpdate");
+          failwith "move_and_slide: missing Kinematic_state"
+    in
+    Kinematic_state.clear k_state;
+
+    (* Classification constants *)
+    let up = Vec2.up in
+    let floor_min_dot = 0.7 in
+    let ceiling_min_dot = 0.7 in
+    let wall_max_abs_dot = 0.2 in
+
     while !iter < max_iterations && !remaining_dt > 0. do
       let rem_len = Float.sqrt ((!remaining_x *. !remaining_x) +. (!remaining_y *. !remaining_y)) in
       if rem_len <= epsilon then iter := max_iterations
@@ -182,6 +200,12 @@ module Make (L : Luma.S) : S = struct
 
             let normal = Kinematic_collision2d.normal col in
             let remainder = Kinematic_collision2d.remainder col in
+
+            (* Update kinematic state flags *)
+            let d = (normal.x *. up.x) +. (normal.y *. up.y) in
+            if d >= floor_min_dot then Kinematic_state.set_is_on_floor k_state true;
+            if d <= -.ceiling_min_dot then Kinematic_state.set_is_on_ceiling k_state true;
+            if Float.abs d <= wall_max_abs_dot then Kinematic_state.set_is_on_wall k_state true;
 
             (* Slide the remainder along the collision plane *)
             let dot_rest = (remainder.x *. normal.x) +. (remainder.y *. normal.y) in

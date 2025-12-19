@@ -36,6 +36,13 @@ module Make (L : Luma.S) = struct
                 rb_store.body_type.(row) <- Rigid_body.encode_body_type rb.body_type;
                 rb_store.shape.(row) <- Rigid_body.encode_shape rb.shape;
 
+                (match rb.body_type with
+                | Kinematic ->
+                    let c = Kinematic_state.default () in
+                    let packed = L.Component.pack (module Kinematic_state.C) c in
+                    L.World.add_component w packed entity
+                | _ -> ());
+
                 let open L.Math.Bounded2d in
                 match rb.shape with
                 | Circle c ->
