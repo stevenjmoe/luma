@@ -4,7 +4,11 @@ type t = {
 }
 
 let create x y = { x; y }
-let zero = { x = 0.; y = 0. }
+let zero = create 0. 0.
+let left = create (-1.) 0.
+let right = create 1. 0.
+let up = create 0. (-1.)
+let down = create 0. 1.
 
 (** A vector which points along the positive x axis. *)
 let pos_x = { x = 1.; y = 0. }
