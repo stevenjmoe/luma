@@ -11,7 +11,7 @@ module type S = sig
   val pos : Luma__ecs.World.t -> Luma__id.Id.EntitySet.elt -> Vec2.t option
 
   val move_and_collide :
-    World.t -> Id.Entity.t -> velocity:Vec2.t -> dt:float -> (Id.Entity.t * Vec2.t * float) option
+    World.t -> Id.Entity.t -> velocity:Vec2.t -> dt:float -> Kinematic_collision2d.t option
 
   val move_and_slide : ?max_iterations:int -> World.t -> Id.Entity.t -> Vec2.t -> float -> bool
   val plugin : ?world_config:Config.t -> Luma__app.App.t -> Luma__app.App.t
@@ -145,9 +145,19 @@ module Make (L : Luma.S) : S = struct
           match !collided_row with
           | None -> None
           | Some other ->
-              let entity_other = index.row_to_ent.(other) in
-              let hit_normal = L.Math.Vec2.create !collision_normal_x !collision_normal_y in
-              Some (entity_other, hit_normal, !earliest_collision_fraction))
+              let collider = index.row_to_ent.(other) in
+              let normal = L.Math.Vec2.create !collision_normal_x !collision_normal_y in
+              let travel = Vec2.create !collision_normal_x !collision_normal_y in
+              let remainder = Vec2.create (dx -. actual_dx) (dy -. actual_dy) in
+              let position =
+                let x = store.prev_pos_x.(row) +. (dx *. !earliest_collision_fraction) in
+                let y = store.prev_pos_y.(row) +. (dy *. !earliest_collision_fraction) in
+                Vec2.create x y
+              in
+
+              Some
+                (Kinematic_collision2d.create ~collider ~angle:0. ~collider_velocity:Vec2.zero
+                   ~depth:0. ~normal ~position ~remainder ~travel))
 
   let move_and_slide ?(max_iterations = 4) world entity velocity dt =
     let open Luma__math.Vec2 in
@@ -167,24 +177,24 @@ module Make (L : Luma.S) : S = struct
         in
         match move_and_collide world entity ~velocity:vel_step ~dt:!remaining_dt with
         | None -> iter := max_iterations
-        | Some (_, normal, t_frac) ->
+        | Some col ->
             collided := true;
-            (* advance remaining based on how far we actually went *)
-            let travelled_x = !remaining_x *. t_frac in
-            let travelled_y = !remaining_y *. t_frac in
-            let rest_x = !remaining_x -. travelled_x in
-            let rest_y = !remaining_y -. travelled_y in
 
-            let dot_rest = (rest_x *. normal.x) +. (rest_y *. normal.y) in
-            let slide_x = rest_x -. (dot_rest *. normal.x) in
-            let slide_y = rest_y -. (dot_rest *. normal.y) in
+            let normal = Kinematic_collision2d.normal col in
+            let remainder = Kinematic_collision2d.remainder col in
+
+            (* Slide the remainder along the collision plane *)
+            let dot_rest = (remainder.x *. normal.x) +. (remainder.y *. normal.y) in
+            let slide_x = remainder.x -. (dot_rest *. normal.x) in
+            let slide_y = remainder.y -. (dot_rest *. normal.y) in
 
             remaining_x := slide_x;
             remaining_y := slide_y;
 
-            let rest_len = Float.sqrt ((slide_x *. slide_x) +. (slide_y *. slide_y)) in
+            let slide_len = Float.sqrt ((slide_x *. slide_x) +. (slide_y *. slide_y)) in
             remaining_dt :=
-              if rem_len <= Float.epsilon then 0. else !remaining_dt *. (rest_len /. rem_len);
+              if rem_len <= Float.epsilon then 0. else !remaining_dt *. (slide_len /. rem_len);
+
             iter := !iter + 1
     done;
     !collided
