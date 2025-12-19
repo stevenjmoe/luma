@@ -47,8 +47,7 @@ let update_broad_phase (s : Rb_store.t) (grid : Grid.t) =
     for row = 0 to s.len - 1 do
       Grid.insert grid row ~min_x:s.min_x.(row) ~min_y:s.min_y.(row) ~max_x:s.max_x.(row)
         ~max_y:s.max_y.(row)
-    done;
-  grid
+    done
 
 let update_potential_collision_pairs c grid =
   (* This shouldn't happen but why not check it anyway *)
@@ -97,6 +96,10 @@ let update_potential_collision_pairs c grid =
             done
       done
   done
+
+let step rb_store grid c =
+  update_broad_phase rb_store grid;
+  update_potential_collision_pairs c grid
 
 let pairs_view c = (c.ids1, c.ids2)
 
