@@ -36,14 +36,12 @@ let register_resource
   Type_register.Resource_registry.register_resource name (module R) serializers app.world;
   app
 
-let on (type s) stage system ?(run_if = fun _ -> true) app =
-  let open Luma__state.State in
-  let open Luma__resource in
+let on stage system ?(run_if = fun _ -> true) app =
   let uuid = System.uuid system in
   Scheduler.add_system app.scheduler stage (Scheduler.System { uuid; sys = system; run_if });
   app
 
-let once (type s) stage system ?(placement = Scheduler.At) ?(run_if = fun _ -> true) app =
+let once stage system ?(placement = Scheduler.At) ?(run_if = fun _ -> true) app =
   let uuid = System.uuid system in
   let system = Scheduler.System { uuid; sys = system; run_if } in
   Scheduler.add_in_placement app.scheduler stage run_if placement system;
@@ -80,7 +78,6 @@ let while_in
 let on_
     (type s)
     (module S : Luma__state.State.STATE with type t = s)
-    (s : s)
     (system : (World.t, 'a) System.t)
     (app : t)
     (pred : Luma__state__State.state_resource -> bool) =
@@ -105,7 +102,7 @@ let on_enter
     (s : s)
     (system : (World.t, 'a) System.t)
     (app : t) =
-  on_ (module S) s system app (Luma__state.State.just_entered (module S) s)
+  on_ (module S) system app (Luma__state.State.just_entered (module S) s)
 
 let on_exit
     (type s)
@@ -113,7 +110,7 @@ let on_exit
     (s : s)
     (system : (World.t, 'a) System.t)
     (app : t) =
-  on_ (module S) s system app (Luma__state.State.just_exited (module S) s)
+  on_ (module S) system app (Luma__state.State.just_exited (module S) s)
 
 (* TODO: Clean up*)
 let init_state (type a) state_mod (state : a) app =

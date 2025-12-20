@@ -1,6 +1,4 @@
 open Luma__ecs
-open Luma__serialize
-open Luma__core
 open Luma__app
 
 module type PLUGIN = sig
@@ -29,7 +27,6 @@ module Plugin (D : Luma__driver.Driver.S) : PLUGIN with type t = t = struct
   type nonrec t = t
 
   let update_time () =
-    let open Luma__id in
     System.make ~components:End "update_time" (fun (world : World.t) _ _ ->
         match World.get_resource world R.type_id with
         | Some r -> (

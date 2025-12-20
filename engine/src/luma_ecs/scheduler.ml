@@ -69,12 +69,6 @@ let buckets_or_default sched stage =
   |> Option.value
        ~default:{ first = []; last = []; before = Hashtbl.create 7; after = Hashtbl.create 7 }
 
-let add_first sched stage trigger system =
-  let buckets = buckets_or_default sched stage in
-  let e = { trigger; system } in
-  buckets.first <- buckets.first @ [ e ];
-  Hashtbl.replace sched.once stage buckets
-
 let create () =
   log.info (fun log -> log "Creating scheduler.");
   let systems = Hashtbl.create 16 in

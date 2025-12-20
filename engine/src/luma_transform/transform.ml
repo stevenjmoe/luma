@@ -1,8 +1,5 @@
 open Luma__math
-open Luma__app
 open Luma__ecs
-open Luma__serialize
-open Luma__core
 
 type t = {
   mutable position : Vec3.t;
