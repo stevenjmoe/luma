@@ -5,9 +5,6 @@ open Luma__ecs
 
 module Make (L : Luma.S) = struct
   include Types
-
-  let log = Luma__core.Log.sub_log "tiled_plugin"
-
   module Map = Map.Tilemap (L)
   module Plan = Plan.Make (Map)
   module Tiled_render = Render.Make (Plan) (L)
@@ -115,7 +112,7 @@ module Make (L : Luma.S) = struct
       | _ts, Image h -> L.Assets.is_loaded assets h
       | _ts, Collection_of_images id2h ->
           Hashtbl.to_seq id2h
-          |> Seq.for_all (fun (_, { size; pos; handle }) -> L.Assets.is_loaded assets handle))
+          |> Seq.for_all (fun (_, { handle; _ }) -> L.Assets.is_loaded assets handle))
 
   let finalize_maps (map : Map.t) (textures_by_tileset : (int, tileset_texture) Hashtbl.t) =
     let finalized_tilesets = Hashtbl.create (List.length map.tilesets) in
@@ -149,7 +146,7 @@ module Make (L : Luma.S) = struct
           & Resource (module R)
           & End)
       "resolve_tilemaps"
-      (fun w cmd e r ->
+      (fun w cmd _ r ->
         Query.Tuple.with3 r (fun assets server tilemap_map ->
             Hashtbl.iter
               (fun tilemap_handle (render_map : map_inner) ->
@@ -170,7 +167,7 @@ module Make (L : Luma.S) = struct
                           let plan = Plan.make_plan ~z_base map tilesets in
 
                           render_map.background_colour <- map.background_colour;
-                          Collision.extract_colliders map None cmd;
+                          Collision.extract_colliders map cmd;
 
                           render_map.phase <- Ready { tilesets; plan }
                       | None -> ()

@@ -186,7 +186,7 @@ module Make (Map : Map.S) : S with type map = Map.t = struct
                       | Textures { texture_by_tile_id } -> (
                           match Hashtbl.find_opt texture_by_tile_id id with
                           | None -> ()
-                          | Some { handle; size; pos } ->
+                          | Some { handle; _ } ->
                               let w = float_of_int map.tile_width
                               and h = float_of_int map.tile_height in
                               let dest =

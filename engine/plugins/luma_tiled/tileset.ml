@@ -156,7 +156,6 @@ let object_group_from_json json =
 let tile_data_from_json json path =
   let open Luma__serialize.Json_helpers in
   let* user_type = parse_string_opt "type" json in
-  let* user_class = parse_string_opt "class" json in
   let* probability = parse_float_opt "probability" json in
   let* id = parse_int "id" json in
   let* image = parse_image json path in
@@ -216,13 +215,10 @@ let from_json json path =
   let* margin = parse_int "margin" json in
   let* columns = parse_int "columns" json in
   let* name = parse_string "name" json in
-  let* user_type = parse_string_opt "type" json in
-  let* user_class = parse_string_opt "class" json in
   let* tile_count = parse_int "tilecount" json in
   let* tile_width = parse_int "tilewidth" json in
   let* tile_height = parse_int "tileheight" json in
   let* tiles = tiles_from_json json path in
-  let* image = parse_string_opt "image" json in
   let* image = parse_image json path in
 
   Ok

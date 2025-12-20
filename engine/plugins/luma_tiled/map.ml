@@ -46,8 +46,7 @@ module Tilemap (L : Luma.S) : S = struct
     parallax_origin : Vec2.t;
   }
 
-  let rec parse_layers layers path infinite tilesets =
-    let open Luma__serialize.Json_helpers in
+  let parse_layers layers path infinite tilesets =
     let* rev =
       List.fold_left
         (fun acc j ->
@@ -84,8 +83,6 @@ module Tilemap (L : Luma.S) : S = struct
     let open Luma__serialize.Json_helpers in
     let* colour = parse_string_opt "backgroundcolor" json in
     let* infinite = parse_bool_opt "infinite" json in
-    let* user_class = parse_string_opt "class" json in
-    let* user_type = parse_string_opt "type" json in
     let* stagger_axis = parse_string_opt "staggeraxis" json in
     let* stagger_index = parse_string_opt "staggerindex" json in
     let* hex_side_length = parse_int_opt "hexsidelength" json in

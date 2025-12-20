@@ -1,4 +1,3 @@
-open Luma__ecs
 open Luma__math
 open Types
 
@@ -90,7 +89,7 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
             let cams_sorted =
               cams
               |> List.filter_map (fun (_e, (cam, ())) ->
-                     if Camera.active cam then Some cam else None)
+                  if Camera.active cam then Some cam else None)
               |> List.stable_sort (fun a b -> Int.compare (Camera.order a) (Camera.order b))
             in
             List.iter

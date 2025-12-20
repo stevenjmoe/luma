@@ -2,6 +2,7 @@ module Luma = Luma.Make (Luma_driver_raylib.Driver)
 module Physics_plugin = Luma_physics.Physics.Make (Luma)
 open Luma
 open Luma_physics
+module Query = Luma.Query
 
 let gc_metrics () =
   let frame = ref 0 in
@@ -38,7 +39,7 @@ let make_floor w cmd () =
   Command.spawn cmd [ Component ((module Rigid_body.C), floor_rb) ] |> ignore;
   w
 
-let make_rect w ~pos ~size ~colour cmd () =
+let make_rect w ~pos ~size cmd () =
   let open Math.Vec2 in
   let rect1_center = Math.Vec2.create (pos.x +. (size.x *. 0.5)) (pos.y +. (size.y *. 0.5)) in
   let rb = Rigid_body.create_box Dynamic rect1_center size ~mass:1000. in
@@ -47,18 +48,17 @@ let make_rect w ~pos ~size ~colour cmd () =
   w
 
 let setup_rigid_bodies () =
-  System.make ~components:End "setup_movable_rect" (fun w cmd e ->
+  System.make ~components:End "setup_movable_rect" (fun w cmd _ ->
       let rect_w, rect_h = (50., 50.) in
       let pos = Math.Vec2.create 50. 50. in
       let size = Math.Vec2.create rect_w rect_h in
-      let colour = Colour.rgb ~r:100 ~g:100 ~b:255 in
 
       let w = make_floor w cmd () in
-      let w = make_rect w ~pos ~size ~colour cmd () in
+      let w = make_rect w ~pos ~size cmd () in
 
       let pos2 = Math.Vec2.create 500. 50. in
       let size2 = Math.Vec2.create rect_w rect_h in
-      ignore (make_rect w ~pos:pos2 ~size:size2 ~colour cmd ());
+      ignore (make_rect w ~pos:pos2 ~size:size2 cmd ());
 
       let pos3 = Math.Vec2.create 500. 150. in
       let size3 = Math.Vec2.create rect_w rect_h in
@@ -89,15 +89,15 @@ let move_rect () =
   System.make
     ~components:Query.Component.(Required (module Rigid_body.C) & End)
     "move_rect"
-    (fun w cmd e ->
+    (fun w _ e ->
       Query.Tuple.iter_e1
-        (fun e rb ->
+        (fun _ rb ->
           let open Rigid_body in
           if rb.body_type = Kinematic then
             let pos = Input.Mouse.get_mouse_position () in
 
             match rb.shape with
-            | Aabb a ->
+            | Aabb _ ->
                 rb.pos.x <- pos.x;
                 rb.pos.y <- pos.y;
                 ()
@@ -109,8 +109,8 @@ let print_collision () =
   System.make_with_resources ~components:End
     ~resources:Query.Resource.(Resource (module Player_ref.R) & End)
     "print_collision"
-    (fun w cmd e (r, _) ->
-      Collision_event.iter_events_for_entity ~entity:r w (fun ~other phase ~flags ->
+    (fun w _ _ (r, _) ->
+      Collision_event.iter_events_for_entity ~entity:r w (fun ~other phase ~flags:_ ->
           Printf.printf "Player collision: %s %d %d \n%!"
             (Collision_event.phase_to_string phase)
             (Id.Entity.to_int r) (Id.Entity.to_int other));
@@ -121,8 +121,8 @@ let () =
     Luma_physics.Config.create ~gravity:(Math.Vec2.create 0. 10.) ~debug:true ()
   in
   App.create ()
-  |> Plugin.add_default_plugins
-  |> App.add_plugin Plugin.debug_plugin
+  |> Luma.Plugin.add_default_plugins
+  |> App.add_plugin Luma.Plugin.debug_plugin
   |> App.add_plugin (Physics_plugin.plugin ~world_config:physics_config)
   |> App.on Startup (setup_rigid_bodies ())
   |> App.on Update (move_rect ())

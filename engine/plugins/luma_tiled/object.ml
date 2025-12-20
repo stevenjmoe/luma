@@ -97,7 +97,6 @@ module Object_data = struct
   }
 
   let size_from_json json =
-    let open Yojson.Safe.Util in
     let open Luma__serialize.Json_helpers in
     let ( let* ) = Result.bind in
     let* width = parse_float "width" json in
@@ -105,7 +104,6 @@ module Object_data = struct
     Ok { width; height }
 
   let point_from_json json =
-    let open Yojson.Safe.Util in
     let open Luma__serialize.Json_helpers in
     let ( let* ) = Result.bind in
     let* x = parse_float "x" json in
@@ -113,8 +111,6 @@ module Object_data = struct
     Ok { x; y }
 
   let polygon_from_json points =
-    let open Yojson.Safe.Util in
-    let open Luma__serialize.Json_helpers in
     let ( let* ) = Result.bind in
     let* points =
       List.fold_left
@@ -129,8 +125,6 @@ module Object_data = struct
     Ok (Polygon points)
 
   let polyline_from_json points =
-    let open Yojson.Safe.Util in
-    let open Luma__serialize.Json_helpers in
     let ( let* ) = Result.bind in
     let* points =
       List.fold_left
@@ -144,19 +138,17 @@ module Object_data = struct
     in
     Ok (Polyline points)
 
-  let from_json json tilesets for_tileset base_path =
+  let from_json json tilesets =
     let open Luma__serialize.Json_helpers in
     let ( let* ) = Result.bind in
 
     let* id = parse_int_opt "id" json in
     let* gid = parse_int_opt "gid" json in
     let* name = parse_string_opt "name" json in
-    let* type_ = parse_string_opt "type" json in
     let* width = parse_float_opt "width" json in
     let* height = parse_float_opt "height" json in
     let* visible = parse_bool_opt "visible" json in
     let* rotation = parse_float_opt "rotation" json in
-    let* template = parse_string_opt "template" json in
     let* x = parse_float_opt "x" json in
     let* y = parse_float_opt "y" json in
     let x = Option.value ~default:0. x in

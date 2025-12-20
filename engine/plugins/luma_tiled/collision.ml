@@ -7,7 +7,7 @@ module Collision (L : Luma.S) (Map : Map.S) = struct
     | None -> None
     | Some mts -> Hashtbl.find_opt mts.tiles tile.id
 
-  let extract_colliders (map : Map.t) world cmd =
+  let extract_colliders (map : Map.t) cmd =
     let open Layers.Layer_data in
     List.iter
       (fun l ->
@@ -21,7 +21,7 @@ module Collision (L : Luma.S) (Map : Map.S) = struct
                   let ( let* ) = Option.bind in
                   let* tile_ref = layer_object.tile in
                   let* tile_data = get_tile_data_for_object map tile_ref in
-                  Object.Object_tile_data.(tile_data.object_group)
+                  tile_data.object_group
                 in
 
                 match maybe_object_group with

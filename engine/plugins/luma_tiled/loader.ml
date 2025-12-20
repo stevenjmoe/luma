@@ -1,7 +1,5 @@
 let ( let* ) = Result.bind
 
-open Util
-
 module Make (L : Luma.S) (Map : Map.S) (Tilemap_asset : L.Asset.S with type t = Map.t) = struct
   include Types
 
@@ -19,7 +17,7 @@ module Make (L : Luma.S) (Map : Map.S) (Tilemap_asset : L.Asset.S with type t = 
     let begin_load path ~k =
       L.IO.read_file path ~k:(function Ok bytes -> k (Ok bytes) | Error e -> k (Error e))
 
-    let finalize ctx path bytes =
+    let finalize _ path bytes =
       let open Luma__serialize.Json_helpers in
       try
         let json = Yojson.Safe.from_string (Bytes.unsafe_to_string bytes) in

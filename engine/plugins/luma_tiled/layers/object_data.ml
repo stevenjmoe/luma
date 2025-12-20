@@ -7,14 +7,14 @@ type t = {
   colour : Types.colour option;
 }
 
-let parse_objects objects tilesets path =
+let parse_objects objects tilesets =
   let* rev =
     List.fold_left
       (fun acc object_ ->
         match acc with
         | Error _ as e -> e
         | Ok acc_list ->
-            let* o = Object.Object_data.from_json object_ tilesets None path in
+            let* o = Object.Object_data.from_json object_ tilesets in
             Ok (o :: acc_list))
       (Ok []) objects
   in
@@ -23,7 +23,7 @@ let parse_objects objects tilesets path =
 let from_json json path tilesets =
   match field "objects" json with
   | `List objects ->
-      let* objects = parse_objects objects tilesets path in
+      let* objects = parse_objects objects tilesets in
       Ok { colour = None; objects }
   | o ->
       let s = Yojson.Safe.pretty_to_string o in
