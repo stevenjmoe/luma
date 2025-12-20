@@ -2,8 +2,6 @@ open Luma__app
 open Luma__ecs
 open Luma__resource
 open Luma__math
-open Luma__image
-open Luma__sprite
 open Luma__transform
 open Luma__asset
 open Luma__image
@@ -31,7 +29,6 @@ module type Renderer = sig
     size:Luma__math.Vec2.t ->
     ?flip_x:bool ->
     ?flip_y:bool ->
-    ?texture_atlas:Luma__image.Texture_atlas.t option ->
     ?src:Rect.t option ->
     ?opacity:float ->
     ?rotation:float ->
@@ -98,7 +95,6 @@ module type Renderer = sig
     position:Vec2.t ->
     size:Vec2.t ->
     ?layers:int64 ->
-    ?texture_atlas:Texture_atlas.t ->
     ?src:Rect.t ->
     ?flip_x:bool ->
     ?flip_y:bool ->
@@ -115,12 +111,10 @@ module type Renderer = sig
   module Camera : Camera.S
 end
 
-module Make
-    (D : Luma__driver.Driver.S)
-    (Sprite : Sprite.S)
-    (Texture : Texture.S with type t = D.texture) :
+module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.texture) :
   Renderer with type texture = D.texture and type colour = D.colour = struct
   open Luma__math
+  open Luma__sprite
   module Shape = Shape.Make (D)
 
   type texture = D.Texture.t
@@ -141,7 +135,6 @@ module Make
       ~size
       ?(flip_x = false)
       ?(flip_y = false)
-      ?(texture_atlas = None)
       ?(src = None)
       ?(opacity = 1.)
       ?(rotation = 0.)
@@ -186,7 +179,6 @@ module Make
       rotation : float;
       origin : Vec2.t;
       src : Rect.t option;
-      atlas : Luma__image.Texture_atlas.t option;
     }
 
     type cmd =
@@ -215,7 +207,7 @@ module Make
 
     let iter_sorted q ~camera_layers ~f =
       !q
-      |> List.filter (fun { meta } -> Int64.(logand meta.layers camera_layers <> 0L))
+      |> List.filter (fun { meta; _ } -> Int64.(logand meta.layers camera_layers <> 0L))
       |> List.stable_sort (fun a b -> compare a.meta.z b.meta.z)
       |> List.iter f
 
@@ -232,7 +224,6 @@ module Make
       ~position
       ~size
       ?(layers = 1L)
-      ?texture_atlas
       ?src
       ?(flip_x = false)
       ?(flip_y = false)
@@ -241,21 +232,7 @@ module Make
       ?(origin = Vec2.zero)
       q
       () =
-    let s =
-      Queue.
-        {
-          tex;
-          pos = position;
-          size;
-          flip_x;
-          flip_y;
-          atlas = texture_atlas;
-          src;
-          opacity;
-          rotation;
-          origin;
-        }
-    in
+    let s = Queue.{ tex; pos = position; size; flip_x; flip_y; src; opacity; rotation; origin } in
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Sprite s }
 
   let push_rect ~z ~rect ?(layers = 1L) colour q =
@@ -313,8 +290,8 @@ module Make
                       match cmd with
                       | Queue.Sprite s ->
                           draw_texture s.tex ~position:s.pos ~size:s.size ~flip_x:s.flip_x
-                            ~flip_y:s.flip_y ~texture_atlas:s.atlas ~src:s.src ~opacity:s.opacity
-                            ~rotation:s.rotation ~origin:s.origin ()
+                            ~flip_y:s.flip_y ~src:s.src ~opacity:s.opacity ~rotation:s.rotation
+                            ~origin:s.origin ()
                       | Queue.Rect (r, colour) -> draw_rect r colour
                       | Queue.Rect_lines (r, line, colour) -> draw_rect_lines r line colour
                       | Queue.Circle (c, colour) ->
@@ -356,13 +333,13 @@ module Make
         Query.Tuple.iter1
           (fun shape ->
             match shape with
-            | Rect { rect; z; layer; colour; style = Fill } ->
+            | Rect { rect; z; layer; colour; style = Fill; _ } ->
                 push_rect ~z ~rect ~layers:layer colour queue
-            | Rect { rect; layer; style = Lines l; colour; z } ->
+            | Rect { rect; layer; style = Lines l; colour; z; _ } ->
                 push_rect_lines ~z ~rect ~layers:layer ~line_thickness:l colour queue
             | Circle { circle; z; layer; colour; style = Fill } ->
                 push_circle ~z ~circle ~layers:layer colour queue
-            | Circle { circle; z; layer; colour; style = Lines l } ->
+            | Circle { circle; z; layer; colour; style = Lines _ } ->
                 push_circle_lines ~z ~circle ~layers:layer colour queue)
           entities;
         world)
@@ -399,8 +376,7 @@ module Make
                 let position = Vec2.create transform.position.x transform.position.y in
                 let rotation = transform.rotation in
 
-                push_texture ~z ~tex ~position ~size ?texture_atlas ~flip_x ~flip_y ?src ~rotation
-                  queue ())
+                push_texture ~z ~tex ~position ~size ~flip_x ~flip_y ?src ~rotation queue ())
           entities;
         world)
 

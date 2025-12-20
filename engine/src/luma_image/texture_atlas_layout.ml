@@ -4,7 +4,7 @@ open Containers
 type t = {
   size : Vec2.t;
   textures : (Rect.t, Vector.rw) Vector.t;
-  mutable last_index : int option;
+  last_index : int option;
 }
 
 let empty () = { size = Vec2.zero; textures = Vector.create (); last_index = None }

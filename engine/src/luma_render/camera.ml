@@ -1,7 +1,5 @@
 open Luma__ecs
 open Luma__math
-open Luma__serialize
-open Luma__core
 open Luma__app
 
 module type S = sig
@@ -100,7 +98,7 @@ module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
   let set_rotation c rotation = D.Camera.set_rotation c.camera rotation
 
   let add_camera default_camera () =
-    System.make ~components:End "add_camera" (fun world _ entities ->
+    System.make ~components:End "add_camera" (fun world _ _ ->
         if default_camera then (
           let camera = default () in
           world

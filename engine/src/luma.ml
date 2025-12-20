@@ -134,7 +134,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   end
 
   module Camera_config = Luma__render.Render.Camera_config
-  module R = Luma__render.Render.Make (D) (Sprite) (Image.Texture)
+  module R = Luma__render.Render.Make (D) (Image.Texture)
 
   type texture = Image.Texture.t
 

@@ -1,7 +1,5 @@
 open Luma__image
 open Luma__asset
-open Luma__serialize
-open Luma__core
 open Luma__math
 
 module type S = sig

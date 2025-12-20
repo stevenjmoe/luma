@@ -26,6 +26,7 @@ let y v = Vec2.y v.physical_position
 let w v = Vec2.x v.physical_size
 let h v = Vec2.y v.physical_size
 let center v = Vec2.create (x v +. (0.5 *. w v)) (y v +. (0.5 *. h v))
+let depth v = v.depth
 
 let to_rect v =
   ( int_of_float v.physical_position.x,

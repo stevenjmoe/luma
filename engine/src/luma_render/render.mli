@@ -1,7 +1,6 @@
 open Luma__app
 open Luma__math
 open Luma__image
-open Luma__sprite
 
 module Camera_config : sig
   type t
@@ -26,7 +25,6 @@ module type Renderer = sig
     size:Luma__math.Vec2.t ->
     ?flip_x:bool ->
     ?flip_y:bool ->
-    ?texture_atlas:Texture_atlas.t option ->
     ?src:Luma__math.Rect.t option ->
     ?opacity:float ->
     ?rotation:float ->
@@ -89,7 +87,6 @@ module type Renderer = sig
     position:Vec2.t ->
     size:Vec2.t ->
     ?layers:int64 ->
-    ?texture_atlas:Texture_atlas.t ->
     ?src:Luma__math.Rect.t ->
     ?flip_x:bool ->
     ?flip_y:bool ->
@@ -106,8 +103,5 @@ module type Renderer = sig
   module Camera : Camera.S
 end
 
-module Make : functor
-  (D : Luma__driver.Driver.S)
-  (Sprite : Sprite.S)
-  (Texture : Texture.S with type t = D.texture)
-  -> Renderer with type texture = D.texture and type colour = D.colour
+module Make : functor (D : Luma__driver.Driver.S) (_ : Texture.S with type t = D.texture) ->
+  Renderer with type texture = D.texture and type colour = D.colour
