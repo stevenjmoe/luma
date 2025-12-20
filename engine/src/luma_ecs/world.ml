@@ -28,11 +28,6 @@ type entity_metadata = {
   name : string;
 }
 
-type component_metadata = {
-  id : Id.Component.t;
-  name : string;
-}
-
 type t = {
   empty_archetype : Archetype.t;
   archetypes : (Id.Archetype.t, Archetype.t) Hashtbl.t;
@@ -129,7 +124,7 @@ let get_component (type a) world (module C : Component.S with type t = a) entity
 
 let has_component (type a) world (module C : Component.S with type t = a) entity =
   let arch = find_archetype world entity in
-  match Archetype.query_table arch entity C.id with Some p -> true | None -> false
+  match Archetype.query_table arch entity C.id with Some _ -> true | None -> false
 
 let move_entity_to_archetype world entity ~old_arch ~new_arch overrides =
   if Archetype.id old_arch = Archetype.id new_arch then (

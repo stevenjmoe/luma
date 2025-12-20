@@ -120,7 +120,7 @@ let queue_state (type s) (module S : STATE with type t = s) (v : s) (world : Lum
       match Luma__resource.Resource.unpack_opt (module State_res.R) packed with
       | Some sr ->
           (* TODO: perform some checks of the existing resource. eg. Don't overwrite next if it's some *)
-          let next = State_res.{ sr with next = Some pending } in
+          let next = { sr with next = Some pending } in
           let packed = Luma__resource.Resource.pack (module State_res.R) next in
           World.set_resource State_res.R.type_id packed world
       | None ->
@@ -128,7 +128,7 @@ let queue_state (type s) (module S : STATE with type t = s) (v : s) (world : Lum
           world)
   | None ->
       let packed =
-        State_res.{ next = Some pending; current = None; previous = None; last_result = NoChange }
+        { next = Some pending; current = None; previous = None; last_result = NoChange }
         |> Luma__resource.Resource.pack (module State_res.R)
       in
       World.set_resource State_res.R.type_id packed world
@@ -149,13 +149,12 @@ let transition_system () =
           if eq_state curr next_ then w
           else
             let s =
-              State_res.
-                {
-                  next = None;
-                  previous = Some curr;
-                  current = Some next_;
-                  last_result = Transitioned { from = curr; to_ = next_ };
-                }
+              {
+                next = None;
+                previous = Some curr;
+                current = Some next_;
+                last_result = Transitioned { from = curr; to_ = next_ };
+              }
             in
             let new_packed = Resource.pack (module State_res.R) s in
             World.set_resource State_res.R.type_id new_packed w

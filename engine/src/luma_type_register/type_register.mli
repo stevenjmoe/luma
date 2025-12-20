@@ -2,7 +2,6 @@ open Luma__id
 open Luma__ecs
 open Luma__resource
 open Luma__serialize
-open Luma__core
 
 val get_json_serializer :
   'a.

@@ -20,6 +20,8 @@ type stage =
   | Overlay
   | Cleanup
 
+val stage_to_string : stage -> string
+
 type system =
   | System : {
       uuid : Uuidm.t;

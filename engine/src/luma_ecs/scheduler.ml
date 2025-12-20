@@ -14,7 +14,7 @@ type stage =
   | Overlay
   | Cleanup
 
-let stage_name = function
+let stage_to_string = function
   | PreStartup -> "PreStartup"
   | Startup -> "Startup"
   | PostStartup -> "PostStartup"
@@ -144,7 +144,7 @@ let add_in_placement sched stage trigger placement system =
       Hashtbl.replace buckets.after u entries';
       Hashtbl.replace sched.once stage buckets
 
-let run_system (world : World.t) cmd (System { sys = system; run_if }) : World.t =
+let run_system (world : World.t) cmd (System { sys = system; run_if; _ }) : World.t =
   if run_if world then
     let archetypes = World.archetypes world |> Hashtbl.to_seq_values |> List.of_seq in
     match system with

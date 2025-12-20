@@ -2,7 +2,6 @@ open Luma__ecs
 open Luma__id
 open Luma__resource
 open Luma__serialize.Serialize
-open Luma__core
 
 let log = Luma__core.Log.sub_log "type_register"
 let normalize_name name = name |> String.trim |> String.lowercase_ascii
@@ -11,7 +10,7 @@ let get_json_serializer : type a.
     a serializer_pack list ->
     (module Serializable with type t = a and type repr = Yojson.Safe.t) option =
  fun packs ->
-  let rec find = function [] -> None | Json s :: _ -> Some s in
+  let find = function [] -> None | Json s :: _ -> Some s in
   find packs
 
 let ensure_resource (type a) (module R : Resource.S with type t = a) ~(create : unit -> a) world =
@@ -53,7 +52,7 @@ module Component_registry = struct
     let normalized_name = normalize_name name in
     let register registry =
       match Hashtbl.find_opt registry.name_to_entry normalized_name with
-      | Some e ->
+      | Some _ ->
           let message =
             Printf.sprintf "A component with the name %s has already been registered." name
           in
@@ -95,7 +94,7 @@ module Resource_registry = struct
     let normalized_name = normalize_name name in
     let register registry =
       match Hashtbl.find_opt registry.name_to_entry normalized_name with
-      | Some e ->
+      | Some _ ->
           let message =
             Printf.sprintf "A resource with the name %s has already been registered." name
           in

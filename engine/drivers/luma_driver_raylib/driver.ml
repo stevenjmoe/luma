@@ -217,7 +217,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       | `Screen
       ]
 
-    let line space ~p0 ~p1 ~colour = ()
+    let line _space ~p0:_ ~p1:_ ~colour:_ = ()
   end
 end
 
