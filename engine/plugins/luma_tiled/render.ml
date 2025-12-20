@@ -22,10 +22,10 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
   end)
 
   let render () =
-    System.make_with_resources
-      ~components:Query.Component.(Required (module Camera.C) & End)
+    Ecs.System.make_with_resources
+      ~components:Ecs.Query.Component.(Required (module Camera.C) & End)
       ~resources:
-        Query.Resource.(
+        Ecs.Query.Resource.(
           Resource (module Asset_server.R)
           & Resource (module R)
           & Resource (module Assets.R)
@@ -84,7 +84,7 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
             plan.layers
         in
 
-        Query.Tuple.with4 res
+        Ecs.Query.Tuple.with4 res
           (fun _server (maps : map_tbl) (assets : Assets.t) (queue : Renderer.Queue.t) ->
             let cams_sorted =
               cams

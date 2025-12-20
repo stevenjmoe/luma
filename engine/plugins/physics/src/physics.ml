@@ -166,7 +166,7 @@ module Make (L : Luma.S) : S = struct
     let collided = ref false in
 
     let k_state =
-      match L.World.get_component world (module Kinematic_state.C) entity with
+      match L.Ecs.World.get_component world (module Kinematic_state.C) entity with
       | Some s -> s
       | None ->
           L.Log.error (fun l ->

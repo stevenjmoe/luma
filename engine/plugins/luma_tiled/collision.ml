@@ -54,8 +54,8 @@ module Collision (L : Luma.S) (Map : Map.S) = struct
 
                             let rb = Luma_physics.Rigid_body.create_box Static pos size in
 
-                            L.Command.spawn cmd
-                              [ L.Component.component (module Luma_physics.Rigid_body.C) rb ]
+                            L.Ecs.Command.spawn cmd
+                              [ L.Ecs.Component.component (module Luma_physics.Rigid_body.C) rb ]
                             |> ignore
                         | _ -> ())
                       og.objects)

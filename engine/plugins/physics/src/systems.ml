@@ -7,9 +7,10 @@ module Make (L : Luma.S) = struct
   let sync_to_store () =
     let open Luma__ecs in
     System.make_with_resources
-      ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
+      ~components:L.Ecs.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
-        L.Query.Resource.(Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
+        L.Ecs.Query.Resource.(
+          Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
       "sync_to_store"
       (fun w _ e (rb_store, (index, _)) ->
         rb_store.current_generation <- rb_store.current_generation + 1;
@@ -33,8 +34,8 @@ module Make (L : Luma.S) = struct
                 (match rb.body_type with
                 | Kinematic ->
                     let c = Kinematic_state.default () in
-                    let packed = L.Component.pack (module Kinematic_state.C) c in
-                    L.World.add_component w packed entity
+                    let packed = L.Ecs.Component.pack (module Kinematic_state.C) c in
+                    L.Ecs.World.add_component w packed entity
                 | _ -> ());
 
                 let open L.Math.Bounded2d in
@@ -89,10 +90,11 @@ module Make (L : Luma.S) = struct
         w)
 
   let sync_from_store () =
-    L.System.make_with_resources
-      ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
+    L.Ecs.System.make_with_resources
+      ~components:L.Ecs.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
-        L.Query.Resource.(Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
+        L.Ecs.Query.Resource.(
+          Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
       "sync_from_store"
       (fun w _ e (store, (index, _)) ->
         List.iter
@@ -135,9 +137,10 @@ module Make (L : Luma.S) = struct
       L.Renderer.push_rect_lines ~z:1000 ~rect colour queue
 
   let debug_draw () =
-    L.System.make_with_resources ~components:End
+    L.Ecs.System.make_with_resources ~components:End
       ~resources:
-        L.Query.Resource.(Resource (module L.Renderer.Queue.R) & Resource (module Rb_store.R) & End)
+        L.Ecs.Query.Resource.(
+          Resource (module L.Renderer.Queue.R) & Resource (module Rb_store.R) & End)
       "debug_draw"
       (fun w _ _ (queue, (store, _)) ->
         for i = 0 to store.len - 1 do
@@ -148,10 +151,10 @@ module Make (L : Luma.S) = struct
         w)
 
   let step () =
-    L.System.make_with_resources
-      ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
+    L.Ecs.System.make_with_resources
+      ~components:L.Ecs.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
-        L.Query.Resource.(
+        L.Ecs.Query.Resource.(
           Resource (module Time.R)
           & Resource (module Config.R)
           & Resource (module Rb_store.R)
@@ -163,7 +166,7 @@ module Make (L : Luma.S) = struct
           & End)
       "step"
       (fun w _ _ r ->
-        L.Query.Tuple.with8 r (fun time config store grid bp np event_store index ->
+        L.Ecs.Query.Tuple.with8 r (fun time config store grid bp np event_store index ->
             (* Clamp dt to prevent instability *)
             let dt = min (Time.dt time) config.max_step_dt in
 

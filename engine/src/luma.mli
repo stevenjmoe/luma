@@ -1,11 +1,4 @@
 module type S = sig
-  module App : sig
-    include module type of Luma__app.App
-
-    val run : t -> unit
-    (** Main entry point: sets up the driver and runs the app. *)
-  end
-
   module Driver : Luma__driver.Driver.S
 
   type colour
@@ -14,6 +7,15 @@ module type S = sig
 
   module Draw : sig
     val draw_text : string -> int -> int -> int -> colour -> unit
+  end
+
+  module Ecs : sig
+    module System : module type of Luma__ecs.System
+    module Scheduler : module type of Luma__ecs.Scheduler
+    module Command : module type of Luma__ecs.Command
+    module World : module type of Luma__ecs.World
+    module Component : module type of Luma__ecs.Component
+    module Query : module type of Luma__ecs.Query
   end
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
@@ -36,22 +38,16 @@ module type S = sig
   module Time : module type of Luma__time.Time
   module Time_plugin : Luma__time.Time.PLUGIN
   module Scene : Luma__scene.Scene.S
-  module World : module type of Luma__ecs.World
-  module Component : module type of Luma__ecs.Component
-  module Query : module type of Luma__ecs.Query
   module Resource : module type of Luma__resource.Resource
-  module System : module type of Luma__ecs.System
-  module Scheduler : module type of Luma__ecs.Scheduler
   module Transform : module type of Luma__transform.Transform
   module Id : module type of Luma__id.Id
   module State : module type of Luma__state.State
-  module Command : module type of Luma__ecs.Command
   module Asset : module type of Luma__asset.Asset
   module Assets : module type of Luma__asset.Assets
   module Asset_loader : module type of Luma__asset.Loader
   module Asset_server : module type of Luma__asset.Server
   module Math : module type of Luma__math
-  module Plugin : Luma__plugin.Plugin.S with type app = App.t and type window = Window_config.t
+  module Serialize : module type of Luma__serialize.Serialize
 
   val screen_width : unit -> int
   val screen_height : unit -> int
@@ -73,6 +69,14 @@ module type S = sig
     val info : ('a, unit) Luma__core__Log.conditional_log
   end
 
+  module App : sig
+    include module type of Luma__app.App
+
+    val run : t -> unit
+    (** Main entry point: sets up the driver and runs the app. *)
+  end
+
+  module Plugin : Luma__plugin.Plugin.S with type app = App.t and type window = Window_config.t
   module Error : module type of Luma__core.Error
 end
 

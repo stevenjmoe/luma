@@ -2,11 +2,12 @@ module Luma = Luma.Make (Luma_driver_raylib.Driver)
 module Physics_plugin = Luma_physics.Physics.Make (Luma)
 open Luma
 open Luma_physics
-module Query = Luma.Query
+open Ecs
+module Query = Luma.Ecs.Query
 
 let gc_metrics () =
   let frame = ref 0 in
-  System.make ~components:End "gc_metrics" (fun w _cmd _e ->
+  Ecs.System.make ~components:End "gc_metrics" (fun w _cmd _e ->
       incr frame;
       (* Print GC stats every 120 frames (~2s at 60 FPS) *)
       (if !frame mod 120 = 0 then
@@ -48,7 +49,7 @@ let make_rect w ~pos ~size cmd () =
   w
 
 let setup_rigid_bodies () =
-  System.make ~components:End "setup_movable_rect" (fun w cmd _ ->
+  Ecs.System.make ~components:End "setup_movable_rect" (fun w cmd _ ->
       let rect_w, rect_h = (50., 50.) in
       let pos = Math.Vec2.create 50. 50. in
       let size = Math.Vec2.create rect_w rect_h in
@@ -86,7 +87,7 @@ let setup_rigid_bodies () =
       w)
 
 let move_rect () =
-  System.make
+  Ecs.System.make
     ~components:Query.Component.(Required (module Rigid_body.C) & End)
     "move_rect"
     (fun w _ e ->
@@ -106,7 +107,7 @@ let move_rect () =
       w)
 
 let print_collision () =
-  System.make_with_resources ~components:End
+  Ecs.System.make_with_resources ~components:End
     ~resources:Query.Resource.(Resource (module Player_ref.R) & End)
     "print_collision"
     (fun w _ _ (r, _) ->
