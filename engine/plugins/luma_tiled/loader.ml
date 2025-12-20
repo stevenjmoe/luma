@@ -15,7 +15,7 @@ module Make (L : Luma.S) (Map : Map.S) (Tilemap_asset : L.Asset.S with type t = 
     let exts = [ ".tmj" ]
 
     let begin_load path ~k =
-      L.IO.read_file path ~k:(function Ok bytes -> k (Ok bytes) | Error e -> k (Error e))
+      L.Driver.IO.read_file path ~k:(function Ok bytes -> k (Ok bytes) | Error e -> k (Error e))
 
     let finalize _ path bytes =
       let open Luma__serialize.Json_helpers in

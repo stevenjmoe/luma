@@ -1,27 +1,12 @@
 module type S = sig
-  open Luma__app
-  open Luma__ecs
-  open Luma__image
-  open Luma__sprite
-  open Luma__transform
-  open Luma__time
-  open Luma__resource
-  open Luma__id
-  open Luma__audio
-  open Luma__scene
-  open Luma__window
-  open Luma__input
-  open Luma__ui
-  open Luma__plugin
-  module Types = Luma__types
-
   module App : sig
-    include module type of App
+    include module type of Luma__app.App
 
     val run : t -> unit
-    (** [run app] The main entry point to the engine. It sets up global resources, and runs all
-        systems. *)
+    (** Main entry point: sets up the driver and runs the app. *)
   end
+
+  module Driver : Luma__driver.Driver.S
 
   type colour
   type texture
@@ -31,19 +16,45 @@ module type S = sig
     val draw_text : string -> int -> int -> int -> colour -> unit
   end
 
-  module Window_config : Window.Window_config with type colour = colour
+  module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Camera_config : module type of Luma__render.Render.Camera_config
-  module Input : Input.S
-  module Ui : Ui.S
-  module Plugin : Plugin.S with type app = App.t and type window = Window_config.t
+  module Camera : Luma__render.Camera.S
+
+  module Renderer :
+    Luma__render.Render.Renderer with type texture = texture and type colour = colour
 
   module Image : sig
-    module Texture : Texture.S with type t = texture
-    module Texture_atlas : module type of Texture_atlas
-    module Texture_atlas_layout : module type of Texture_atlas_layout
+    module Texture : Luma__image.Texture.S with type t = texture
+    module Texture_atlas : module type of Luma__image.Texture_atlas
+    module Texture_atlas_layout : module type of Luma__image.Texture_atlas_layout
   end
 
-  module Audio : Audio.S
+  module Sprite : Luma__sprite.Sprite.S
+  module Input : Luma__input.Input.S
+  module Ui : Luma__ui.Ui.S
+  module Audio : Luma__audio.Audio.S
+  module Time : module type of Luma__time.Time
+  module Time_plugin : Luma__time.Time.PLUGIN
+  module Scene : Luma__scene.Scene.S
+  module World : module type of Luma__ecs.World
+  module Component : module type of Luma__ecs.Component
+  module Query : module type of Luma__ecs.Query
+  module Resource : module type of Luma__resource.Resource
+  module System : module type of Luma__ecs.System
+  module Scheduler : module type of Luma__ecs.Scheduler
+  module Transform : module type of Luma__transform.Transform
+  module Id : module type of Luma__id.Id
+  module State : module type of Luma__state.State
+  module Command : module type of Luma__ecs.Command
+  module Asset : module type of Luma__asset.Asset
+  module Assets : module type of Luma__asset.Assets
+  module Asset_loader : module type of Luma__asset.Loader
+  module Asset_server : module type of Luma__asset.Server
+  module Math : module type of Luma__math
+  module Plugin : Luma__plugin.Plugin.S with type app = App.t and type window = Window_config.t
+
+  val screen_width : unit -> int
+  val screen_height : unit -> int
 
   module Colour : sig
     type t = colour
@@ -53,40 +64,6 @@ module type S = sig
     val white : t
     val from_string : string -> (t, Luma__core.Error.error) result
   end
-
-  open Luma__asset
-  module Camera : Luma__render.Camera.S
-  module Asset : module type of Asset
-  module Assets : module type of Assets
-  module Asset_server : module type of Server
-  module Asset_loader : module type of Loader
-  module Component : module type of Component
-  module Id : module type of Id
-  module Query : module type of Query
-  module Resource : module type of Resource
-  module Scheduler : module type of Scheduler
-  module System : module type of System
-  module Time : module type of Time
-  module Time_plugin : Time.PLUGIN
-  module Transform : module type of Transform
-  module World : module type of World
-  module Math : module type of Luma__math
-  module Texture_atlas : module type of Texture_atlas
-  module Texture_atlas_layout : module type of Texture_atlas_layout
-
-  module Renderer :
-    Luma__render.Render.Renderer with type texture = texture and type colour = colour
-
-  module Sprite : Sprite.S
-  module Key : module type of Luma__types.Input_types.Key
-  module Mouse_button : module type of Types.Input_types.Mouse_button
-  module State : module type of Luma__state.State
-  module Scene : Scene.S
-  module IO : module type of Luma__driver.Driver.IO
-  module Command : module type of Command
-
-  val screen_width : unit -> int
-  val screen_height : unit -> int
 
   module Log : sig
     val log : ('a, Format.formatter, unit, unit) format4 -> 'a

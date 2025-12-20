@@ -26,7 +26,7 @@ module type S = sig
   end
 end
 
-module Tilemap (L : Luma.S) : S = struct
+module Tilemap (D : Luma__driver.Driver.S) : S = struct
   let ( let* ) = Result.bind
 
   type t = {
@@ -72,7 +72,7 @@ module Tilemap (L : Luma.S) : S = struct
               let* source_path = parse_string "source" j in
               let path = Filename.dirname path in
               let full_path = Filename.concat path source_path in
-              let source = L.IO.read_file_blocking full_path |> Yojson.Safe.from_string in
+              let source = D.IO.read_file_blocking full_path |> Yojson.Safe.from_string in
               let* tileset = Tileset.from_json source full_path in
               Ok (({ first_gid; tileset } : Tileset.map_tileset) :: r))
         (Ok []) json

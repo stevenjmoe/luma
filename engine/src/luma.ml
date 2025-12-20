@@ -1,23 +1,11 @@
 module type S = sig
-  open Luma__app
-  open Luma__ecs
-  open Luma__asset
-  open Luma__image
-  open Luma__sprite
-  open Luma__transform
-  open Luma__time
-  open Luma__resource
-  open Luma__id
-  open Luma__audio
-  open Luma__scene
-  open Luma__plugin
-  module Types = Luma__types
-
   module App : sig
-    include module type of App
+    include module type of Luma__app.App
 
     val run : t -> unit
   end
+
+  module Driver : Luma__driver.Driver.S
 
   type colour
   type texture
@@ -29,17 +17,43 @@ module type S = sig
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Camera_config : module type of Luma__render.Render.Camera_config
-  module Input : Luma__input.Input.S
-  module Ui : Luma__ui.Ui.S
-  module Plugin : Plugin.S with type app = App.t and type window = Window_config.t
+  module Camera : Luma__render.Camera.S
+
+  module Renderer :
+    Luma__render.Render.Renderer with type texture = texture and type colour = colour
 
   module Image : sig
-    module Texture : Texture.S with type t = texture
-    module Texture_atlas : module type of Texture_atlas
-    module Texture_atlas_layout : module type of Texture_atlas_layout
+    module Texture : Luma__image.Texture.S with type t = texture
+    module Texture_atlas : module type of Luma__image.Texture_atlas
+    module Texture_atlas_layout : module type of Luma__image.Texture_atlas_layout
   end
 
-  module Audio : Audio.S
+  module Sprite : Luma__sprite.Sprite.S
+  module Input : Luma__input.Input.S
+  module Ui : Luma__ui.Ui.S
+  module Audio : Luma__audio.Audio.S
+  module Time : module type of Luma__time.Time
+  module Time_plugin : Luma__time.Time.PLUGIN
+  module Scene : Luma__scene.Scene.S
+  module World : module type of Luma__ecs.World
+  module Component : module type of Luma__ecs.Component
+  module Query : module type of Luma__ecs.Query
+  module Resource : module type of Luma__resource.Resource
+  module System : module type of Luma__ecs.System
+  module Scheduler : module type of Luma__ecs.Scheduler
+  module Transform : module type of Luma__transform.Transform
+  module Id : module type of Luma__id.Id
+  module State : module type of Luma__state.State
+  module Command : module type of Luma__ecs.Command
+  module Asset : module type of Luma__asset.Asset
+  module Assets : module type of Luma__asset.Assets
+  module Asset_loader : module type of Luma__asset.Loader
+  module Asset_server : module type of Luma__asset.Server
+  module Math : module type of Luma__math
+  module Plugin : Luma__plugin.Plugin.S with type app = App.t and type window = Window_config.t
+
+  val screen_width : unit -> int
+  val screen_height : unit -> int
 
   module Colour : sig
     type t = colour
@@ -49,39 +63,6 @@ module type S = sig
     val white : t
     val from_string : string -> (t, Luma__core.Error.error) result
   end
-
-  module Camera : Luma__render.Camera.S
-  module Asset : module type of Asset
-  module Assets : module type of Assets
-  module Asset_server : module type of Server
-  module Asset_loader : module type of Loader
-  module Component : module type of Component
-  module Id : module type of Id
-  module Query : module type of Query
-  module Resource : module type of Resource
-  module Scheduler : module type of Scheduler
-  module System : module type of System
-  module Time : module type of Time
-  module Time_plugin : Time.PLUGIN
-  module Transform : module type of Transform
-  module World : module type of World
-  module Math : module type of Luma__math
-  module Texture_atlas : module type of Texture_atlas
-  module Texture_atlas_layout : module type of Texture_atlas_layout
-
-  module Renderer :
-    Luma__render.Render.Renderer with type texture = texture and type colour = colour
-
-  module Sprite : Sprite.S
-  module Key : module type of Luma__types.Input_types.Key
-  module Mouse_button : module type of Luma__types.Input_types.Mouse_button
-  module State : module type of Luma__state.State
-  module Scene : Scene.S
-  module IO : module type of Luma__driver.Driver.IO
-  module Command : module type of Command
-
-  val screen_width : unit -> int
-  val screen_height : unit -> int
 
   module Log : sig
     val log : ('a, Format.formatter, unit, unit) format4 -> 'a
@@ -95,55 +76,26 @@ module type S = sig
 end
 
 module Make (D : Luma__driver.Driver.S) : S = struct
-  open Luma__app
-  open Luma__ecs
-  open Luma__asset
-  module Render = Luma__render
-  open Luma__image
-  open Luma__sprite
-  open Luma__transform
-  open Luma__time
-  open Luma__resource
-  open Luma__id
-  open Luma__audio
-  open Luma__scene
-  open Luma__window
-  open Luma__input
-  open Luma__ui
-  open Luma__debug
-  open Luma__plugin
-  open Luma__core
-  open Luma__state
-  module Types = Luma__types
-
   module Image = struct
-    module Texture = Texture.Make (D)
-    module Texture_atlas = Texture_atlas
-    module Texture_atlas_layout = Texture_atlas_layout
+    module Texture = Luma__image.Texture.Make (D)
+    module Texture_atlas = Luma__image.Texture_atlas
+    module Texture_atlas_layout = Luma__image.Texture_atlas_layout
   end
 
-  module Camera_config = Luma__render.Render.Camera_config
-  module R = Luma__render.Render.Make (D) (Image.Texture)
+  module Driver = D
 
   type texture = Image.Texture.t
+  type colour = D.colour
 
   module Draw = struct
     let draw_text = D.Draw.draw_text
   end
 
-  (* core driver dependent modules *)
-  module Window = Window.Make (D)
+  module Window = Luma__window.Window.Make (D)
+  module Window_config = Window.Window_config
+  module Camera_config = Luma__render.Render.Camera_config
+  module R = Luma__render.Render.Make (D) (Image.Texture)
   module Camera = R.Camera
-  module Input = Input.Make (D)
-  module Ui = Ui.Make (D)
-  module Time = Time
-  module Time_plugin = Time.Plugin (D)
-  module Audio = Audio.Make (D)
-  module Debug_plugin = Debug.Make (D) (Camera)
-  module Scene = Scene.Make (D)
-
-  type colour = D.colour
-  type sound = Audio.Sound.t
 
   module Renderer = struct
     include R
@@ -152,34 +104,48 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     type nonrec colour = colour
   end
 
-  module Plugin =
-    Plugin.Make (D) (Window) (Renderer) (Input) (Time_plugin) (Audio) (Image.Texture) (Scene)
-      (Debug_plugin)
+  module Input = Luma__input.Input.Make (D)
+  module Ui = Luma__ui.Ui.Make (D)
+  module Time = Luma__time.Time
+  module Time_plugin = Time.Plugin (D)
+  module Audio = Luma__audio.Audio.Make (D)
 
-  module Window_config = Window.Window_config
+  type sound = Audio.Sound.t
+
+  module Scene = Luma__scene.Scene.Make (D)
 
   module App = struct
-    include App
+    include Luma__app.App
 
     let run app = run (module D) app
   end
 
-  (* logging *)
-  let default_log = Log.sub_log (Logs.Src.name Logs.default)
+  module Sprite = Luma__sprite.Sprite
+  module World = Luma__ecs.World
+  module Component = Luma__ecs.Component
+  module Query = Luma__ecs.Query
+  module Resource = Luma__resource.Resource
+  module System = Luma__ecs.System
+  module Scheduler = Luma__ecs.Scheduler
+  module Transform = Luma__transform.Transform
+  module Id = Luma__id.Id
+  module State = Luma__state.State
+  module Command = Luma__ecs.Command
+  module Asset = Luma__asset.Asset
+  module Assets = Luma__asset.Assets
+  module Asset_loader = Luma__asset.Loader
+  module Asset_server = Luma__asset.Server
+  module Math = Luma__math
+  module Debug = Luma__debug.Debug.Make (D) (Camera)
 
-  module Log = struct
-    let log = Log.app_log
-    let error = default_log.error
-    let warn = default_log.warn
-    let debug = default_log.debug
-    let info = default_log.info
-  end
+  module Plugin =
+    Luma__plugin.Plugin.Make (Driver) (Window) (Renderer) (Input) (Time_plugin) (Audio)
+      (Image.Texture)
+      (Scene)
+      (Debug)
 
-  let () =
-    Fmt_tty.setup_std_outputs ();
-    Luma__core.Log.init ()
-
-  module Sprite = Sprite
+  let screen_width = D.Window.screen_width
+  let screen_height = D.Window.screen_height
 
   module Colour = struct
     type t = colour
@@ -187,30 +153,14 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     include D.Colour
   end
 
-  module Archetype = Archetype
-  module Asset = Asset
-  module Assets = Assets
-  module Asset_server = Server
-  module Asset_loader = Loader
-  module Component = Component
-  module Id = Id
-  module Query = Query
-  module Resource = Resource
-  module Scheduler = Scheduler
-  module System = System
-  module Transform = Transform
-  module World = World
-  module Math = Luma__math
-  module Texture_atlas = Texture_atlas
-  module Texture_atlas_layout = Texture_atlas_layout
-  module Key = Types.Input_types.Key
-  module Mouse_button = Types.Input_types.Mouse_button
-  module State = State
-  module IO = D.IO
-  module Command = Command
+  module Log = struct
+    let default_log = Luma__core.Log.sub_log (Logs.Src.name Logs.default)
+    let log = Luma__core.Log.app_log
+    let error = default_log.error
+    let warn = default_log.warn
+    let debug = default_log.debug
+    let info = default_log.info
+  end
 
-  let screen_width = D.Window.screen_width
-  let screen_height = D.Window.screen_height
-
-  module Error = Error
+  module Error = Luma__core.Error
 end

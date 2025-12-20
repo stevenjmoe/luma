@@ -1,6 +1,8 @@
 open Luma__types.Input_types
 
 module type S = sig
+  module Key : module type of Key
+
   module Keyboard : sig
     val plugin : Luma__app.App.t -> Luma__app.App.t
     val is_key_down : Key.t -> bool
@@ -27,6 +29,7 @@ end
 module Make (D : Luma__driver.Driver.S) : S = struct
   open Luma__ecs
   open Luma__app
+  module Key = Key
 
   module Keyboard = struct
     let is_key_down = D.Input.Keyboard.is_key_down

@@ -5,7 +5,7 @@ open Luma__ecs
 
 module Make (L : Luma.S) = struct
   include Types
-  module Map = Map.Tilemap (L)
+  module Map = Map.Tilemap (L.Driver)
   module Plan = Plan.Make (Map)
   module Tiled_render = Render.Make (Plan) (L)
   open Tiled_render
