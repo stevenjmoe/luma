@@ -164,7 +164,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   module UI = struct
     open Raylib
 
-    type win = {
+    type _win = {
       x : float;
       y : float;
       w : float;
@@ -173,7 +173,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       title : string;
     }
 
-    let win_stack : win list ref = ref []
+    let win_stack : _win list ref = ref []
     let window_open : (string, bool) Hashtbl.t = Hashtbl.create 16
     let title_bar_h = 28.0
     let pad_x = 8.0

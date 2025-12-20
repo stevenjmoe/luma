@@ -82,7 +82,7 @@ module Js_driver : Luma__driver.Driver.S = struct
       ctx##.fillStyle := Js.string (css_rgba colour);
       ctx##fill
 
-    let draw_circle_lines center_x center_y radius colour =
+    let draw_circle_lines center_x center_y radius _colour =
       with_ctx @@ fun ctx ->
       let center_x = Int32.of_int center_x |> Js.int32 in
       let center_y = Int32.of_int center_y |> Js.int32 in
@@ -122,9 +122,9 @@ module Js_driver : Luma__driver.Driver.S = struct
     type path = string
 
     let run_io_loop () = ()
-    let read_file path ~k = ()
-    let read_file_blocking path = ""
-    let write_file path bytes = ()
+    let read_file _path ~k:_ = ()
+    let read_file_blocking _path = ""
+    let write_file _path _bytes = ()
   end
 
   module Window = struct
@@ -155,7 +155,7 @@ module Js_driver : Luma__driver.Driver.S = struct
           ctx_ref := Some ctx;
           ctx
 
-    let init ~width ~height ~title:_ ~resizable =
+    let init ~width ~height ~title:_ ~resizable:_ =
       let c = ensure_canvas () in
       c##.width := width;
       c##.height := height;
@@ -230,7 +230,7 @@ module Js_driver : Luma__driver.Driver.S = struct
     let rgb ~r ~g ~b = { r = clamp r; g = clamp g; b = clamp b; a = 255 }
     let rgba ~r ~g ~b ~a = { r = clamp r; g = clamp g; b = clamp b; a = clamp a }
     let white = rgb ~r:255 ~g:255 ~b:255
-    let from_string s = failwith "TODO"
+    let from_string _s = failwith "TODO"
   end
 
   module Image = struct
@@ -241,7 +241,7 @@ module Js_driver : Luma__driver.Driver.S = struct
       img##.src := Js.string src;
       img
 
-    let load_image_from_memory file_type file_data data_size = failwith "TODO"
+    let load_image_from_memory _file_type _file_data _data_size = failwith "TODO"
   end
 
   module Texture = struct
@@ -556,10 +556,10 @@ module Js_driver : Luma__driver.Driver.S = struct
         Hashtbl.reset mouse_pressed;
         Hashtbl.reset mouse_released
 
-      let is_mouse_button_pressed (b : Mouse_button.t) = false
-      let is_mouse_button_released (b : Mouse_button.t) = false
-      let is_mouse_button_up (b : Mouse_button.t) = false
-      let is_mouse_button_down (b : Mouse_button.t) = false
+      let is_mouse_button_pressed (_b : Mouse_button.t) = false
+      let is_mouse_button_released (_b : Mouse_button.t) = false
+      let is_mouse_button_up (_b : Mouse_button.t) = false
+      let is_mouse_button_down (_b : Mouse_button.t) = false
       let get_mouse_x () = !mouse_x
       let get_mouse_y () = !mouse_y
       let get_mouse_position () = Vec2.create (float !mouse_x) (float !mouse_y)
@@ -580,21 +580,17 @@ module Js_driver : Luma__driver.Driver.S = struct
   module UI = struct
     open Js_of_ocaml
 
-    type win = {
+    type _win = {
       x : float;
       y : float;
       w : float;
       h : float;
-      mutable cursor_y : float;
-      title : string;
+      cursor_y : float;
     }
 
-    let win_stack : win list ref = ref []
+    let win_stack : _win list ref = ref []
     let window_open : (string, bool) Hashtbl.t = Hashtbl.create 16
     let title_bar_h = 28.0
-    let pad_x = 8.0
-    let line_h = 18.0
-    let line_gap = 2.0
     let overlay : Dom_html.divElement Js.t option ref = ref None
 
     let ensure_overlay () =
@@ -625,7 +621,7 @@ module Js_driver : Luma__driver.Driver.S = struct
         header##.textContent := Js.some (Js.string title);
         header##.style##.fontWeight := Js.string "bold";
         Dom.appendChild d header;
-        let wctx = { x; y; w; h; cursor_y = y +. title_bar_h; title } in
+        let wctx = { x; y; w; h; cursor_y = y +. title_bar_h } in
         win_stack := wctx :: !win_stack;
         true
 

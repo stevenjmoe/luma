@@ -2,25 +2,40 @@ module type S = sig
   type music
   type t
 
+  type state =
+    [ `Stopped
+    | `Playing
+    | `Paused
+    ]
+
   module A : Luma__asset.Asset.S with type t = t
 
   val play : ?volume:float -> ?loop:bool -> t -> unit
   val pause : t -> unit
   val resume : t -> unit
   val stop : t -> unit
+  val volume : t -> float
   val set_volume : t -> float -> unit
+  val pan : t -> float
   val set_pan : t -> float -> unit
   val is_playing : t -> bool
   val progress : t -> float option
+  val state : t -> state
   val plugin : Luma__app.App.t -> Luma__app.App.t
 end
 
 module Make (D : Luma__driver.Driver.S) : S with type music = D.Audio.Music.t = struct
   type music = D.Audio.Music.t
 
+  type state =
+    [ `Stopped
+    | `Playing
+    | `Paused
+    ]
+
   type t = {
     stream : music;
-    mutable state : [ `Stopped | `Playing | `Paused ];
+    mutable state : state;
     mutable volume : float;
     mutable pan : float;
     mutable loop : bool;
@@ -31,11 +46,14 @@ module Make (D : Luma__driver.Driver.S) : S with type music = D.Audio.Music.t = 
   end)
 
   let set_state t state = t.state <- state
-  let get_state t = t.state
+  let state t = t.state
 
   let set_volume t vol =
     t.volume <- vol;
     D.Audio.Music.set_music_volume t.stream vol
+
+  let volume t = t.volume
+  let pan t = t.pan
 
   let set_pan t pan =
     t.pan <- pan;

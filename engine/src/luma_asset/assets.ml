@@ -87,7 +87,7 @@ let exists (assets : t) handle =
 
 let is_loaded assets handle =
   match Hashtbl.find_opt assets handle.id with
-  | Some { status = Ready _; generation } -> generation = handle.generation
+  | Some { status = Ready _; generation; _ } -> generation = handle.generation
   | _ -> false
 
 let unload (assets : t) handle =

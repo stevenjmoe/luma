@@ -1,5 +1,4 @@
 open Luma__asset
-open Luma__id
 open Luma__app
 open Luma__ecs
 open Luma__core
@@ -44,7 +43,7 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Texture.t = struct
         let tex = D.Texture.load_texture_from_image img in
         let packed = Asset.pack (module A) tex in
         Ok packed
-      with exn -> Error (Error.io_finalize path "Could not load texture from file.")
+      with _exn -> Error (Error.io_finalize path "Could not load texture from file.")
   end
 
   let register_loader () =

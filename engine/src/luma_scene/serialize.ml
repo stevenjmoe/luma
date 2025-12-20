@@ -6,7 +6,6 @@ open Luma__serialize
 open Luma__type_register.Type_register
 open Luma__core
 open Types
-open Yojson.Safe.Util
 
 type ctx = {
   comps : Component_registry.t;
@@ -15,8 +14,6 @@ type ctx = {
 }
 
 module Json = struct
-  let log = Log.sub_log "json_serialize"
-
   let serialize_entities scene component_registry =
     let entities =
       List.map
@@ -66,7 +63,7 @@ module Json = struct
     in
     Ok resources
 
-  let serialize (type a) scene (ctx : ctx) =
+  let serialize scene (ctx : ctx) =
     let entities = serialize_entities scene ctx.comps in
     let resources = serialize_resources scene ctx.resources in
     match (entities, resources) with
@@ -92,7 +89,6 @@ module Json = struct
     | Error e :: _ -> Error e
 
   let deserialize (scene : Yojson.Safe.t) (ctx : ctx) =
-    let open Yojson.Safe in
     let open Json_helpers in
     let ( let* ) = Result.bind in
 
