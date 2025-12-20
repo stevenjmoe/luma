@@ -222,8 +222,6 @@ module Key = struct
     | Menu -> 82
     | Volume_up -> 24
     | Volume_down -> 25
-
-  let of_int i = Volume_up
 end
 
 module Mouse_button = struct
@@ -235,8 +233,4 @@ module Mouse_button = struct
     | Extra
     | Forward
     | Back
-
-  (*TODO: *)
-  let to_int x = 0
-  let of_int i = Left
 end

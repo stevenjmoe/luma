@@ -19,7 +19,7 @@ let field name = function
 (** Parses an int or float field with the given key as an int.
 
     Returns an error if the field isn't an int, float, or null. *)
-let parse_int_like key j path =
+let parse_int_like key j =
   match field key j with
   | `Int i -> Ok i
   | `Float f -> Ok (int_of_float f)
@@ -30,7 +30,7 @@ let parse_int_like key j path =
 
     Returns a default value if the field is null. Returns an error if the field isn't an int, float,
     or null.*)
-let parse_int_like_or_default ?(default = 0) key j path =
+let parse_int_like_or_default ?(default = 0) key j =
   match field key j with
   | `Int i -> Ok i
   | `Float f -> Ok (int_of_float f)

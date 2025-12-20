@@ -14,6 +14,7 @@ module rec Aabb2d : sig
   val half_size : t -> Vec2.t
   val visible_area : t -> float
   val contains : t -> t -> bool
+  val area : t -> float
   val merge : t -> t -> t
   val grow : t -> Vec2.t -> t
   val shrink : t -> Vec2.t -> t

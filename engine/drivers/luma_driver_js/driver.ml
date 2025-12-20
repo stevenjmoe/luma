@@ -556,16 +556,10 @@ module Js_driver : Luma__driver.Driver.S = struct
         Hashtbl.reset mouse_pressed;
         Hashtbl.reset mouse_released
 
-      let is_mouse_button_pressed (b : Mouse_button.t) =
-        Hashtbl.mem mouse_pressed (Mouse_button.to_int b)
-
-      let is_mouse_button_released (b : Mouse_button.t) =
-        Hashtbl.mem mouse_released (Mouse_button.to_int b)
-
-      let is_mouse_button_up (b : Mouse_button.t) =
-        not (Hashtbl.mem mouse_down (Mouse_button.to_int b))
-
-      let is_mouse_button_down (b : Mouse_button.t) = Hashtbl.mem mouse_down (Mouse_button.to_int b)
+      let is_mouse_button_pressed (b : Mouse_button.t) = false
+      let is_mouse_button_released (b : Mouse_button.t) = false
+      let is_mouse_button_up (b : Mouse_button.t) = false
+      let is_mouse_button_down (b : Mouse_button.t) = false
       let get_mouse_x () = !mouse_x
       let get_mouse_y () = !mouse_y
       let get_mouse_position () = Vec2.create (float !mouse_x) (float !mouse_y)

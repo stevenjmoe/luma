@@ -36,6 +36,7 @@ module rec Aabb2d : sig
   val of_min_max : Vec2.t -> Vec2.t -> t
   val min : t -> Vec2.t
   val max : t -> Vec2.t
+  val area : t -> float
   val intersects_aabb : t -> t -> bool
   val intersects_circle : t -> Bounding_circle.t -> bool
   val set_min : t -> Vec2.t -> unit
@@ -73,7 +74,7 @@ end = struct
     size.x *. size.y
 
   let set_min aabb min = aabb.min <- min
-  let set_max aabb max = aabb.min <- max
+  let set_max aabb max = aabb.max <- max
 
   let visible_area aabb =
     Aabb2d_raw.visible_area ~min_x:aabb.min.x ~max_x:aabb.max.x ~min_y:aabb.min.y ~max_y:aabb.max.y
@@ -137,10 +138,10 @@ end = struct
   let half_size c = radius c
   let visible_area c = Float.pi *. c.radius *. c.radius
   let set_center c center = c.center <- center
-  let contains c1 c2 = failwith "TODO"
-  let merge c1 c2 = failwith "TODO"
-  let grow c1 c2 = failwith "TODO"
-  let shrink c1 c2 = failwith "TODO"
+  let contains _c1 _c2 = failwith "TODO"
+  let merge _c1 _c2 = failwith "TODO"
+  let grow _c1 _c2 = failwith "TODO"
+  let shrink _c1 _c2 = failwith "TODO"
 
   let aabb_2d b =
     let min = Vec2.sub b.center (Vec2.splat b.radius) in

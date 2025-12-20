@@ -54,8 +54,6 @@ type 't serializer_pack = Json : ('t, Yojson.Safe.t) serializer -> 't serializer
 let pack_json r = Json r
 
 module Json_format : Format with type repr = Yojson.Safe.t = struct
-  open Yojson.Safe
-
   type repr = Yojson.Safe.t
 
   let rec encode =
@@ -78,7 +76,7 @@ module Json_format : Format with type repr = Yojson.Safe.t = struct
           let* decoded_v =
             match decode v with
             | Ok dv -> Ok dv
-            | Error e -> Error (Error.decode_error ~expected:Obj [])
+            | Error _e -> Error (Error.decode_error ~expected:Obj [])
           in
           let* decoded_rest = decode_assoc rest in
           Ok ((k, decoded_v) :: decoded_rest)
@@ -100,14 +98,14 @@ module Json_format : Format with type repr = Yojson.Safe.t = struct
               let* dv =
                 match decode v with
                 | Ok dv -> Ok dv
-                | Error e -> Error (Error.decode_error ~expected:List [])
+                | Error _e -> Error (Error.decode_error ~expected:List [])
               in
               let* dr = decode_list rest in
               Ok (dv :: dr)
         in
         let* decoded = decode_list xs in
         Ok (List decoded)
-    | other -> Error (Error.decode_error ~expected:Obj [])
+    | _other -> Error (Error.decode_error ~expected:Obj [])
 
   let write oc json = Yojson.Safe.pretty_to_channel oc json
   let read ic = Ok (Yojson.Safe.from_channel ic)

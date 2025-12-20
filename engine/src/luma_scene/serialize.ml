@@ -27,7 +27,7 @@ module Json = struct
             |> List.filter_map (fun c ->
                 let ( let* ) = Option.bind in
 
-                let* (Component { name; serializers; instance = (module C) }) =
+                let* (Component { serializers; instance = (module C); _ }) =
                   Component_registry.get_entry_by_name component_registry (Component.name c)
                 in
                 let* unpacked = Component.unpack_opt (module C) c in
@@ -54,7 +54,7 @@ module Json = struct
           let ( let* ) = Option.bind in
 
           let name = Resource.name packed in
-          let* (Resource { name; serializers; instance = (module R) }) =
+          let* (Resource { serializers; instance = (module R); _ }) =
             Resource_registry.get_entry registry name
           in
 
@@ -106,9 +106,9 @@ module Json = struct
       result_list_seq
       @@ List.map
            (fun resource_json ->
-             let* resource_name, resource_data = parse_single_assoc resource_json in
+             let* resource_name, _resource_data = parse_single_assoc resource_json in
 
-             let* (Resource { instance = (module R); serializers }) =
+             let* (Resource { instance = (module R); serializers; _ }) =
                Resource_registry.get_entry ctx.resources resource_name
                |> Option.to_result ~none:(Error.type_register (Unregistered_resource resource_name))
              in
@@ -139,7 +139,7 @@ module Json = struct
                     (fun component_json ->
                       let* component_name, component_data = parse_single_assoc component_json in
 
-                      let* (Component { instance = (module C); serializers }) =
+                      let* (Component { instance = (module C); serializers; _ }) =
                         Component_registry.get_entry_by_name ctx.comps component_name
                         |> Option.to_result
                              ~none:(Error.type_register (Unregistered_component component_name))

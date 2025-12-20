@@ -45,8 +45,6 @@ end) : STATE with type t = S.inner = struct
     | _ ->
         Luma__core.Error.unpacked_unexpected_base_type_exn (Luma__id.Id.State.to_int key)
           "Unexpected value wrapped in 'T' constructor"
-
-  let of_base_opt = function T t -> Some t | _ -> None
 end
 
 type state = State : (module STATE with type t = 'a) * 'a -> state
@@ -64,7 +62,7 @@ let unpack : type a. (module STATE with type t = a) -> state -> (a, Luma__core.E
 
 let cast : type a b. (a, b) Key.eq -> a -> b = function Key.Eq -> fun x -> x
 
-let eq_state : type a b. state -> state -> bool =
+let eq_state : state -> state -> bool =
  fun a b ->
   match (a, b) with
   | State ((module A), s1), State ((module B), s2) -> (
@@ -102,14 +100,14 @@ end
 
 let just_entered (type s) (module S : STATE with type t = s) expected_state res =
   match res.last_result with
-  | Transitioned { to_ } ->
+  | Transitioned { to_; _ } ->
       let expected = State ((module S), expected_state) in
       eq_state to_ expected
   | _ -> false
 
 let just_exited (type s) (module S : STATE with type t = s) expected_state res =
   match res.last_result with
-  | Transitioned { from } ->
+  | Transitioned { from; _ } ->
       let expected = State ((module S), expected_state) in
       eq_state from expected
   | _ -> false
@@ -141,7 +139,7 @@ let is (type a) (module S : STATE with type t = a) (v : a) (st : state) : bool =
 let transition_system () =
   let open Luma__ecs in
   let open Luma__resource in
-  Luma__ecs.System.make ~components:End "transition_system" (fun w _ e ->
+  Luma__ecs.System.make ~components:End "transition_system" (fun w _ _e ->
       let ( >>= ) = Option.bind in
       match
         World.get_resource w State_res.R.type_id >>= fun s ->
@@ -161,7 +159,7 @@ let transition_system () =
             in
             let new_packed = Resource.pack (module State_res.R) s in
             World.set_resource State_res.R.type_id new_packed w
-      | Some ({ next = None; last_result = Transitioned _ } as r) ->
+      | Some ({ next = None; last_result = Transitioned _; _ } as r) ->
           (* Clear last_result one frame after a transition, if no new transition is queued. *)
           let cleared = { r with last_result = NoChange } in
           let packed = Resource.pack (module State_res.R) cleared in

@@ -4,7 +4,6 @@ type t = {
   direction_recip : Vec2.t;
 }
 
-let float_is_positive = ( < ) 0.
 let from_ray ray max = { ray; max; direction_recip = Vec2.recip ray.direction }
 let create origin direction max = from_ray (Ray.Ray2d.create origin direction) max
 
