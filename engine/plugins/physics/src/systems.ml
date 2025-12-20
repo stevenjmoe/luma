@@ -1,9 +1,7 @@
 module Make (L : Luma.S) = struct
   open Luma__time
-  open Luma__math
 
   let get_rigid_body entity index =
-    let open Rigid_body in
     match Rb_store.Index.row_of_entity index entity with None -> None | Some row -> Some row
 
   let sync_to_store () =
@@ -11,13 +9,9 @@ module Make (L : Luma.S) = struct
     System.make_with_resources
       ~components:L.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
-        L.Query.Resource.(
-          Resource (module Rb_store.R)
-          & Resource (module Rb_store.Index.R)
-          & Resource (module Luma__time.Time.R)
-          & End)
+        L.Query.Resource.(Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
       "sync_to_store"
-      (fun w _ e (rb_store, (index, (time, _))) ->
+      (fun w _ e (rb_store, (index, _)) ->
         rb_store.current_generation <- rb_store.current_generation + 1;
         let gen = rb_store.current_generation in
 
@@ -145,7 +139,7 @@ module Make (L : Luma.S) = struct
       ~resources:
         L.Query.Resource.(Resource (module L.Renderer.Queue.R) & Resource (module Rb_store.R) & End)
       "debug_draw"
-      (fun w _ e (queue, (store, _)) ->
+      (fun w _ _ (queue, (store, _)) ->
         for i = 0 to store.len - 1 do
           if store.shape.(i) = 0 then draw_circle store i queue
           else if store.shape.(i) = 1 then draw_rectangle store i queue
@@ -168,7 +162,7 @@ module Make (L : Luma.S) = struct
           & Resource (module Rb_store.Index.R)
           & End)
       "step"
-      (fun w _ e r ->
+      (fun w _ _ r ->
         L.Query.Tuple.with8 r (fun time config store grid bp np event_store index ->
             (* Clamp dt to prevent instability *)
             let dt = min (Time.dt time) config.max_step_dt in
@@ -186,6 +180,6 @@ module Make (L : Luma.S) = struct
 
               Narrow_phase.update_actual_collision_pairs np store bp index;
               Resolver.resolve_collisions store np;
-              Collision_event.fill_collision_events np event_store index));
+              Collision_event.fill_collision_events np event_store));
         w)
 end

@@ -1,4 +1,3 @@
-open Luma__core
 open Luma__math
 open Luma__resource
 open Luma__id
@@ -155,9 +154,7 @@ module Make (L : Luma.S) : S = struct
                 Vec2.create x y
               in
 
-              Some
-                (Kinematic_collision2d.create ~collider ~angle:0. ~collider_velocity:Vec2.zero
-                   ~depth:0. ~normal ~position ~remainder ~travel))
+              Some (Kinematic_collision2d.create ~collider ~normal ~position ~remainder ~travel))
 
   let move_and_slide ?(max_iterations = 4) world entity velocity dt =
     let open Luma__math.Vec2 in

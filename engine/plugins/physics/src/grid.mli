@@ -25,6 +25,12 @@ val cols : t -> int
 val rows : t -> int
 (** [rows grid] returns the number of rows in the grid. *)
 
+val world_min : t -> Luma__math.Vec2.t
+(** [world_min grid] returns the minimum world boundaries for grid mapping. *)
+
+val world_max : t -> Luma__math.Vec2.t
+(** [world_max grid] returns the maximum world boundaries for grid mapping. *)
+
 val cell_at : t -> int -> Grid_cell.t
 (** [cell_at grid idx] returns the cell at the index. Raises if the index is out of range. *)
 

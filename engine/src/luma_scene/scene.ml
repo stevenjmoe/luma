@@ -131,7 +131,7 @@ module Make (D : Driver.S) : S = struct
         match Serialize.Json.deserialize s ctx with
         | Error e -> Error e
         | Ok v -> Ok (Asset.pack (module A) v)
-      with exn -> Error (Error.io_finalize path "invalid json")
+      with _exn -> Error (Error.io_finalize path "invalid json")
   end
 
   let register_loader () =

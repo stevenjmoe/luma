@@ -6,19 +6,11 @@ module type S = sig
   open Luma__sprite
   open Luma__transform
   open Luma__time
-  open Luma__math
   open Luma__resource
   open Luma__id
   open Luma__audio
-  open Luma__type_register
   open Luma__scene
-  open Luma__serialize
-  open Luma__window
-  open Luma__input
-  open Luma__ui
-  open Luma__debug
   open Luma__plugin
-  open Luma__core
   module Types = Luma__types
 
   module App : sig
@@ -111,13 +103,10 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   open Luma__sprite
   open Luma__transform
   open Luma__time
-  open Luma__math
   open Luma__resource
   open Luma__id
   open Luma__audio
-  open Luma__type_register
   open Luma__scene
-  open Luma__serialize
   open Luma__window
   open Luma__input
   open Luma__ui

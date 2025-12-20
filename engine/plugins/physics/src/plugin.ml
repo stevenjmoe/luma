@@ -73,5 +73,5 @@ module Make (L : Luma.S) : S = struct
     |> App.on PreUpdate (S.sync_to_store ())
     |> App.on PreUpdate (S.sync_from_store ())
     |> App.on Update (S.step ())
-    |> App.on PreRender ~run_if:(fun w -> config.debug = true) (S.debug_draw ())
+    |> App.on PreRender ~run_if:(fun _ -> config.debug = true) (S.debug_draw ())
 end

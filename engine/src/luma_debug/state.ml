@@ -1,7 +1,5 @@
-open Luma__serialize
 open Luma__id
 open Luma__resource
-open Luma__app
 
 type mouse_debug_mode =
   | Screen
@@ -46,5 +44,4 @@ module R = Resource.Make (struct
   type inner = t
 
   let name = "debug_state"
-  let default = default ()
 end)

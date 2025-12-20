@@ -89,7 +89,7 @@ module Collision_events_store = struct
   end)
 end
 
-let fill_collision_events narrow events (index : Rb_store.Index.t) =
+let fill_collision_events narrow events =
   let open Narrow_phase in
   let open Collision_events_store in
   clear events;

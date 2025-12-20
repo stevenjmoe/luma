@@ -5,17 +5,14 @@ open Luma__id.Id
 
 type t = {
   collider : Entity.t;
-  angle : float;
-  collider_velocity : Vec2.t;
-  depth : float;
   normal : Vec2.t;
   position : Vec2.t;
   remainder : Vec2.t;
   travel : Vec2.t;
 }
 
-let create ~collider ~angle ~collider_velocity ~depth ~normal ~position ~remainder ~travel =
-  { collider; angle; collider_velocity; depth; normal; position; remainder; travel }
+let create ~collider ~normal ~position ~remainder ~travel =
+  { collider; normal; position; remainder; travel }
 
 let collider k = k.collider
 let normal k = k.normal

@@ -1,7 +1,5 @@
 open Luma__ecs
 open Luma__id
-open Luma__serialize
-open Luma__core
 open Luma__app
 
 module type S = sig
@@ -397,7 +395,7 @@ module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struc
     System.make_with_resources ~components:End
       ~resources:Query.Resource.(Resource (module State.R) & End)
       "toggle_mouse_overlay"
-      (fun w cmd e (state, _) ->
+      (fun w _cmd _e (state, _) ->
         (if D.Input.Keyboard.is_key_pressed Luma__types.Input_types.Key.F3 then
            match state.mouse_debug_mode with
            | Both -> state.mouse_debug_mode <- Screen

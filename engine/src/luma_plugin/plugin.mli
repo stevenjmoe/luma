@@ -1,16 +1,4 @@
-open Luma__app.App
-open Luma__driver
-open Luma__type_register
-open Luma__transform
-open Luma__image
-open Luma__scene
 open Luma__render
-open Luma__window
-open Luma__input
-open Luma__time
-open Luma__audio
-open Luma__sprite
-open Luma__debug
 
 (** Engine configuration shared by the core plugins. *)
 module type Config = sig
@@ -110,13 +98,13 @@ module type S = sig
 end
 
 module Make : functor
-  (D : Luma__driver.Driver.S)
+  (_ : Luma__driver.Driver.S)
   (Window : Luma__window.Window.S)
-  (Renderer : Luma__render.Render.Renderer)
-  (Input : Luma__input.Input.S)
-  (Time : Luma__time.Time.PLUGIN)
-  (Audio : Luma__audio.Audio.S)
-  (Texture : Luma__image.Texture.S)
-  (Scene : Luma__scene.Scene.S)
-  (Debug : Luma__debug.Debug.S)
+  (_ : Luma__render.Render.Renderer)
+  (_ : Luma__input.Input.S)
+  (_ : Luma__time.Time.PLUGIN)
+  (_ : Luma__audio.Audio.S)
+  (_ : Luma__image.Texture.S)
+  (_ : Luma__scene.Scene.S)
+  (_ : Luma__debug.Debug.S)
   -> S with type window = Window.Window_config.t and type app = Luma__app.App.t

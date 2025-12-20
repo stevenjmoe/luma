@@ -232,12 +232,6 @@ let resolve_aabb_aabb (store : Rb_store.t) ~a ~b ~restitution ~position_correcti
           store.min_y.(b) <- min_b_y +. dy_b;
           store.max_y.(b) <- max_b_y +. dy_b)
 
-let resolve_aabb_circle (store : Rb_store.t) ~a ~b ~restitution ~position_correction =
-  if store.shape.(a) != 0 && store.shape.(b) != 1 then ()
-  else
-    let _ = () in
-    ()
-
 let length vx vy = Float.sqrt ((vx *. vx) +. (vy *. vy))
 
 let resolve_circle_aabb

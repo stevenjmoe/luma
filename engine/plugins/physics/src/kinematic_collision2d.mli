@@ -6,15 +6,7 @@ open Luma__id.Id
 type t
 
 val create :
-  collider:Entity.t ->
-  angle:float ->
-  collider_velocity:Vec2.t ->
-  depth:float ->
-  normal:Vec2.t ->
-  position:Vec2.t ->
-  remainder:Vec2.t ->
-  travel:Vec2.t ->
-  t
+  collider:Entity.t -> normal:Vec2.t -> position:Vec2.t -> remainder:Vec2.t -> travel:Vec2.t -> t
 
 val collider : t -> Entity.t
 (** [collider collision] returns the colliding body's associated entity. *)

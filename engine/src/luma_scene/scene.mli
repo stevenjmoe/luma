@@ -1,9 +1,7 @@
 open Luma__asset
 open Luma__app
 open Luma__core
-open Luma__id
 open Luma__ecs
-open Luma__resource
 open Types
 
 (** Scene operations for snapshotting, injecting, and serializing worlds. *)
@@ -21,4 +19,4 @@ module type S = sig
   module Serialize : module type of Serialize
 end
 
-module Make : functor (D : Luma__driver.Driver.S) -> S
+module Make : functor (_ : Luma__driver.Driver.S) -> S

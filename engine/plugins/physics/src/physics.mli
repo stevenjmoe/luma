@@ -14,4 +14,4 @@ module type S = sig
   val plugin : ?world_config:Config.t -> Luma__app.App.t -> Luma__app.App.t
 end
 
-module Make (L : Luma.S) : S
+module Make (_ : Luma.S) : S

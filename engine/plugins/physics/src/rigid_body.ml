@@ -72,7 +72,7 @@ let create_circle ?(mass = 0.) body_type pos radius =
     vel = Vec2.zero;
     acc = Vec2.zero;
     mass;
-    inv_mass = compute_inv_mass mass;
+    inv_mass;
     damping = 0.99;
     active = true;
     angle = 0.;

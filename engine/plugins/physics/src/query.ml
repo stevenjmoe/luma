@@ -1,5 +1,3 @@
-open Grid
-
 let sweep_ray_aabb ~origin_x ~origin_y ~dir_x ~dir_y ~min_x ~min_y ~max_x ~max_y =
   let open Float in
   if abs dir_x < epsilon_float && abs dir_y < epsilon_float then None

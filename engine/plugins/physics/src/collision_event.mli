@@ -32,7 +32,7 @@ module Collision_events_store : sig
   module R : Luma__resource.Resource.S with type t = t
 end
 
-val fill_collision_events : Narrow_phase.t -> Collision_events_store.t -> Rb_store.Index.t -> unit
+val fill_collision_events : Narrow_phase.t -> Collision_events_store.t -> unit
 val iter_events : Luma__ecs__World.t -> (t -> unit) -> unit
 
 val iter_events_for_entity :

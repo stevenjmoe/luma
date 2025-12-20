@@ -29,8 +29,8 @@ type t = {
   cell_size : float;
   rows : int;
   cols : int;  (** Grid dimensions. *)
-  world_min : Vec2.t;  (** World boundaries for grid mapping. *)
-  world_max : Vec2.t;  (** World boundaries for grid mapping. *)
+  world_min : Vec2.t;
+  world_max : Vec2.t;
   occupied : int Dynarray.t;
   touched : bool array;
       (** A collection of bools indicating whether the corresponding cell in [cells] has been
@@ -119,6 +119,8 @@ let insert grid body_index ~min_x ~min_y ~max_x ~max_y =
 let occupied grid = grid.occupied
 let cols grid = grid.cols
 let rows grid = grid.rows
+let world_min grid = grid.world_min
+let world_max grid = grid.world_max
 
 let cell_at grid index =
   if index > Array.length grid.cells - 1 then failwith "cell_at: Cell index is out of range.";

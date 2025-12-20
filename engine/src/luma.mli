@@ -5,14 +5,10 @@ module type S = sig
   open Luma__sprite
   open Luma__transform
   open Luma__time
-  open Luma__math
   open Luma__resource
   open Luma__id
   open Luma__audio
-  open Luma__type_register
   open Luma__scene
-  open Luma__serialize
-  open Luma__state
   open Luma__window
   open Luma__input
   open Luma__ui
@@ -103,4 +99,4 @@ module type S = sig
   module Error : module type of Luma__core.Error
 end
 
-module Make : functor (D : Luma__driver.Driver.S) -> S
+module Make : functor (_ : Luma__driver.Driver.S) -> S

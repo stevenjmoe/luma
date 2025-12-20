@@ -1,4 +1,5 @@
 open Luma__math
+(* TODO: remove hashtbls *)
 
 type t = {
   ids1 : int Dynarray.t;
@@ -40,7 +41,6 @@ let circle_circle_collision (s : Rb_store.t) idx1 idx2 =
     ~b_radius:s.radius.(idx2)
 
 let check_collision (s : Rb_store.t) ~row_a ~row_b =
-  let open Bounded2d.Aabb2d in
   let shape_a = s.shape.(row_a) in
   let shape_b = s.shape.(row_b) in
 
@@ -72,7 +72,7 @@ let entities_of_pair_key key =
 let update_actual_collision_pairs c (s : Rb_store.t) (bp : Broad_phase.t) (index : Rb_store.Index.t)
     =
   clear c;
-  let { curr_pairs; ids1; ids2 } = c in
+  let { curr_pairs; ids1; ids2; _ } = c in
 
   let bp_ids1, bp_ids2 = Broad_phase.pairs_view bp in
 
