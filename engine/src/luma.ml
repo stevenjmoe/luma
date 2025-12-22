@@ -162,6 +162,10 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     include D.Colour
   end
 
+  let () =
+    Fmt_tty.setup_std_outputs ();
+    Luma__core.Log.init ()
+
   module Log = struct
     let default_log = Luma__core.Log.sub_log (Logs.Src.name Logs.default)
     let log = Luma__core.Log.app_log
