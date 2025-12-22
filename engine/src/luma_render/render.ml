@@ -138,7 +138,7 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
       ?(src = None)
       ?(opacity = 1.)
       ?(rotation = 0.)
-      ?(origin = Vec2.zero)
+      ?(origin = Vec2.(create (size.x *. 0.5) (size.y *. 0.5)))
       () =
     let full_texture () =
       Rect.create ~pos:(Vec2.create 0. 0.)
@@ -154,11 +154,12 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
     let src_rect =
       match (flip_x, flip_y) with
       | false, false -> src
-      | true, false -> Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create (-.w) h)
-      | false, true -> Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create w (-.h))
+      | true, false -> Rect.create ~pos:(Vec2.create (x +. w) y) ~size:(Vec2.create (-.w) h)
+      | false, true -> Rect.create ~pos:(Vec2.create x (y +. h)) ~size:(Vec2.create w (-.h))
       | true, true ->
           Rect.create ~pos:(Vec2.create (x +. w) (y +. h)) ~size:(Vec2.create (-.w) (-.h))
     in
+
     let dst = Rect.create ~pos:position ~size in
     let opacity = if opacity < 0. then 0. else if opacity > 1. then 1. else opacity in
     let opacity = int_of_float ((opacity *. 255.0) +. 0.5) in
@@ -229,7 +230,7 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
       ?(flip_y = false)
       ?(opacity = 1.)
       ?(rotation = 0.)
-      ?(origin = Vec2.zero)
+      ?(origin = Vec2.(create (size.x *. 0.5) (size.y *. 0.5)))
       q
       () =
     let s = Queue.{ tex; pos = position; size; flip_x; flip_y; src; opacity; rotation; origin } in
