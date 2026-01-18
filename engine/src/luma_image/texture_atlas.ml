@@ -13,7 +13,7 @@ end)
 
 type t = A.t
 
-let from_layout layout = { layout; index = 0 }
+let from_layout ?(index = 0) layout = { layout; index }
 let get_frame t = Texture_atlas_layout.get_frame t.layout t.index
 let set_index atlas index = atlas.index <- index
 let index atlas = atlas.index
