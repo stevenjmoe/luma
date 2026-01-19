@@ -154,8 +154,8 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
     let src_rect =
       match (flip_x, flip_y) with
       | false, false -> src
-      | true, false -> Rect.create ~pos:(Vec2.create (x +. w) y) ~size:(Vec2.create (-.w) h)
-      | false, true -> Rect.create ~pos:(Vec2.create x (y +. h)) ~size:(Vec2.create w (-.h))
+      | true, false -> Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create (-.w) h)
+      | false, true -> Rect.create ~pos:(Vec2.create x y) ~size:(Vec2.create w (-.h))
       | true, true ->
           Rect.create ~pos:(Vec2.create (x +. w) (y +. h)) ~size:(Vec2.create (-.w) (-.h))
     in
