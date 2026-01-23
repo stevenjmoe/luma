@@ -13,7 +13,7 @@ module type S = sig
   val default : unit -> t
 
   val make :
-    ?viewport:Viewport.t option ->
+    ?viewport:Viewport.t ->
     ?order:int ->
     offset:Vec2.t ->
     target:Vec2.t ->
@@ -60,7 +60,7 @@ module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
 
   let default () = { camera = D.Camera.default (); viewport = None; order = 0; active = true }
 
-  let make ?(viewport = None) ?(order = 0) ~offset ~target ~rotation ~zoom () =
+  let make ?viewport ?(order = 0) ~offset ~target ~rotation ~zoom () =
     { camera = D.Camera.make ~offset ~target ~rotation ~zoom (); viewport; active = true; order }
 
   let target c = D.Camera.target c.camera

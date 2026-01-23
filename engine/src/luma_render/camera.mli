@@ -13,7 +13,7 @@ module type S = sig
   val default : unit -> t
 
   val make :
-    ?viewport:Viewport.t option ->
+    ?viewport:Viewport.t ->
     ?order:int ->
     offset:Vec2.t ->
     target:Vec2.t ->
