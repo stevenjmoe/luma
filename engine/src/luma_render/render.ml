@@ -108,11 +108,21 @@ module type Renderer = sig
   val push_rect_screen :
     z:int -> ?layers:int64 -> rect:Rect.t -> colour -> Queue.item list ref -> unit
 
-  module Camera : sig
-    include module type of Camera
+  module View : sig
+    type t
 
-    val viewport_to_world_2d : Vec2.t -> t -> Vec2.t
-    val world_to_viewport_2d : Vec2.t -> t -> Vec2.t
+    val camera_entity : t -> Luma__id__Id.Entity.t
+    val camera : t -> Camera.t
+    val viewport : t -> Viewport.t
+
+    module R : Luma__resource.Resource.S with type t = t list
+  end
+
+  module Projection : sig
+    val viewport_to_world_2d : View.t -> Vec2.t -> Vec2.t
+    val world_to_viewport_2d : View.t -> Vec2.t -> Vec2.t
+    val window_to_world_2d : View.t -> Vec2.t -> Vec2.t
+    val world_to_window_2d : View.t -> Vec2.t -> Vec2.t
   end
 end
 
@@ -262,41 +272,70 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
     let rect_screen ~rect ~colour q = push_rect_screen ~z:0 ~rect colour q
   end
 
-  (* render specific logic and systems for the camera module *)
-  module Camera = struct
-    include Camera
+  let to_driver vp c : D.camera =
+    let open Camera in
+    let offset = Vec2.create (Viewport.w vp *. 0.5) (Viewport.h vp *. 0.5) in
+    D.Camera.make ~offset ~target:(target c) ~rotation:(rotation c) ~zoom:(zoom c) ()
 
-    let to_driver c : D.camera =
-      D.Camera.make ~offset:(offset c) ~target:(target c) ~rotation:(rotation c) ~zoom:(zoom c) ()
+  module View = struct
+    type t = {
+      camera_entity : Luma__id.Id.Entity.t;
+      camera : Camera.t;
+      viewport : Viewport.t;
+    }
 
-    let viewport_to_world_2d position c = D.Camera.get_screen_to_world_2d position (to_driver c)
-    let world_to_viewport_2d position c = D.Camera.get_world_to_screen_2d position (to_driver c)
+    let camera_entity v = v.camera_entity
+    let camera v = v.camera
+    let viewport v = v.viewport
 
-    let render_cameras () =
+    module R = Resource.Make (struct
+      type inner = t list
+
+      let name = "view_res"
+    end)
+
+    let resolve_views () =
+      System.make
+        ~components:Query.Component.(Required (module Camera.C) & End)
+        "resolve_views"
+        (fun w _cmd e ->
+          let cams =
+            e
+            |> List.filter (fun (_, (cam, _)) -> Camera.active cam)
+            |> List.sort (fun (e1, (camera1, _)) (e2, (camera2, _)) ->
+                compare (Camera.order camera1, e1) (Camera.order camera2, e2))
+            |> List.map (fun (entity, (camera, _)) ->
+                let viewport =
+                  let win_w, win_h = (D.Window.screen_width (), D.Window.screen_height ()) in
+                  match Camera.viewport camera with
+                  | Some v -> Viewport.clamp_to_window (float win_w) (float win_h) v
+                  | None -> Viewport.full win_w win_h
+                in
+                { camera_entity = entity; camera; viewport })
+          in
+
+          let packed = Resource.pack (module R) cams in
+          let w =
+            if World.has_resource R.type_id w then World.set_resource R.type_id packed w
+            else World.add_resource R.type_id packed w
+          in
+          w)
+
+    let render () =
       System.make_with_resources
-        ~components:Query.Component.(Required (module C) & End)
-        ~resources:Query.Resource.(Resource (module Queue.R) & End)
+        ~components:Query.Component.(Required (module Camera.C) & End)
+        ~resources:Query.Resource.(Resource (module Queue.R) & Resource (module R) & End)
         "render_cameras"
-        (fun world _ entities (queue, _) ->
-          let win_w, win_h = (D.Window.screen_width (), D.Window.screen_height ()) in
-          entities
-          |> List.filter (fun (_, (cam, _)) -> active cam)
-          |> List.sort (fun (e1, (camera1, _)) (e2, (camera2, _)) ->
-              compare (order camera1, e1) (order camera2, e2))
-          |> Query.Tuple.iter1 (fun cam ->
-              let vp =
-                match viewport cam with
-                | None -> Viewport.full win_w win_h
-                | Some view ->
-                    Viewport.clamp_to_window (float_of_int win_w) (float_of_int win_h) view
-              in
-              let x, y, w, h = Viewport.to_rect vp in
+        (fun world _ _entities (queue, (views, _)) ->
+          views
+          |> List.iter (fun view ->
+              let x, y, w, h = Viewport.to_rect view.viewport in
               D.Window.set_viewport_scissor x y w h;
 
               Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
                   match cmd with Queue.ScreenRect (r, c) -> draw_rect r c | _ -> ());
 
-              let camera = to_driver cam in
+              let camera = to_driver view.viewport view.camera in
 
               D.Window.with_2d camera (fun () ->
                   Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
@@ -318,13 +357,22 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
               D.Window.reset_scissor ();
               ());
           world)
+  end
 
-    let plugin default_camera app =
-      let app = app |> App.on Render @@ render_cameras () in
+  module Projection = struct
+    let viewport_to_world_2d (view : View.t) position =
+      D.Camera.get_screen_to_world_2d position (to_driver view.viewport view.camera)
 
-      (* apply camera plugin *)
-      let app = plugin default_camera app in
-      app
+    let world_to_viewport_2d (view : View.t) position =
+      D.Camera.get_world_to_screen_2d position (to_driver view.viewport view.camera)
+
+    let window_to_world_2d (view : View.t) pos_window =
+      let local = Vec2.sub pos_window (Viewport.position view.viewport) in
+      viewport_to_world_2d view local
+
+    let world_to_window_2d (view : View.t) world =
+      let local = world_to_viewport_2d view world in
+      Vec2.add local (Viewport.position view.viewport)
   end
 
   (* clear the queue at the beginning of the frame *)
@@ -393,8 +441,18 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
           entities;
         world)
 
+  let add_camera default_camera () =
+    System.make ~components:End "add_camera" (fun world _ _ ->
+        if default_camera then (
+          let camera = Camera.default () in
+          world
+          |> World.add_entity ~name:"Camera"
+          |> World.with_component world (module Camera.C) camera
+          |> ignore;
+          world)
+        else world)
+
   let plugin ?(camera_config = Camera_config.default ()) app =
-    let app = Camera.plugin camera_config.default_camera app in
     World.add_resource Queue.R.type_id
       (Resource.pack (module Queue.R) (Queue.make ()))
       (App.world app)
@@ -402,9 +460,12 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
 
     let app =
       app
+      |> App.on PostStartup (add_camera camera_config.default_camera ())
+      |> App.on PreRender (View.resolve_views ())
       |> App.on PreRender (begin_frame ())
       |> App.on PreRender (extract_sprite ())
       |> App.on PreRender (extract_shapes ())
+      |> App.on Render (View.render ())
     in
     app
 end

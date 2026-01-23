@@ -1,6 +1,7 @@
 open Luma__ecs
 open Luma__id
 open Luma__app
+open Luma__render
 
 module type S = sig
   val toggle_overlay : unit -> ('a, unit) System.t
@@ -301,60 +302,42 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
           world))
 
   let draw_coords () =
-    System.make_with_resources
-      ~components:Query.Component.(Required (module Renderer.Camera.C) & End)
-      ~resources:Query.Resource.(Resource (module State.R) & End)
+    System.make_with_resources ~components:End
+      ~resources:
+        Query.Resource.(Resource (module State.R) & Resource (module Renderer.View.R) & End)
       "draw_coords"
-      (fun w _cmd e (state, _) ->
+      (fun w _cmd _e (state, (views, _)) ->
         let open Luma__math.Vec2 in
-        let cameras = List.map (fun (_, (c, _)) -> c) e in
         let padding = -16 in
         let mouse_pos = D.Input.Mouse.get_mouse_position () in
         let mx = mouse_pos.x in
         let my = mouse_pos.y in
 
-        let point_in_viewport (v : Luma__render.Viewport.t) mx my =
+        let point_in_viewport (vp : Viewport.t) mx my =
           let open Luma__render.Viewport in
-          let v_pos = position v in
-          let v_size = size v in
-          mx >= v_pos.x && mx < v_pos.x +. v_size.x && my >= v_pos.y && my < v_pos.y +. v_size.y
+          let p = position vp in
+          let s = size vp in
+          mx >= p.x && mx < p.x +. s.x && my >= p.y && my < p.y +. s.y
         in
 
-        (* Try to find the camera whose viewport contains the mouse *)
-        let cam_under_mouse =
-          cameras
-          |> List.filter_map (fun cam ->
-              match Renderer.Camera.viewport cam with
-              | None -> None
-              | Some vp -> if point_in_viewport vp mx my then Some cam else None)
-          |> List.fold_left
-               (fun acc cam ->
-                 match acc with
-                 | None -> Some cam
-                 | Some best ->
-                     if Renderer.Camera.order cam > Renderer.Camera.order best then Some cam
-                     else acc)
-               None
+        (* Prefer the view under the mouse; fallback to first view *)
+        let view_under_mouse =
+          List.find_opt
+            (fun (v : Renderer.View.t) -> point_in_viewport (Renderer.View.viewport v) mx my)
+            views
         in
 
-        (* If no viewport hit, use the first camera. Single camera games don't typically have a viewport. *)
-        let cam_for_debug =
-          match (cam_under_mouse, cameras) with
-          | Some cam, _ -> Some cam
-          | None, cam :: _ -> Some cam
+        let view_for_debug =
+          match (view_under_mouse, views) with
+          | Some v, _ -> Some v
+          | None, v :: _ -> Some v
           | None, [] -> None
         in
+
         let mouse_world_opt =
-          match cam_for_debug with
+          match view_for_debug with
           | None -> None
-          | Some cam -> (
-              match Renderer.Camera.viewport cam with
-              | Some vp when point_in_viewport vp mx my ->
-                  let open Luma__render.Viewport in
-                  let v_pos = position vp in
-                  let local = Luma__math.Vec2.create (mx -. v_pos.x) (my -. v_pos.y) in
-                  Some (Renderer.Camera.viewport_to_world_2d local cam)
-              | _ -> Some (Renderer.Camera.viewport_to_world_2d mouse_pos cam))
+          | Some view -> Some (Renderer.Projection.window_to_world_2d view mouse_pos)
         in
 
         let screen_x = int_of_float mx in
