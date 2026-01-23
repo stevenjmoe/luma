@@ -1,114 +1,65 @@
 open Luma__ecs
 open Luma__math
 open Luma__app
+module Viewport = Viewport
 
-module type S = sig
-  module Viewport : module type of Viewport
+type t = {
+  mutable target : Vec2.t;
+  mutable offset : Vec2.t;
+  mutable rotation : float;
+  mutable zoom : float;
+  mutable viewport : Viewport.t option;
+  mutable order : int;
+  mutable active : bool;
+}
 
-  type camera
-  type t
+module C = Component.Make (struct
+  type inner = t
 
-  module C : Luma__ecs.Component.S with type t = t
+  let name = "Camera"
+end)
 
-  val default : unit -> t
-
-  val make :
-    ?viewport:Viewport.t ->
-    ?order:int ->
-    offset:Vec2.t ->
-    target:Vec2.t ->
-    rotation:float ->
-    zoom:float ->
-    unit ->
-    t
-
-  val target : t -> Vec2.t
-  val offset : t -> Vec2.t
-  val zoom : t -> float
-  val rotation : t -> float
-  val viewport : t -> Viewport.t option
-  val order : t -> int
-  val active : t -> bool
-  val camera : t -> camera
-  val center : t -> Vec2.t
-  val get_screen_to_world_2d : Vec2.t -> t -> Vec2.t
-  val get_world_to_screen_2d : Vec2.t -> t -> Vec2.t
-  val set_target : t -> Vec2.t -> unit
-  val set_offset : t -> Vec2.t -> unit
-  val set_zoom : t -> float -> unit
-  val set_rotation : t -> float -> unit
-  val plugin : bool -> App.t -> App.t
-end
-
-module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
-  module Viewport = Viewport
-
-  type camera = D.camera
-
-  type t = {
-    camera : camera;
-    viewport : Viewport.t option;
-    order : int;
-    active : bool;
+let default () =
+  {
+    target = Vec2.create 0. 0.;
+    offset = Vec2.create 0. 0.;
+    rotation = 0.;
+    zoom = 1.;
+    viewport = None;
+    order = 0;
+    active = true;
   }
 
-  module C = Component.Make (struct
-    type inner = t
+let make ?viewport ?(order = 0) ~offset ~target ~rotation ~zoom () =
+  { viewport; active = true; order; target; offset; rotation; zoom }
 
-    let name = "Camera"
-  end)
+let target c = c.target
+let offset c = c.offset
+let zoom c = c.zoom
+let rotation c = c.rotation
+let viewport c = c.viewport
+let order c = c.order
+let active c = c.active
+let set_target c target = c.target <- target
+let set_offset c offset = c.offset <- offset
+let set_zoom c zoom = c.zoom <- zoom
+let set_rotation c rotation = c.rotation <- rotation
+let set_order c order = c.order <- order
+let set_active c active = c.active <- active
+let set_viewport c viewport = c.viewport <- viewport
 
-  let default () = { camera = D.Camera.default (); viewport = None; order = 0; active = true }
+let add_camera default_camera () =
+  System.make ~components:End "add_camera" (fun world _ _ ->
+      if default_camera then (
+        let camera = default () in
+        world
+        |> World.add_entity ~name:"Camera"
+        |> World.with_component world (module C) camera
+        |> ignore;
+        world)
+      else world)
 
-  let make ?viewport ?(order = 0) ~offset ~target ~rotation ~zoom () =
-    { camera = D.Camera.make ~offset ~target ~rotation ~zoom (); viewport; active = true; order }
-
-  let target c = D.Camera.target c.camera
-  let offset c = D.Camera.offset c.camera
-  let zoom c = D.Camera.zoom c.camera
-  let rotation c = D.Camera.rotation c.camera
-  let viewport c = c.viewport
-  let order c = c.order
-  let active c = c.active
-  let camera c = c.camera
-
-  let center c =
-    match c.viewport with
-    | None -> D.Camera.target c.camera
-    | Some vp ->
-        let screen_center = Viewport.center vp in
-        let dx = (Vec2.x screen_center -. Vec2.x (offset c)) /. zoom c in
-        let dy = (Vec2.y screen_center -. Vec2.y (offset c)) /. zoom c in
-        let rot = -.rotation c in
-        let cosr = cos rot and sinr = sin rot in
-        let rx = (dx *. cosr) -. (dy *. sinr) in
-        let ry = (dx *. sinr) +. (dy *. cosr) in
-
-        Vec2.create (Vec2.x (target c) +. rx) (Vec2.y (target c) +. ry)
-
-  let get_screen_to_world_2d position camera =
-    D.Camera.get_screen_to_world_2d position camera.camera
-
-  let get_world_to_screen_2d position camera =
-    D.Camera.get_world_to_screen_2d position camera.camera
-
-  let set_target c target = D.Camera.set_target c.camera target
-  let set_offset c offset = D.Camera.set_offset c.camera offset
-  let set_zoom c zoom = D.Camera.set_zoom c.camera zoom
-  let set_rotation c rotation = D.Camera.set_rotation c.camera rotation
-
-  let add_camera default_camera () =
-    System.make ~components:End "add_camera" (fun world _ _ ->
-        if default_camera then (
-          let camera = default () in
-          world
-          |> World.add_entity ~name:"Camera"
-          |> World.with_component world (module C) camera
-          |> ignore;
-          world)
-        else world)
-
-  (*module Camera_serializer =
+(*module Camera_serializer =
     Serialize.Make_serializer
       (Serialize.Json_format)
       (struct
@@ -144,9 +95,8 @@ module Make (D : Luma__driver.Driver.S) : S with type camera = D.camera = struct
     let packed_serializer = Luma__serialize.Serialize.pack_json (module Camera_serializer) in
     App.register_component C.name (module C) [ packed_serializer ] app*)
 
-  let plugin default_camera app =
-    app
-    |>
-    (*register_component |>*)
-    App.on PostStartup (add_camera default_camera ())
-end
+let plugin default_camera app =
+  app
+  |>
+  (*register_component |>*)
+  App.on PostStartup (add_camera default_camera ())

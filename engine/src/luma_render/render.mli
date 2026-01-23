@@ -100,7 +100,18 @@ module type Renderer = sig
   val push_rect_screen :
     z:int -> ?layers:int64 -> rect:Rect.t -> colour -> Queue.item list ref -> unit
 
-  module Camera : Camera.S
+  module Camera : sig
+    include module type of Camera
+
+    val viewport_to_world_2d : Vec2.t -> t -> Vec2.t
+    (** [viewport_to_world_2d position camera] converts from viewport-local (render-target-local)
+        coordinates to world space. The input position must already be relative to the viewport
+        origin. *)
+
+    val world_to_viewport_2d : Vec2.t -> t -> Vec2.t
+    (** [world_to_viewport_2d position camera] converts from world space to viewport-local
+        (render-target-local) coordinates. *)
+  end
 end
 
 module Make : functor (D : Luma__driver.Driver.S) (_ : Texture.S with type t = D.texture) ->

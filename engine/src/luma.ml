@@ -20,7 +20,7 @@ module type S = sig
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Camera_config : module type of Luma__render.Render.Camera_config
-  module Camera : Luma__render.Camera.S
+  module Camera : module type of Luma__render.Camera
 
   module Renderer :
     Luma__render.Render.Renderer with type texture = texture and type colour = colour
@@ -143,7 +143,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   module Asset_loader = Luma__asset.Loader
   module Asset_server = Luma__asset.Server
   module Math = Luma__math
-  module Debug = Luma__debug.Debug.Make (D) (Camera)
+  module Debug = Luma__debug.Debug.Make (D) (R)
 
   module Plugin =
     Luma__plugin.Plugin.Make (Driver) (Window) (Renderer) (Input) (Time_plugin) (Audio)

@@ -108,7 +108,12 @@ module type Renderer = sig
   val push_rect_screen :
     z:int -> ?layers:int64 -> rect:Rect.t -> colour -> Queue.item list ref -> unit
 
-  module Camera : Camera.S
+  module Camera : sig
+    include module type of Camera
+
+    val viewport_to_world_2d : Vec2.t -> t -> Vec2.t
+    val world_to_viewport_2d : Vec2.t -> t -> Vec2.t
+  end
 end
 
 module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.texture) :
@@ -259,8 +264,13 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
 
   (* render specific logic and systems for the camera module *)
   module Camera = struct
-    module Base = Camera.Make (D)
-    include Base
+    include Camera
+
+    let to_driver c : D.camera =
+      D.Camera.make ~offset:(offset c) ~target:(target c) ~rotation:(rotation c) ~zoom:(zoom c) ()
+
+    let viewport_to_world_2d position c = D.Camera.get_screen_to_world_2d position (to_driver c)
+    let world_to_viewport_2d position c = D.Camera.get_world_to_screen_2d position (to_driver c)
 
     let render_cameras () =
       System.make_with_resources
@@ -286,7 +296,9 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
               Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
                   match cmd with Queue.ScreenRect (r, c) -> draw_rect r c | _ -> ());
 
-              D.Window.with_2d (camera cam) (fun () ->
+              let camera = to_driver cam in
+
+              D.Window.with_2d camera (fun () ->
                   Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
                       match cmd with
                       | Queue.Sprite s ->
@@ -311,7 +323,7 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
       let app = app |> App.on Render @@ render_cameras () in
 
       (* apply camera plugin *)
-      let app = Base.plugin default_camera app in
+      let app = plugin default_camera app in
       app
   end
 

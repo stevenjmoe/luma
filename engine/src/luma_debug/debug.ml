@@ -83,7 +83,7 @@ let clamp_window_size ~min_w ~min_h w h =
   let h' = if h < min_h then min_h else h in
   (w', h')
 
-module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struct
+module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer) = struct
   open State
 
   let current_panel_rect state : Luma__math.Rect.t * float * float * float * float =
@@ -302,7 +302,7 @@ module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struc
 
   let draw_coords () =
     System.make_with_resources
-      ~components:Query.Component.(Required (module Camera.C) & End)
+      ~components:Query.Component.(Required (module Renderer.Camera.C) & End)
       ~resources:Query.Resource.(Resource (module State.R) & End)
       "draw_coords"
       (fun w _cmd e (state, _) ->
@@ -324,14 +324,16 @@ module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struc
         let cam_under_mouse =
           cameras
           |> List.filter_map (fun cam ->
-              match Camera.viewport cam with
+              match Renderer.Camera.viewport cam with
               | None -> None
               | Some vp -> if point_in_viewport vp mx my then Some cam else None)
           |> List.fold_left
                (fun acc cam ->
                  match acc with
                  | None -> Some cam
-                 | Some best -> if Camera.order cam > Camera.order best then Some cam else acc)
+                 | Some best ->
+                     if Renderer.Camera.order cam > Renderer.Camera.order best then Some cam
+                     else acc)
                None
         in
 
@@ -342,18 +344,17 @@ module Make (D : Luma__driver.Driver.S) (Camera : Luma__render.Camera.S) = struc
           | None, cam :: _ -> Some cam
           | None, [] -> None
         in
-
         let mouse_world_opt =
           match cam_for_debug with
           | None -> None
           | Some cam -> (
-              match Camera.viewport cam with
+              match Renderer.Camera.viewport cam with
               | Some vp when point_in_viewport vp mx my ->
                   let open Luma__render.Viewport in
                   let v_pos = position vp in
                   let local = Luma__math.Vec2.create (mx -. v_pos.x) (my -. v_pos.y) in
-                  Some (Camera.get_screen_to_world_2d local cam)
-              | _ -> Some (Camera.get_screen_to_world_2d mouse_pos cam))
+                  Some (Renderer.Camera.viewport_to_world_2d local cam)
+              | _ -> Some (Renderer.Camera.viewport_to_world_2d mouse_pos cam))
         in
 
         let screen_x = int_of_float mx in

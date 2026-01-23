@@ -47,8 +47,9 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
                       (Vec2.create (x plan.map_parallax_origin) (y plan.map_parallax_origin))
                       tm.scale))
           in
-          let cam_center_world = Camera.center cam in
-          let d = Vec2.sub cam_center_world map_origin_world in
+
+          let cam_target = Camera.target cam in
+          let d = Vec2.sub cam_target map_origin_world in
 
           Array.iteri
             (fun i layer ->
