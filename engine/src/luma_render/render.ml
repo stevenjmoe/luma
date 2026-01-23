@@ -274,7 +274,9 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
 
   let to_driver vp c : D.camera =
     let open Camera in
-    let offset = Vec2.create (Viewport.w vp *. 0.5) (Viewport.h vp *. 0.5) in
+    let vp_pos = Viewport.position vp in
+    let vp_size = Viewport.size vp in
+    let offset = Vec2.create (vp_pos.x +. (vp_size.x *. 0.5)) (vp_pos.y +. (vp_size.y *. 0.5)) in
     D.Camera.make ~offset ~target:(target c) ~rotation:(rotation c) ~zoom:(zoom c) ()
 
   module View = struct
