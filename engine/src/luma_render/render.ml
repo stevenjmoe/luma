@@ -17,16 +17,15 @@ module type Renderer = sig
   val draw_rect_lines : Luma__math.Rect.t -> float -> colour -> unit
 
   val draw_texture :
-    texture ->
-    position:Luma__math.Vec2.t ->
     size:Luma__math.Vec2.t ->
+    position:Vec2.t ->
     ?flip_x:bool ->
     ?flip_y:bool ->
-    ?src:Rect.t option ->
+    ?src:Luma__math.Rect.t option ->
     ?opacity:float ->
     ?rotation:float ->
     ?origin:Vec2.t ->
-    unit ->
+    texture ->
     unit
 
   val draw_circle : center_x:float -> center_y:float -> radius:float -> colour -> unit
@@ -53,9 +52,6 @@ module type Renderer = sig
     type t = item list ref
 
     val make : unit -> t
-    val clear : t -> unit
-    val push : t -> item -> unit
-    val iter_sorted : t -> camera_layers:int64 -> f:(item -> unit) -> unit
 
     module R : Luma__resource.Resource.S with type t = t
   end
@@ -95,7 +91,6 @@ module type Renderer = sig
     ?rotation:float ->
     ?origin:Vec2.t ->
     Queue.item list ref ->
-    unit ->
     unit
 
   val push_rect_screen :
@@ -138,16 +133,15 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
     D.Draw.draw_circle_lines (int_of_float center_x) (int_of_float center_y) radius colour
 
   let draw_texture
-      texture
-      ~position
       ~size
+      ~position
       ?(flip_x = false)
       ?(flip_y = false)
       ?(src = None)
       ?(opacity = 1.)
       ?(rotation = 0.)
       ?(origin = Vec2.(create (size.x *. 0.5) (size.y *. 0.5)))
-      () =
+      texture =
     let full_texture () =
       Rect.create ~pos:(Vec2.create 0. 0.)
         ~size:(Vec2.create (float @@ D.Texture.width texture) (float @@ D.Texture.height texture))
@@ -239,8 +233,7 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
       ?(opacity = 1.)
       ?(rotation = 0.)
       ?(origin = Vec2.(create (size.x *. 0.5) (size.y *. 0.5)))
-      q
-      () =
+      q =
     let s = Queue.{ tex; pos = position; size; flip_x; flip_y; src; opacity; rotation; origin } in
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Sprite s }
 
@@ -336,9 +329,9 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
                   Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
                       match cmd with
                       | Queue.Sprite s ->
-                          draw_texture s.tex ~position:s.pos ~size:s.size ~flip_x:s.flip_x
+                          draw_texture ~position:s.pos ~size:s.size ~flip_x:s.flip_x
                             ~flip_y:s.flip_y ~src:s.src ~opacity:s.opacity ~rotation:s.rotation
-                            ~origin:s.origin ()
+                            ~origin:s.origin s.tex
                       | Queue.Rect (r, colour) -> draw_rect r colour
                       | Queue.Rect_lines (r, line, colour) -> draw_rect_lines r line colour
                       | Queue.Circle (c, colour) ->
@@ -432,7 +425,7 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
                 let position = Vec2.create transform.position.x transform.position.y in
                 let rotation = transform.rotation in
 
-                push_texture ~z ~tex ~position ~size ~flip_x ~flip_y ?src ~rotation queue ())
+                push_texture ~z ~tex ~position ~size ~flip_x ~flip_y ?src ~rotation queue)
           entities;
         world)
 

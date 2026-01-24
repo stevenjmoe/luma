@@ -80,7 +80,7 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
 
                       Renderer.push_texture ~z:cmd.z ~tex ~position:base_world ~size:size_world
                         ?src:(Some cmd.source) ~rotation:cmd.rotation ~opacity:meta.opacity
-                        ~origin:cmd.origin ~flip_x:cmd.flip.h ~flip_y:cmd.flip.v queue ())
+                        ~origin:cmd.origin ~flip_x:cmd.flip.h ~flip_y:cmd.flip.v queue)
                 layer)
             plan.layers
         in
