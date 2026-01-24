@@ -19,7 +19,6 @@ module type S = sig
   end
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
-  module Camera_config : module type of Luma__render.Render.Camera_config
   module Camera : module type of Luma__camera.Camera
 
   module Renderer :

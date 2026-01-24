@@ -19,7 +19,6 @@ module type S = sig
   end
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
-  module Camera_config : module type of Luma__render.Render.Camera_config
   module Camera : module type of Luma__camera.Camera
 
   module Renderer :
@@ -106,7 +105,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   module Window = Luma__window.Window.Make (D)
   module Window_config = Window.Window_config
-  module Camera_config = Luma__render.Render.Camera_config
   module R = Luma__render.Render.Make (D) (Image.Texture)
   module Camera = Luma__camera.Camera
 

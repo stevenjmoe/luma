@@ -7,14 +7,6 @@ open Luma__transform
 open Luma__asset
 open Luma__image
 
-module Camera_config = struct
-  type t = { default_camera : bool }
-
-  let default () = { default_camera = true }
-  let create ~default_camera = { default_camera }
-  let default_camera c = c.default_camera
-end
-
 module type Renderer = sig
   type texture
   type colour
@@ -43,7 +35,7 @@ module type Renderer = sig
   val draw_circle_lines : center_x:float -> center_y:float -> radius:float -> colour -> unit
   (** [draw_circle_lines center_x center_y radius color] *)
 
-  val plugin : ?camera_config:Camera_config.t -> App.t -> App.t
+  val plugin : App.t -> App.t
 
   module Queue : sig
     type sprite_cmd
@@ -444,18 +436,21 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
           entities;
         world)
 
-  let add_camera default_camera () =
-    System.make ~components:End "add_camera" (fun world _ _ ->
-        if default_camera then (
+  let ensure_default_camera () =
+    System.make
+      ~components:Query.Component.(Required (module Camera.C) & End)
+      "add_camera"
+      (fun world _ entities ->
+        if entities <> [] then world
+        else
           let camera = Camera.default () in
           world
           |> World.add_entity ~name:"Camera"
           |> World.with_component world (module Camera.C) camera
           |> ignore;
           world)
-        else world)
 
-  let plugin ?(camera_config = Camera_config.default ()) app =
+  let plugin app =
     World.add_resource Queue.R.type_id
       (Resource.pack (module Queue.R) (Queue.make ()))
       (App.world app)
@@ -463,7 +458,7 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
 
     let app =
       app
-      |> App.on PostStartup (add_camera camera_config.default_camera ())
+      |> App.on PostStartup (ensure_default_camera ())
       |> App.on PreRender (View.resolve_views ())
       |> App.on PreRender (begin_frame ())
       |> App.on PreRender (extract_sprite ())

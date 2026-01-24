@@ -1,15 +1,14 @@
+(** Rendering interface and systems.
+
+    Render is responsible for turning world-space data into pixels. It owns render queues, view
+    resolution, camera component to driver conversion, and viewport-aware projection utilities.
+
+    The renderer is backend-agnostic and instantiated via {!Make}. *)
+
 open Luma__app
 open Luma__math
 open Luma__image
 open Luma__camera
-
-module Camera_config : sig
-  type t
-
-  val default : unit -> t
-  val create : default_camera:bool -> t
-  val default_camera : t -> bool
-end
 
 module type Renderer = sig
   type texture
@@ -35,7 +34,7 @@ module type Renderer = sig
 
   val draw_circle : center_x:float -> center_y:float -> radius:float -> colour -> unit
   val draw_circle_lines : center_x:float -> center_y:float -> radius:float -> colour -> unit
-  val plugin : ?camera_config:Camera_config.t -> App.t -> App.t
+  val plugin : App.t -> App.t
 
   module Queue : sig
     type sprite_cmd

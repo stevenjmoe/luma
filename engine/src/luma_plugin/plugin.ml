@@ -14,8 +14,7 @@ module type Config = sig
 
   val default : unit -> t
   val window : t -> window
-  val camera : t -> Render.Camera_config.t
-  val create : ?window:window -> ?camera:Render.Camera_config.t -> unit -> t
+  val create : ?window:window -> unit -> t
 end
 
 module type S = sig
@@ -33,7 +32,7 @@ module type S = sig
   val debug_plugin : app -> app
   val texture_plugin : app -> app
   val scene_plugin : app -> app
-  val render_plugin : ?camera_config:Render.Camera_config.t -> app -> app
+  val render_plugin : app -> app
   val serializers_plugin : app -> app
   val type_register_plugin : app -> app
   val default_config : unit -> config
@@ -53,23 +52,11 @@ module Make
 struct
   module Config : Config with type window = Window.Window_config.t = struct
     type window = Window.Window_config.t
+    type t = { window : window }
 
-    type t = {
-      window : window;
-      camera : Render.Camera_config.t;
-    }
-
-    let default () : t =
-      { window = Window.Window_config.default (); camera = Render.Camera_config.default () }
-
-    let create
-        ?(window = Window.Window_config.default ())
-        ?(camera = Render.Camera_config.default ())
-        () =
-      { window; camera }
-
+    let default () : t = { window = Window.Window_config.default () }
+    let create ?(window = Window.Window_config.default ()) () = { window }
     let window c = c.window
-    let camera c = c.camera
   end
 
   type config = Config.t
@@ -101,7 +88,7 @@ struct
         texture_plugin;
         serializers_plugin;
         scene_plugin;
-        render_plugin ~camera_config:(Config.camera config);
+        render_plugin;
         type_register_plugin;
       ]
       @ plugins

@@ -1,5 +1,3 @@
-open Luma__render
-
 (** Engine configuration shared by the core plugins. *)
 module type Config = sig
   type t
@@ -13,11 +11,7 @@ module type Config = sig
   val window : t -> window
   (** [window cfg] extracts the window configuration from [cfg]. *)
 
-  val camera : t -> Render.Camera_config.t
-  (** [camera cfg] returns the default camera configuration used by the render plugin when [cfg] is
-      passed to [add_default_plugins]. *)
-
-  val create : ?window:window -> ?camera:Render.Camera_config.t -> unit -> t
+  val create : ?window:window -> unit -> t
   (** [create ?window ?camera ()] builds a configuration from optional window and camera settings,
       falling back to sensible defaults when omitted. *)
 end
@@ -69,7 +63,7 @@ module type S = sig
   (** [scene_plugin app] registers scene asset types and file loaders so worlds can be saved/loaded
       as scenes. *)
 
-  val render_plugin : ?camera_config:Render.Camera_config.t -> app -> app
+  val render_plugin : app -> app
   (** [render_plugin ?camera_config app] installs the render pipeline: render queue resources,
       per-frame setup systems, and extract systems that pull sprites/shapes into the render queue.
       If [camera_config] is omitted, the default camera from [Config] is used when building a
