@@ -20,7 +20,7 @@ module type S = sig
 
   module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Camera_config : module type of Luma__render.Render.Camera_config
-  module Camera : module type of Luma__render.Camera
+  module Camera : module type of Luma__camera.Camera
 
   module Renderer :
     Luma__render.Render.Renderer with type texture = texture and type colour = colour

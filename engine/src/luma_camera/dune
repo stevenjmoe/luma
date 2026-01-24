@@ -1,0 +1,7 @@
+(library 
+  (public_name luma.camera)
+  (name luma__camera)
+  (libraries 
+    luma.math
+    luma.ecs
+    ))

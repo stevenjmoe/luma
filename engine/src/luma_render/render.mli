@@ -1,6 +1,7 @@
 open Luma__app
 open Luma__math
 open Luma__image
+open Luma__camera
 
 module Camera_config : sig
   type t

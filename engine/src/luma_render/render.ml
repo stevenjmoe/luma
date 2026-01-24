@@ -1,4 +1,5 @@
 open Luma__app
+open Luma__camera
 open Luma__ecs
 open Luma__resource
 open Luma__math

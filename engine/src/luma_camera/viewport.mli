@@ -1,6 +1,8 @@
 open Luma__math
 
 type depth
+(** The minimum and maximum depth to render between 0.0 and 1.0 *)
+
 type t
 
 val make : pos:Vec2.t -> size:Vec2.t -> float -> float -> t

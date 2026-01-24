@@ -4,10 +4,11 @@
  (libraries 
    raylib
    containers
-   luma.core
    luma.app
    luma.asset
    luma.audio
+   luma.camera
+   luma.core
    luma.driver
    luma.ecs
    luma.plugin

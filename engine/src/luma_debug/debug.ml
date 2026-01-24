@@ -1,7 +1,7 @@
 open Luma__ecs
 open Luma__id
 open Luma__app
-open Luma__render
+open Luma__camera
 
 module type S = sig
   val toggle_overlay : unit -> ('a, unit) System.t
@@ -314,7 +314,7 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
         let my = mouse_pos.y in
 
         let point_in_viewport (vp : Viewport.t) mx my =
-          let open Luma__render.Viewport in
+          let open Camera.Viewport in
           let p = position vp in
           let s = size vp in
           mx >= p.x && mx < p.x +. s.x && my >= p.y && my < p.y +. s.y

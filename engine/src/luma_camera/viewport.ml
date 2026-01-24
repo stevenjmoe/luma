@@ -6,8 +6,8 @@ type depth = {
 }
 
 type t = {
-  physical_position : Vec2.t;
-  physical_size : Vec2.t;
+  physical_position : Vec2.t;  (** *)
+  physical_size : Vec2.t;  (** *)
   depth : depth;
 }
 

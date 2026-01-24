@@ -3,6 +3,7 @@
   (libraries 
     luma.app 
     luma.asset 
+    luma.camera
     luma.driver
     luma.image 
     luma.math 
