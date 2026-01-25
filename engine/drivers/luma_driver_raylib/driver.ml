@@ -31,17 +31,38 @@ module Raylib_driver : Luma__driver.Driver.S = struct
     let draw_circle_lines center_x center_y radius colour =
       Raylib.draw_circle_lines center_x center_y radius colour
 
-    let draw_capsule center ~half_length ~radius colour =
-      let open Vec2 in
-      let start_pos = Raylib.Vector3.create center.x (center.y -. half_length) 0. in
-      let end_pos = Raylib.Vector3.create center.x (center.y +. half_length) 0. in
-      Raylib.draw_capsule start_pos end_pos radius 16 8 colour
+    let draw_capsule2d center ~half_length ~radius colour =
+      let cx = center.Vec2.x in
+      let cy = center.Vec2.y in
 
-    let draw_capsule_wires center ~half_length ~radius colour =
-      let open Vec2 in
-      let start_pos = Raylib.Vector3.create center.x (center.y -. half_length) 0.0 in
-      let end_pos = Raylib.Vector3.create center.x (center.y +. half_length) 0.0 in
-      Raylib.draw_capsule_wires start_pos end_pos radius 16 8 colour
+      (* middle rect (axis-aligned, vertical) *)
+      let rect_pos = Raylib.Vector2.create (cx -. radius) (cy -. half_length) in
+      let rect_size = Raylib.Vector2.create (radius *. 2.) (half_length *. 2.) in
+      Raylib.draw_rectangle_v rect_pos rect_size colour;
+
+      (* end circles *)
+      let top = Raylib.Vector2.create cx (cy +. half_length) in
+      let bot = Raylib.Vector2.create cx (cy -. half_length) in
+      Raylib.draw_circle_v top radius colour;
+      Raylib.draw_circle_v bot radius colour
+
+    let draw_capsule2d_wires center ~half_length ~radius colour =
+      let cx = center.Vec2.x in
+      let cy = center.Vec2.y in
+
+      (* rect outline *)
+      let rect_x = cx -. radius in
+      let rect_y = cy -. half_length in
+      let rect_w = radius *. 2. in
+      let rect_h = half_length *. 2. in
+      Raylib.draw_rectangle_lines (Int.of_float rect_x) (Int.of_float rect_y) (Int.of_float rect_w)
+        (Int.of_float rect_h) colour;
+
+      (* end circles outline *)
+      let top = Raylib.Vector2.create cx (cy +. half_length) in
+      let bot = Raylib.Vector2.create cx (cy -. half_length) in
+      Raylib.draw_circle_lines_v top radius colour;
+      Raylib.draw_circle_lines_v bot radius colour
   end
 
   module IO = struct

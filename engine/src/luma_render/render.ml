@@ -146,10 +146,10 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
     D.Draw.draw_circle_lines (int_of_float center_x) (int_of_float center_y) radius colour
 
   let draw_capsule center ~half_length ~radius colour =
-    D.Draw.draw_capsule center ~half_length ~radius colour
+    D.Draw.draw_capsule2d center ~half_length ~radius colour
 
   let draw_capsule_wires center ~half_length ~radius colour =
-    D.Draw.draw_capsule_wires center ~half_length ~radius colour
+    D.Draw.draw_capsule2d_wires center ~half_length ~radius colour
 
   let draw_texture
       ~size

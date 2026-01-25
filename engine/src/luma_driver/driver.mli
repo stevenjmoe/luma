@@ -16,8 +16,8 @@ module type S = sig
     val draw_circle : int -> int -> float -> colour -> unit
     val draw_circle_lines : int -> int -> float -> colour -> unit
     val draw_text : string -> int -> int -> int -> colour -> unit
-    val draw_capsule : Vec2.t -> half_length:float -> radius:float -> colour -> unit
-    val draw_capsule_wires : Vec2.t -> half_length:float -> radius:float -> colour -> unit
+    val draw_capsule2d : Vec2.t -> half_length:float -> radius:float -> colour -> unit
+    val draw_capsule2d_wires : Vec2.t -> half_length:float -> radius:float -> colour -> unit
   end
 
   module IO : sig
