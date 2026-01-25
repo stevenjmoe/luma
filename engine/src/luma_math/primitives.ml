@@ -14,12 +14,13 @@ module Circle = struct
   let center c = c.center
 
   let closest_point c (point : Vec2.t) =
-    let dist = (point.x *. point.x) +. (point.y *. point.y) in
+    let d = Vec2.sub point c.center in
+    let dist = (d.x *. d.x) +. (d.y *. d.y) in
     if dist <= c.radius *. c.radius then point
     else
       let inv_len = 1.0 /. Float.sqrt dist in
-      let dir = Vec2.create (point.x *. inv_len) (point.y *. inv_len) in
-      Vec2.create (dir.x *. c.radius) (dir.y *. c.radius)
+      let dir = Vec2.create (d.x *. inv_len) (d.y *. inv_len) in
+      Vec2.add c.center (Vec2.mul dir (Vec2.splat c.radius))
 end
 
 module Plane2d = struct

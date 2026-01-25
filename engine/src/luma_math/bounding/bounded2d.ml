@@ -151,7 +151,7 @@ end = struct
   let intersects_aabb circle aabb = Aabb2d.intersects_circle aabb circle
 
   let intersects_circle circle1 circle2 =
-    Aabb2d_raw.circle_intersects_circle ~a_center_x:circle1.center.x ~a_center_y:circle1.center.x
+    Aabb2d_raw.circle_intersects_circle ~a_center_x:circle1.center.x ~a_center_y:circle1.center.y
       ~a_radius:circle1.radius ~b_center_x:circle2.center.x ~b_center_y:circle2.center.y
       ~b_radius:circle2.radius
 end

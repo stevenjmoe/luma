@@ -76,6 +76,26 @@ module Circle = struct
 
     let point_zero = Vec2.zero in
     check_vec "origin" (closest_point circle point_zero) point_zero
+
+  let test_circle_closest_point_offset_center () =
+    let open Primitives.Circle in
+    let circle = { radius = 2.0; center = Vec2.create 10.0 (-5.0) } in
+
+    (* Inside: should return the point unchanged *)
+    let p_inside = Vec2.create 11.0 (-4.0) in
+    check_vec "inside offset" (closest_point circle p_inside) p_inside;
+
+    (* Outside on +X axis from center: should clamp to center + (r,0) *)
+    let p_out_x = Vec2.create 20.0 (-5.0) in
+    let expect_x = Vec2.create 12.0 (-5.0) in
+    check_vec "outside axis offset" (closest_point circle p_out_x) expect_x;
+
+    (* Outside diagonal: direction (3,4) from center -> normalized (0.6,0.8) *)
+    let p_out_diag = Vec2.create 13.0 (-1.0) in
+    (* center + (3,4) *)
+    let expect_diag = Vec2.create 11.2 (-3.4) in
+    (* center + 2*(0.6,0.8) *)
+    check_vec "outside diagonal offset" (closest_point circle p_out_diag) expect_diag
 end
 
 module Vec2 = struct
@@ -440,6 +460,7 @@ let tests =
       "Rot2.t rotation" -: Rotation.test_rotate;
       "Rot2.t normalise" -: Rotation.test_normalise;
       "Circle.t closest_point" -: Circle.test_circle_closest_point;
+      "Circle.t closest_point_offset_center" -: Circle.test_circle_closest_point_offset_center;
       "Vec2.t distance" -: Vec2.test_distance;
       "Vec2.t distance_squared" -: Vec2.test_distance_squared;
       "Aabb2d.t of_center_halfsize" -: Bounded2d_tests.test_of_center_halfsize;
