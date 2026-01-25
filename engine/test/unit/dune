@@ -1,6 +1,6 @@
 (executable
  (name unit)
- (libraries alcotest containers luma.ecs luma.math luma.image))
+ (libraries alcotest containers luma.ecs luma.math luma.image luma.render))
 
 (rule
   (alias runtest)
