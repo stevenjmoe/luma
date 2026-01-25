@@ -7,6 +7,11 @@ open Luma__transform
 open Luma__asset
 open Luma__image
 
+module Projection_pure = struct
+  let window_to_viewport_pos ~viewport_pos p = Vec2.sub p viewport_pos
+  let viewport_to_window_pos ~viewport_pos p = Vec2.add p viewport_pos
+end
+
 module type Renderer = sig
   type texture
   type colour
@@ -299,12 +304,18 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
       D.Camera.get_world_to_screen_2d position (to_driver (View.viewport view) (View.camera view))
 
     let window_to_world_2d (view : View.t) pos_window =
-      let local = Vec2.sub pos_window (Viewport.position (View.viewport view)) in
-      viewport_to_world_2d view local
+      let pos_viewport =
+        Projection_pure.window_to_viewport_pos
+          ~viewport_pos:(Viewport.position (View.viewport view))
+          pos_window
+      in
+      viewport_to_world_2d view pos_viewport
 
     let world_to_window_2d (view : View.t) world =
-      let local = world_to_viewport_2d view world in
-      Vec2.add local (Viewport.position (View.viewport view))
+      let pos_viewport = world_to_viewport_2d view world in
+      Projection_pure.viewport_to_window_pos
+        ~viewport_pos:(Viewport.position (View.viewport view))
+        pos_viewport
   end
 
   (* clear the queue at the beginning of the frame *)

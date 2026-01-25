@@ -18,6 +18,11 @@ open Luma__app
 open Luma__math
 open Luma__image
 
+module Projection_pure : sig
+  val window_to_viewport_pos : viewport_pos:Vec2.t -> Vec2.t -> Vec2.t
+  val viewport_to_window_pos : viewport_pos:Vec2.t -> Vec2.t -> Vec2.t
+end
+
 module type Renderer = sig
   (** The renderer is responsible for:
       - collecting draw commands into a queue
