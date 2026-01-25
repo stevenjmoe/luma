@@ -34,3 +34,27 @@ module Plane2d = struct
     | Error _ -> failwith "Normal must be nonzero and finite"
     | Ok normal -> { normal }
 end
+
+module Capsule2d = struct
+  type t = {
+    center : Vec2.t;
+    radius : float;
+    half_length : float;
+  }
+
+  let default () = { center = Vec2.create 0. 0.; radius = 0.5; half_length = 0.5 }
+
+  (** [create center radius length] creates a new [Capsule2d.t] from a radius and length. *)
+  let create center ~radius ~length =
+    assert (radius >= 0.);
+    assert (length >= 0.);
+    { center; radius; half_length = length /. 2. }
+
+  let top c = Vec2.add c.center (Vec2.create 0. c.half_length)
+  let bottom c = Vec2.sub c.center (Vec2.create 0. c.half_length)
+
+  let to_inner_rectangle c =
+    let size = Vec2.create (c.radius *. 2.) (c.half_length *. 2.) in
+    let pos = Vec2.sub c.center (Vec2.mul size (Vec2.splat 0.5)) in
+    Rect.create ~pos ~size
+end

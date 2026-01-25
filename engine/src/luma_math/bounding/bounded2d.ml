@@ -5,6 +5,7 @@ module Types = struct
   }
 
   type circle = Primitives.Circle.t
+  type capsule = Primitives.Capsule2d.t
 end
 
 module type Bounding_volume = sig
@@ -16,10 +17,6 @@ module type Bounding_volume = sig
   val center : t -> translation
   val half_size : t -> half_size
   val visible_area : t -> float
-  val contains : t -> t -> bool
-  val merge : t -> t -> t
-  val grow : t -> half_size -> t
-  val shrink : t -> half_size -> t
 end
 
 module rec Aabb2d : sig
@@ -41,6 +38,10 @@ module rec Aabb2d : sig
   val intersects_circle : t -> Bounding_circle.t -> bool
   val set_min : t -> Vec2.t -> unit
   val set_max : t -> Vec2.t -> unit
+  val contains : t -> t -> bool
+  val merge : t -> t -> t
+  val grow : t -> Vec2.t -> t
+  val shrink : t -> Vec2.t -> t
 
   (* TODO: val scale_around_center : t -> Vec2.t -> t
   val transformed_by : t -> Vec2.t -> Rot2.t -> t
@@ -138,10 +139,6 @@ end = struct
   let half_size c = radius c
   let visible_area c = Float.pi *. c.radius *. c.radius
   let set_center c center = c.center <- center
-  let contains _c1 _c2 = failwith "TODO"
-  let merge _c1 _c2 = failwith "TODO"
-  let grow _c1 _c2 = failwith "TODO"
-  let shrink _c1 _c2 = failwith "TODO"
 
   let aabb_2d b =
     let min = Vec2.sub b.center (Vec2.splat b.radius) in
@@ -154,4 +151,45 @@ end = struct
     Aabb2d_raw.circle_intersects_circle ~a_center_x:circle1.center.x ~a_center_y:circle1.center.y
       ~a_radius:circle1.radius ~b_center_x:circle2.center.x ~b_center_y:circle2.center.y
       ~b_radius:circle2.radius
+end
+
+and Bounding_capsule2d : sig
+  type t
+
+  include
+    Bounding_volume
+      with type t := t
+       and type translation = Vec2.t
+       and type rotation = Rot2.t
+       and type half_size = Vec2.t
+
+  val create : Vec2.t -> radius:float -> length:float -> t
+  val visible_area : t -> float
+  val radius : t -> float
+  val center : t -> Vec2.t
+  val half_size : t -> Vec2.t
+  val half_length : t -> float
+  val aabb_2d : t -> Aabb2d.t
+end = struct
+  open Primitives.Capsule2d
+
+  type t = Types.capsule
+  type translation = Vec2.t
+  type rotation = Rot2.t
+  type half_size = Vec2.t
+
+  let create center ~radius ~length = Primitives.Capsule2d.create center ~radius ~length
+  let radius c = c.radius
+  let center c = c.center
+  let half_size c = Vec2.create c.radius (c.half_length +. c.radius)
+  let half_length c = c.half_length
+
+  let visible_area c =
+    let radius = c.radius in
+    let hl = c.half_length in
+    (4.0 *. hl *. radius) +. (Float.pi *. radius *. radius)
+
+  let aabb_2d c =
+    let half = Vec2.create c.radius (c.half_length +. c.radius) in
+    Aabb2d.of_center_halfsize c.center half
 end
