@@ -29,7 +29,7 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
           Resource (module Asset_server.R)
           & Resource (module R)
           & Resource (module Assets.R)
-          & Resource (module Renderer.Queue.R)
+          & Resource (module Render.Renderer.Queue.R)
           & End)
       "render_tilemap"
       (fun w _ cams res ->
@@ -38,7 +38,7 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
             (cam : Camera.t)
             (tm : map_inner)
             (plan : Plan.t)
-            (queue : Renderer.Queue.t) =
+            (queue : Render.Renderer.Queue.t) =
           let map_origin_world =
             Vec2.(
               tm.origin
@@ -78,15 +78,16 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
                           tm.scale
                       in
 
-                      Renderer.push_texture ~z:cmd.z ~tex ~position:base_world ~size:size_world
-                        ?src:(Some cmd.source) ~rotation:cmd.rotation ~opacity:meta.opacity
-                        ~origin:cmd.origin ~flip_x:cmd.flip.h ~flip_y:cmd.flip.v queue)
+                      Render.Renderer.push_texture ~z:cmd.z ~tex ~position:base_world
+                        ~size:size_world ?src:(Some cmd.source) ~rotation:cmd.rotation
+                        ~opacity:meta.opacity ~origin:cmd.origin ~flip_x:cmd.flip.h
+                        ~flip_y:cmd.flip.v queue)
                 layer)
             plan.layers
         in
 
         Ecs.Query.Tuple.with4 res
-          (fun _server (maps : map_tbl) (assets : Assets.t) (queue : Renderer.Queue.t) ->
+          (fun _server (maps : map_tbl) (assets : Assets.t) (queue : Render.Renderer.Queue.t) ->
             let cams_sorted =
               cams
               |> List.filter_map (fun (_e, (cam, ())) ->

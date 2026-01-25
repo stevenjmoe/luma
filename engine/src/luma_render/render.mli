@@ -17,7 +17,6 @@
 open Luma__app
 open Luma__math
 open Luma__image
-open Luma__camera
 
 module type Renderer = sig
   (** The renderer is responsible for:
@@ -161,28 +160,6 @@ module type Renderer = sig
 
       Screen-space commands are rendered before world-space commands for each view and are not
       affected by the camera transform. *)
-
-  module View : sig
-    (** Resolved render view.
-
-        A view is the render-time pairing of:
-        - a camera entity
-        - its camera component
-        - a concrete viewport in window space
-
-        The viewport defaults to fullscreen if absent from the camera component.
-
-        Views are resolved every frame and drive rendering. Multiple views may exist (eg.
-        split-screen). *)
-
-    type t
-
-    val camera_entity : t -> Luma__id__Id.Entity.t
-    val camera : t -> Camera.t
-    val viewport : t -> Viewport.t
-
-    module R : Luma__resource.Resource.S with type t = t list
-  end
 
   module Projection : sig
     (** Coordinate space conversion utilities.

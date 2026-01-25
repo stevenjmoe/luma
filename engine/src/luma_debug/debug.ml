@@ -2,6 +2,7 @@ open Luma__ecs
 open Luma__id
 open Luma__app
 open Luma__camera
+open Luma__render
 
 module type S = sig
   val toggle_overlay : unit -> ('a, unit) System.t
@@ -303,8 +304,7 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
 
   let draw_coords () =
     System.make_with_resources ~components:End
-      ~resources:
-        Query.Resource.(Resource (module State.R) & Resource (module Renderer.View.R) & End)
+      ~resources:Query.Resource.(Resource (module State.R) & Resource (module View.R) & End)
       "draw_coords"
       (fun w _cmd _e (state, (views, _)) ->
         let open Luma__math.Vec2 in
@@ -322,9 +322,7 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
 
         (* Prefer the view under the mouse; fallback to first view *)
         let view_under_mouse =
-          List.find_opt
-            (fun (v : Renderer.View.t) -> point_in_viewport (Renderer.View.viewport v) mx my)
-            views
+          List.find_opt (fun (v : View.t) -> point_in_viewport (View.viewport v) mx my) views
         in
 
         let view_for_debug =

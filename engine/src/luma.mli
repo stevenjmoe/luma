@@ -21,8 +21,15 @@ module type S = sig
   module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Camera : module type of Luma__camera.Camera
 
-  module Renderer :
-    Luma__render.Render.Renderer with type texture = texture and type colour = colour
+  module Render : sig
+    module Renderer :
+      Luma__render.Render.Renderer with type texture = texture and type colour = colour
+
+    (* driver independant modules *)
+    module Types : sig
+      module View : module type of Luma__render.View
+    end
+  end
 
   module Image : sig
     module Texture : Luma__image.Texture.S with type t = texture
