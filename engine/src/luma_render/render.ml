@@ -51,6 +51,8 @@ module type Renderer = sig
       | Circle of Luma__math.Primitives.Circle.t * colour
       | Circle_lines of Primitives.Circle.t * colour
       | Sprite of sprite_cmd
+      | Capsule of Primitives.Capsule2d.t * colour
+      | Capsule_wires of Primitives.Capsule2d.t * colour
 
     type meta
     type item
@@ -82,6 +84,22 @@ module type Renderer = sig
 
   val push_circle_lines :
     z:int -> circle:Primitives.Circle.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
+
+  val push_capsule :
+    z:int ->
+    capsule:Primitives.Capsule2d.t ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
+
+  val push_capsule_wires :
+    z:int ->
+    capsule:Primitives.Capsule2d.t ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
 
   val push_texture :
     z:int ->
@@ -126,6 +144,12 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
 
   let draw_circle_lines ~center_x ~center_y ~radius colour =
     D.Draw.draw_circle_lines (int_of_float center_x) (int_of_float center_y) radius colour
+
+  let draw_capsule center ~half_length ~radius colour =
+    D.Draw.draw_capsule center ~half_length ~radius colour
+
+  let draw_capsule_wires center ~half_length ~radius colour =
+    D.Draw.draw_capsule_wires center ~half_length ~radius colour
 
   let draw_texture
       ~size
@@ -186,6 +210,8 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
       | Circle of Primitives.Circle.t * colour
       | Circle_lines of Primitives.Circle.t * colour
       | Sprite of sprite_cmd
+      | Capsule of Primitives.Capsule2d.t * colour
+      | Capsule_wires of Primitives.Capsule2d.t * colour
 
     type meta = {
       z : int;
@@ -248,6 +274,12 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
   let push_circle_lines ~z ~circle ?(layers = 1L) colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle_lines (circle, colour) }
 
+  let push_capsule ~z ~capsule ?(layers = 1L) colour q =
+    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Capsule (capsule, colour) }
+
+  let push_capsule_wires ~z ~capsule ?(layers = 1L) colour q =
+    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Capsule_wires (capsule, colour) }
+
   module Draw = struct
     let rect ~rect ~colour q = push_rect ~z:0 ~rect colour q
     let rect_screen ~rect ~colour q = push_rect_screen ~z:0 ~rect colour q
@@ -290,7 +322,12 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
                     | Queue.Circle_lines (c, colour) ->
                         draw_circle_lines ~center_x:c.center.x ~center_y:c.center.y ~radius:c.radius
                           colour
-                    | _ -> ());
+                    | Queue.Capsule (c, colour) ->
+                        draw_capsule c.center ~half_length:c.half_length ~radius:c.radius colour
+                    | Queue.Capsule_wires (c, colour) ->
+                        draw_capsule_wires c.center ~half_length:c.half_length ~radius:c.radius
+                          colour
+                    | Queue.ScreenRect _ -> ());
                 ());
             D.Window.reset_scissor ();
             ());
@@ -344,7 +381,11 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
             | Circle { circle; z; layer; colour; style = Fill } ->
                 push_circle ~z ~circle ~layers:layer colour queue
             | Circle { circle; z; layer; colour; style = Lines _ } ->
-                push_circle_lines ~z ~circle ~layers:layer colour queue)
+                push_circle_lines ~z ~circle ~layers:layer colour queue
+            | Capsule { capsule; z; layer; colour; style = Fill } ->
+                push_capsule ~z ~capsule ~layers:layer colour queue
+            | Capsule { capsule; z; layer; colour; style = Lines _ } ->
+                push_capsule_wires ~z ~capsule ~layers:layer colour queue)
           entities;
         world)
 

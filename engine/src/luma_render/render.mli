@@ -101,6 +101,8 @@ module type Renderer = sig
       | Circle of Luma__math.Primitives.Circle.t * colour
       | Circle_lines of Luma__math.Primitives.Circle.t * colour
       | Sprite of sprite_cmd
+      | Capsule of Primitives.Capsule2d.t * colour
+      | Capsule_wires of Primitives.Capsule2d.t * colour
 
     type meta
     type item
@@ -141,6 +143,25 @@ module type Renderer = sig
   val push_circle_lines :
     z:int -> circle:Primitives.Circle.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
   (** [push_circle z circle ?layers colour queue] enqueues world-space circle lines draw command. *)
+
+  val push_capsule :
+    z:int ->
+    capsule:Primitives.Capsule2d.t ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
+  (** [push_capsule z capsule ?layers colour queue] enqueues a world-space capsule draw command. *)
+
+  val push_capsule_wires :
+    z:int ->
+    capsule:Primitives.Capsule2d.t ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
+  (** [push_capsule_wires z capsule ?layers colour queue] enqueues world-space capsule wires draw
+      command. *)
 
   val push_texture :
     z:int ->

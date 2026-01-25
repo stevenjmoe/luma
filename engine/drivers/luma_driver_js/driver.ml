@@ -93,6 +93,9 @@ module Js_driver : Luma__driver.Driver.S = struct
         (Js.number_of_float (2. *. Float.pi))
         Js._false
 
+    let draw_capsule _ ~half_length:_ ~radius:_ _ = ()
+    let draw_capsule_wires _ ~half_length:_ ~radius:_ _ = ()
+
     let draw_text text x y size colour =
       with_ctx @@ fun ctx ->
       ctx##.fillStyle := Js.string (css_rgba colour);

@@ -27,6 +27,13 @@ module type S = sig
         z : int;
         layer : Int64.t;
       }
+    | Capsule of {
+        capsule : Primitives.Capsule2d.t;
+        colour : colour;
+        style : style;
+        z : int;
+        layer : Int64.t;
+      }
 
   val rect : ?layer:int64 -> Rect.t -> colour -> style -> space -> int -> t
   val circle : ?layer:int64 -> Primitives.Circle.t -> colour -> style -> int -> t
@@ -56,6 +63,13 @@ module Make (D : Luma__driver.Driver.S) : S with type colour = D.colour = struct
       }
     | Circle of {
         circle : Primitives.Circle.t;
+        colour : colour;
+        style : style;
+        z : int;
+        layer : Int64.t;
+      }
+    | Capsule of {
+        capsule : Primitives.Capsule2d.t;
         colour : colour;
         style : style;
         z : int;

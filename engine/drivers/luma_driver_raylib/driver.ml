@@ -30,6 +30,18 @@ module Raylib_driver : Luma__driver.Driver.S = struct
 
     let draw_circle_lines center_x center_y radius colour =
       Raylib.draw_circle_lines center_x center_y radius colour
+
+    let draw_capsule center ~half_length ~radius colour =
+      let open Vec2 in
+      let start_pos = Raylib.Vector3.create center.x (center.y -. half_length) 0. in
+      let end_pos = Raylib.Vector3.create center.x (center.y +. half_length) 0. in
+      Raylib.draw_capsule start_pos end_pos radius 16 8 colour
+
+    let draw_capsule_wires center ~half_length ~radius colour =
+      let open Vec2 in
+      let start_pos = Raylib.Vector3.create center.x (center.y -. half_length) 0.0 in
+      let end_pos = Raylib.Vector3.create center.x (center.y +. half_length) 0.0 in
+      Raylib.draw_capsule_wires start_pos end_pos radius 16 8 colour
   end
 
   module IO = struct
