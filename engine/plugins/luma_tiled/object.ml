@@ -166,7 +166,7 @@ module Object_data = struct
 
     let ellipse' = "ellipse" in
     let point' = "point" in
-    let polygon' = "polygon'" in
+    let polygon' = "polygon" in
     let polyline' = "polyline" in
 
     (* check for each shape type and return when one matches. Default to rect. *)

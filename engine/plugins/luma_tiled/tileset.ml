@@ -13,7 +13,7 @@ type object_ = {
 
 type object_group = {
   draw_order : string;
-  id : int;
+  id : int option;
   opacity : float;
   type_ : string;
   visible : bool;
@@ -104,7 +104,7 @@ let object_group_from_json json =
   let open Luma__serialize.Json_helpers in
   let parse og_json =
     let* draw_order = parse_string_opt "draworder" og_json in
-    let* id = parse_int "id" og_json in
+    let* id = parse_int_opt "id" og_json in
     let* opacity = parse_float_opt "opacity" og_json in
     let* type_ = parse_string_opt "type" og_json in
     let* visible = parse_bool_opt "visible" og_json in

@@ -125,7 +125,7 @@ let pp fmt (e : error) =
   | `Asset_ext_unsupported { path } ->
       Format.fprintf fmt "Incompatible asset extension. Path: %s" path
   | `Serialize { expected; path; msg } -> (
-      Format.fprintf fmt "Decode error at";
+      Format.fprintf fmt "Decode error at ";
       pp_path fmt path;
       Format.fprintf fmt ": expected %a" pp_value_kind expected;
       match msg with None -> () | Some m -> Format.fprintf fmt " (%s)" m)
