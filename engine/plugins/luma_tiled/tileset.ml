@@ -1,5 +1,10 @@
 let ( let* ) = Result.bind
 
+type point = {
+  x : float;
+  y : float;
+}
+
 type object_ = {
   id : int;
   width : float;
@@ -7,6 +12,7 @@ type object_ = {
   rotation : float;
   visible : bool;
   point : bool;
+  polygon : point array option;
   x : float;
   y : float;
 }
@@ -60,7 +66,6 @@ type map_tileset = {
 
 let parse_image json path : (Types.image option, Luma__core.Error.error) result =
   let open Luma__serialize.Json_helpers in
-  let ( let* ) = Result.bind in
   let* image = parse_string_opt "image" json in
   match image with
   | Some image ->
@@ -79,6 +84,34 @@ let parse_image json path : (Types.image option, Luma__core.Error.error) result 
         (Some { source = full_path; width; height; transparent_colour = None } : Types.image option)
   | None -> Ok None
 
+let parse_point json =
+  let open Luma__serialize.Json_helpers in
+  let* x = parse_float "x" json in
+  let* y = parse_float "y" json in
+  Ok { x; y }
+
+let parse_polygon_opt json =
+  let open Luma__serialize.Json_helpers in
+  match field "polygon" json with
+  | `List l ->
+      let* rev =
+        List.fold_left
+          (fun acc j ->
+            match acc with
+            | Error _ as e -> e
+            | Ok rs ->
+                let* point = parse_point j in
+                Ok (point :: rs))
+          (Ok []) l
+      in
+      Ok (Some (List.rev rev |> Array.of_list))
+  | `Null -> Ok None
+  | other ->
+      let other = Yojson.Safe.pretty_to_string other in
+      Error
+        (Luma__core.Error.io_finalize "tileset.tile.objectgroup.object.polygon"
+           (Printf.sprintf "expected polygon object or null, got %s" other))
+
 let object_from_json json =
   let open Luma__serialize.Json_helpers in
   let* id = parse_int "id" json in
@@ -89,6 +122,7 @@ let object_from_json json =
   let* x = parse_float_opt "x" json in
   let* y = parse_float_opt "y" json in
   let* point = parse_bool_opt "point" json in
+  let* polygon = parse_polygon_opt json in
 
   let width = Option.value ~default:0. width in
   let height = Option.value ~default:0. height in
@@ -98,7 +132,7 @@ let object_from_json json =
   let x = Option.value ~default:0. x in
   let y = Option.value ~default:0. y in
 
-  Ok { id; width; height; rotation; visible; point; x; y }
+  Ok { id; width; height; rotation; visible; point; polygon; x; y }
 
 let object_group_from_json json =
   let open Luma__serialize.Json_helpers in
