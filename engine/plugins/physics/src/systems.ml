@@ -116,10 +116,10 @@ module Make (L : Luma.S) = struct
       let radius = store.radius.(idx) in
       let center_x = store.pos_x.(idx) in
       let center_y = store.pos_y.(idx) in
-      let circle = L.Math.Primitives.Circle.create radius (L.Math.Vec2.create center_x center_y) in
+      let center = L.Math.Vec2.create center_x center_y in
       let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
 
-      L.Render.Renderer.push_circle_lines ~z:1000 ~circle colour queue
+      L.Render.Renderer.push_circle_lines ~z:1000 ~radius ~center colour queue
 
   let draw_rectangle store idx queue =
     let open Rb_store in

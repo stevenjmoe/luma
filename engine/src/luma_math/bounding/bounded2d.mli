@@ -40,15 +40,3 @@ and Bounding_circle : sig
   val intersects_aabb : t -> Aabb2d.t -> bool
   val intersects_circle : t -> t -> bool
 end
-
-and Bounding_capsule2d : sig
-  type t
-
-  val create : Vec2.t -> radius:float -> length:float -> t
-  val visible_area : t -> float
-  val radius : t -> float
-  val center : t -> Vec2.t
-  val half_size : t -> Vec2.t
-  val half_length : t -> float
-  val aabb_2d : t -> Aabb2d.t
-end

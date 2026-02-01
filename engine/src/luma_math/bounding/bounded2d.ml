@@ -65,6 +65,24 @@ end = struct
     { min = Vec2.sub center half_size; max = Vec2.add center half_size }
 
   let of_min_max min max = { min; max }
+
+  let of_point_cloud points (isometry : Isometry.t) =
+    let n = Array.length points in
+    if n = 0 then failwith "Point cloud must contain at least one point for Aabb2d construction."
+    else
+      let rot p = Rot2.rotate_vec isometry.rotation p in
+      let first = rot points.(0) in
+      let min = ref first in
+      let max = ref first in
+
+      for i = 1 to n - 1 do
+        let rp = rot points.(i) in
+        min := Vec2.min !min rp;
+        max := Vec2.max !max rp
+      done;
+
+      { min = Vec2.add !min isometry.translation; max = Vec2.add !max isometry.translation }
+
   let min aabb = aabb.min
   let max aabb = aabb.max
   let center aabb = Vec2.div (Vec2.add aabb.min aabb.max) (Vec2.splat 2.)
@@ -97,10 +115,12 @@ end = struct
     Aabb2d_raw.aabb_intersects_aabb ~a_min_x:a.min.x ~a_max_x:a.max.x ~a_min_y:a.min.y
       ~a_max_y:a.max.y ~b_min_x:b.min.x ~b_max_x:b.max.x ~b_min_y:b.min.y ~b_max_y:b.max.y
 
-  let intersects_circle aabb (circle : circle) =
-    let cp = closest_point aabb circle.center in
-    let ds = Vec2.distance_squared circle.center cp in
-    let radius_squared = circle.radius *. circle.radius in
+  let intersects_circle aabb (circle : Bounding_circle.t) =
+    let center = Bounding_circle.center circle in
+    let radius = Bounding_circle.radius circle in
+    let cp = closest_point aabb center in
+    let ds = Vec2.distance_squared center cp in
+    let radius_squared = radius *. radius in
     ds <= radius_squared
 end
 
@@ -128,68 +148,38 @@ end = struct
   type translation = Vec2.t
   type rotation = Rot2.t
   type half_size = float
-  type t = circle
+
+  type t = {
+    circle : circle;
+    mutable center : Vec2.t;
+  }
 
   let create center radius =
     assert (radius >= 0.);
-    Primitives.Circle.create radius center
+    { circle = Primitives.Circle.create ~radius; center }
 
   let center b = b.center
-  let radius b = b.radius
+  let radius b = b.circle.radius
   let half_size c = radius c
-  let visible_area c = Float.pi *. c.radius *. c.radius
+  let visible_area c = Float.pi *. c.circle.radius *. c.circle.radius
   let set_center c center = c.center <- center
 
   let aabb_2d b =
-    let min = Vec2.sub b.center (Vec2.splat b.radius) in
-    let max = Vec2.add b.center (Vec2.splat b.radius) in
+    let min = Vec2.sub b.center (Vec2.splat b.circle.radius) in
+    let max = Vec2.add b.center (Vec2.splat b.circle.radius) in
     Aabb2d.of_min_max min max
 
   let intersects_aabb circle aabb = Aabb2d.intersects_circle aabb circle
 
   let intersects_circle circle1 circle2 =
     Aabb2d_raw.circle_intersects_circle ~a_center_x:circle1.center.x ~a_center_y:circle1.center.y
-      ~a_radius:circle1.radius ~b_center_x:circle2.center.x ~b_center_y:circle2.center.y
-      ~b_radius:circle2.radius
+      ~a_radius:circle1.circle.radius ~b_center_x:circle2.center.x ~b_center_y:circle2.center.y
+      ~b_radius:circle2.circle.radius
 end
 
-and Bounding_capsule2d : sig
-  type t
+module type Boudned2d = sig
+  type shape
 
-  include
-    Bounding_volume
-      with type t := t
-       and type translation = Vec2.t
-       and type rotation = Rot2.t
-       and type half_size = Vec2.t
-
-  val create : Vec2.t -> radius:float -> length:float -> t
-  val visible_area : t -> float
-  val radius : t -> float
-  val center : t -> Vec2.t
-  val half_size : t -> Vec2.t
-  val half_length : t -> float
-  val aabb_2d : t -> Aabb2d.t
-end = struct
-  open Primitives.Capsule2d
-
-  type t = Types.capsule
-  type translation = Vec2.t
-  type rotation = Rot2.t
-  type half_size = Vec2.t
-
-  let create center ~radius ~length = Primitives.Capsule2d.create center ~radius ~length
-  let radius c = c.radius
-  let center c = c.center
-  let half_size c = Vec2.create c.radius (c.half_length +. c.radius)
-  let half_length c = c.half_length
-
-  let visible_area c =
-    let radius = c.radius in
-    let hl = c.half_length in
-    (4.0 *. hl *. radius) +. (Float.pi *. radius *. radius)
-
-  let aabb_2d c =
-    let half = Vec2.create c.radius (c.half_length +. c.radius) in
-    Aabb2d.of_center_halfsize c.center half
+  val aabb2d : shape -> Isometry.t -> Aabb2d.t
+  val bounding_circle : shape -> Isometry.t -> Bounding_circle.t
 end

@@ -94,12 +94,18 @@ module type Renderer = sig
 
     type sprite_cmd
 
+    type render_circle = {
+      center : Vec2.t;
+      radius : float;
+      colour : colour;
+    }
+
     type cmd =
       | Rect of Rect.t * colour
       | Rect_lines of Rect.t * float * colour
       | ScreenRect of Rect.t * colour
-      | Circle of Luma__math.Primitives.Circle.t * colour
-      | Circle_lines of Luma__math.Primitives.Circle.t * colour
+      | Circle of render_circle
+      | Circle_lines of render_circle
       | Sprite of sprite_cmd
       | Capsule of Primitives.Capsule2d.t * colour
       | Capsule_wires of Primitives.Capsule2d.t * colour
@@ -137,12 +143,26 @@ module type Renderer = sig
       lines draw command. *)
 
   val push_circle :
-    z:int -> circle:Primitives.Circle.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
-  (** [push_circle z circle ?layers colour queue] enqueues a world-space circle draw command. *)
+    z:int ->
+    radius:float ->
+    center:Luma__math.Vec2.t ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
+  (** [push_circle z radius center ?layers colour queue] enqueues a world-space circle draw command.
+  *)
 
   val push_circle_lines :
-    z:int -> circle:Primitives.Circle.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
-  (** [push_circle z circle ?layers colour queue] enqueues world-space circle lines draw command. *)
+    z:int ->
+    radius:float ->
+    center:Luma__math.Vec2.t ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
+  (** [push_circle z radius center ?layers colour queue] enqueues world-space circle lines draw
+      command. *)
 
   val push_capsule :
     z:int ->

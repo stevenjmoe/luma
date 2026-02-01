@@ -44,12 +44,18 @@ module type Renderer = sig
   module Queue : sig
     type sprite_cmd
 
+    type render_circle = {
+      center : Vec2.t;
+      radius : float;
+      colour : colour;
+    }
+
     type cmd =
       | Rect of Rect.t * colour
       | Rect_lines of Rect.t * float * colour
       | ScreenRect of Rect.t * colour
-      | Circle of Luma__math.Primitives.Circle.t * colour
-      | Circle_lines of Primitives.Circle.t * colour
+      | Circle of render_circle
+      | Circle_lines of render_circle
       | Sprite of sprite_cmd
       | Capsule of Primitives.Capsule2d.t * colour
       | Capsule_wires of Primitives.Capsule2d.t * colour
@@ -80,10 +86,22 @@ module type Renderer = sig
     unit
 
   val push_circle :
-    z:int -> circle:Primitives.Circle.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
+    z:int ->
+    radius:float ->
+    center:Luma__math.Vec2.t ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
 
   val push_circle_lines :
-    z:int -> circle:Primitives.Circle.t -> ?layers:int64 -> colour -> Queue.item list ref -> unit
+    z:int ->
+    radius:float ->
+    center:Luma__math.Vec2.t ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
 
   val push_capsule :
     z:int ->
@@ -203,12 +221,18 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
       src : Rect.t option;
     }
 
+    type render_circle = {
+      center : Vec2.t;
+      radius : float;
+      colour : colour;
+    }
+
     type cmd =
-      | Rect of Rect.t * D.colour
-      | Rect_lines of Rect.t * float * D.colour
+      | Rect of Rect.t * colour
+      | Rect_lines of Rect.t * float * colour
       | ScreenRect of Rect.t * colour
-      | Circle of Primitives.Circle.t * colour
-      | Circle_lines of Primitives.Circle.t * colour
+      | Circle of render_circle
+      | Circle_lines of render_circle
       | Sprite of sprite_cmd
       | Capsule of Primitives.Capsule2d.t * colour
       | Capsule_wires of Primitives.Capsule2d.t * colour
@@ -268,11 +292,11 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
   let push_rect_screen ~z ?(layers = 1L) ~rect colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.ScreenRect (rect, colour) }
 
-  let push_circle ~z ~circle ?(layers = 1L) colour q =
-    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle (circle, colour) }
+  let push_circle ~z ~radius ~center ?(layers = 1L) colour q =
+    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle { center; radius; colour } }
 
-  let push_circle_lines ~z ~circle ?(layers = 1L) colour q =
-    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle_lines (circle, colour) }
+  let push_circle_lines ~z ~radius ~center ?(layers = 1L) colour q =
+    Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle_lines { center; radius; colour } }
 
   let push_capsule ~z ~capsule ?(layers = 1L) colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Capsule (capsule, colour) }
@@ -316,12 +340,10 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
                           ~src:s.src ~opacity:s.opacity ~rotation:s.rotation ~origin:s.origin s.tex
                     | Queue.Rect (r, colour) -> draw_rect r colour
                     | Queue.Rect_lines (r, line, colour) -> draw_rect_lines r line colour
-                    | Queue.Circle (c, colour) ->
-                        draw_circle ~center_x:c.center.x ~center_y:c.center.y ~radius:c.radius
-                          colour
-                    | Queue.Circle_lines (c, colour) ->
-                        draw_circle_lines ~center_x:c.center.x ~center_y:c.center.y ~radius:c.radius
-                          colour
+                    | Queue.Circle { center; radius; colour } ->
+                        draw_circle ~center_x:center.x ~center_y:center.y ~radius colour
+                    | Queue.Circle_lines { center; radius; colour } ->
+                        draw_circle_lines ~center_x:center.x ~center_y:center.y ~radius colour
                     | Queue.Capsule (c, colour) ->
                         draw_capsule c.center ~half_length:c.half_length ~radius:c.radius colour
                     | Queue.Capsule_wires (c, colour) ->
@@ -378,10 +400,10 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
                 push_rect ~z ~rect ~layers:layer colour queue
             | Rect { rect; layer; style = Lines l; colour; z; _ } ->
                 push_rect_lines ~z ~rect ~layers:layer ~line_thickness:l colour queue
-            | Circle { circle; z; layer; colour; style = Fill } ->
-                push_circle ~z ~circle ~layers:layer colour queue
-            | Circle { circle; z; layer; colour; style = Lines _ } ->
-                push_circle_lines ~z ~circle ~layers:layer colour queue
+            | Circle { radius; center; z; layer; colour; style = Fill } ->
+                push_circle ~z ~radius ~center ~layers:layer colour queue
+            | Circle { radius; center; z; layer; colour; style = Lines _ } ->
+                push_circle_lines ~z ~radius ~center ~layers:layer colour queue
             | Capsule { capsule; z; layer; colour; style = Fill } ->
                 push_capsule ~z ~capsule ~layers:layer colour queue
             | Capsule { capsule; z; layer; colour; style = Lines _ } ->

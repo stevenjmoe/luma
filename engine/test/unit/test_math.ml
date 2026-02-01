@@ -58,44 +58,46 @@ end
 module Circle = struct
   let test_circle_closest_point () =
     let open Primitives.Circle in
-    let circle = { radius = 2.0; center = Vec2.zero } in
+    let circle = { radius = 2.0 } in
+    let center = Vec2.zero in
 
     let point_in = Vec2.create 1.0 1.0 in
-    check_vec "inside" (closest_point circle point_in) point_in;
+    check_vec "inside" (closest_point circle point_in center) point_in;
 
     let point_on = Vec2.create 2.0 0.0 in
-    check_vec "on-boundary" (closest_point circle point_on) point_on;
+    check_vec "on-boundary" (closest_point circle point_on center) point_on;
 
     let point_out_x = Vec2.create 3.0 0.0 in
     let expect_x = Vec2.create 2.0 0.0 in
-    check_vec "outside axis" (closest_point circle point_out_x) expect_x;
+    check_vec "outside axis" (closest_point circle point_out_x center) expect_x;
 
     let point_out_diag = Vec2.create 3.0 4.0 in
     let expect_diag = Vec2.create 1.2 1.6 in
-    check_vec "outside diagonal" (closest_point circle point_out_diag) expect_diag;
+    check_vec "outside diagonal" (closest_point circle point_out_diag center) expect_diag;
 
     let point_zero = Vec2.zero in
-    check_vec "origin" (closest_point circle point_zero) point_zero
+    check_vec "origin" (closest_point circle point_zero center) point_zero
 
   let test_circle_closest_point_offset_center () =
     let open Primitives.Circle in
-    let circle = { radius = 2.0; center = Vec2.create 10.0 (-5.0) } in
+    let circle = { radius = 2.0 } in
+    let center = Vec2.create 10.0 (-5.0) in
 
     (* Inside: should return the point unchanged *)
     let p_inside = Vec2.create 11.0 (-4.0) in
-    check_vec "inside offset" (closest_point circle p_inside) p_inside;
+    check_vec "inside offset" (closest_point circle p_inside center) p_inside;
 
     (* Outside on +X axis from center: should clamp to center + (r,0) *)
     let p_out_x = Vec2.create 20.0 (-5.0) in
     let expect_x = Vec2.create 12.0 (-5.0) in
-    check_vec "outside axis offset" (closest_point circle p_out_x) expect_x;
+    check_vec "outside axis offset" (closest_point circle p_out_x center) expect_x;
 
     (* Outside diagonal: direction (3,4) from center -> normalized (0.6,0.8) *)
     let p_out_diag = Vec2.create 13.0 (-1.0) in
     (* center + (3,4) *)
     let expect_diag = Vec2.create 11.2 (-3.4) in
     (* center + 2*(0.6,0.8) *)
-    check_vec "outside diagonal offset" (closest_point circle p_out_diag) expect_diag
+    check_vec "outside diagonal offset" (closest_point circle p_out_diag center) expect_diag
 end
 
 module Vec2 = struct
