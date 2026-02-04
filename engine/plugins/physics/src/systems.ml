@@ -38,10 +38,8 @@ module Make (L : Luma.S) = struct
                     L.Ecs.World.add_component w packed entity
                 | _ -> ());
 
-                let open L.Math.Bounded2d in
                 match rb.shape with
-                | Circle c ->
-                    let radius = Bounding_circle.radius c in
+                | Circle radius ->
                     rb_store.radius.(row) <- radius;
                     let cx = rb.pos.x in
                     let cy = rb.pos.y in
@@ -52,8 +50,7 @@ module Make (L : Luma.S) = struct
                     rb_store.max_x.(row) <- cx +. radius;
                     rb_store.min_y.(row) <- cy -. radius;
                     rb_store.max_y.(row) <- cy +. radius
-                | Aabb a ->
-                    let half_size = Aabb2d.half_size a in
+                | Aabb half_size ->
                     rb_store.box_hw.(row) <- half_size.x;
                     rb_store.box_hh.(row) <- half_size.y;
 
@@ -144,8 +141,10 @@ module Make (L : Luma.S) = struct
       "debug_draw"
       (fun w _ _ (queue, (store, _)) ->
         for i = 0 to store.len - 1 do
-          if store.shape.(i) = 0 then draw_circle store i queue
-          else if store.shape.(i) = 1 then draw_rectangle store i queue
+          match store.shape.(i) with
+          | 0 -> draw_circle store i queue
+          | 1 -> draw_rectangle store i queue
+          | _ -> ()
         done;
 
         w)

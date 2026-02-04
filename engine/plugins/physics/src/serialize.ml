@@ -22,21 +22,25 @@ let rigid_body_to_value rb =
   let active = ("active", Bool rb.active) in
   let shape =
     match rb.shape with
-    | Circle c ->
+    | Circle radius ->
         ( "shape",
           Obj
             [
               ("type", String "circle");
-              ("radius", Float (Bounded2d.Bounding_circle.radius c));
-              ("center", Codecs.Math.Vec2.to_value (Bounded2d.Bounding_circle.center c));
+              ("radius", Float radius);
+              ("center", Codecs.Math.Vec2.to_value rb.pos);
             ] )
-    | Aabb a ->
+    | Aabb half_size ->
+        let min_x = rb.pos.x -. half_size.x in
+        let max_x = rb.pos.x +. half_size.x in
+        let min_y = rb.pos.y -. half_size.y in
+        let max_y = rb.pos.y +. half_size.y in
         ( "shape",
           Obj
             [
               ("type", String "aabb");
-              ("min", Codecs.Math.Vec2.to_value (Bounded2d.Aabb2d.min a));
-              ("max", Codecs.Math.Vec2.to_value (Bounded2d.Aabb2d.max a));
+              ("min", Codecs.Math.Vec2.to_value (Vec2.create min_x min_y));
+              ("max", Codecs.Math.Vec2.to_value (Vec2.create max_x max_y));
             ] )
   in
 
@@ -123,32 +127,22 @@ module Codecs = struct
                 in
                 let* radius = float radius_v in
 
-                let* center =
-                  get_field "center"
-                    ~on_missing:(fun s -> Error.expected_float [ Field s ])
-                    shape_fields
-                in
-                let* center = Math.Vec2.of_value center in
-                let c = Bounded2d.Bounding_circle.create center radius in
-
-                Ok (Circle c)
+                Ok (Circle radius)
             | "aabb" ->
-                let* min_v =
-                  get_field "min"
+                let* half_size_x =
+                  get_field "box_hw"
                     ~on_missing:(fun s -> Error.expected_float [ Field s ])
                     shape_fields
                 in
-                let* min = Math.Vec2.of_value min_v in
-
-                let* max_v =
-                  get_field "max"
+                let* half_size_x = float half_size_x in
+                let* half_size_y =
+                  get_field "box_hh"
                     ~on_missing:(fun s -> Error.expected_float [ Field s ])
                     shape_fields
                 in
+                let* half_size_y = float half_size_y in
 
-                let* max = Math.Vec2.of_value max_v in
-                let a = Bounded2d.Aabb2d.of_min_max min max in
-                Ok (Aabb a)
+                Ok (Aabb (Vec2.create half_size_x half_size_y))
             | _ -> Error (Error.expected_obj [ Field "shape" ]))
         | _ -> Error (Error.expected_obj [ Field "shape" ])
       in

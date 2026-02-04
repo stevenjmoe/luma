@@ -6,8 +6,8 @@ type body_type =
   | Kinematic
 
 type shape =
-  | Circle of Bounded2d.Bounding_circle.t
-  | Aabb of Bounded2d.Aabb2d.t
+  | Circle of float (* radius *)
+  | Aabb of Vec2.t (* half_size *)
 
 type t = {
   body_type : body_type;
@@ -44,9 +44,6 @@ let body_type_of_string = function
 
 let encode_shape = function Circle _ -> 0 | Aabb _ -> 1
 
-let bounding_box body =
-  match body.shape with Circle c -> Bounded2d.Bounding_circle.aabb_2d c | Aabb a -> a
-
 let compute_inv_mass mass =
   assert (mass >= 0.);
   if mass > 0. then 1. else 0.
@@ -55,7 +52,6 @@ let create_circle ?(mass = 0.) body_type pos radius =
   let mass, inv_mass =
     match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
   in
-  let circle = Bounded2d.Bounding_circle.create pos radius in
   {
     body_type;
     pos;
@@ -67,18 +63,16 @@ let create_circle ?(mass = 0.) body_type pos radius =
     active = true;
     angle = 0.;
     force_accumulator = Vec2.zero;
-    shape = Circle circle;
+    shape = Circle radius;
   }
 
 let create_box ?(mass = 1.) body_type pos size =
   let mass, inv_mass =
     match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
   in
-  let aabb = Bounded2d.Aabb2d.of_center_halfsize pos (Vec2.scale size 0.5) in
-
   {
     body_type;
-    shape = Aabb aabb;
+    shape = Aabb (Vec2.scale size 0.5);
     pos;
     vel = Vec2.zero;
     acc = Vec2.zero;
@@ -92,11 +86,6 @@ let create_box ?(mass = 1.) body_type pos size =
 
 let moi_of_circle mass radius = 0.5 *. mass *. radius *. radius
 let moi_of_aabb mass (size : Vec2.t) = mass *. ((size.x *. size.x) +. (size.y *. size.y)) /. 12.
-
-let moi body =
-  match body.shape with
-  | Circle c -> moi_of_circle body.mass (Bounded2d.Bounding_circle.radius c)
-  | Aabb a -> moi_of_aabb body.mass Bounded2d.Aabb2d.(Vec2.sub (max a) (min a))
 
 module Velocity = struct
   type t = {

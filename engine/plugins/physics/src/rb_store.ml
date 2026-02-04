@@ -161,25 +161,31 @@ let add s (rb : rigid_body) =
   s.current_generation <- 0;
 
   (match rb.shape with
-  | Circle c ->
-      let radius = Bounded2d.Bounding_circle.radius c in
+  | Circle radius ->
       s.radius.(i) <- radius;
 
       (* circle aabb *)
-      let cx = s.pos_x.(i) and cy = s.pos_y.(i) in
+      let cx = s.pos_x.(i) in
+      let cy = s.pos_y.(i) in
       s.min_x.(i) <- cx -. radius;
       s.min_y.(i) <- cy -. radius;
       s.max_x.(i) <- cx +. radius;
       s.max_y.(i) <- cy +. radius;
       ()
-  | Aabb a ->
-      let half_size = Bounded2d.Aabb2d.half_size a in
+  | Aabb half_size ->
+      let cx = s.pos_x.(i) in
+      let cy = s.pos_y.(i) in
+      let min_x = cx -. half_size.x in
+      let max_x = cx +. half_size.x in
+      let min_y = cy -. half_size.y in
+      let max_y = cy +. half_size.y in
+
       s.box_hw.(i) <- half_size.x;
       s.box_hh.(i) <- half_size.y;
-      s.min_x.(i) <- (Bounded2d.Aabb2d.min a).x;
-      s.min_y.(i) <- (Bounded2d.Aabb2d.min a).y;
-      s.max_x.(i) <- (Bounded2d.Aabb2d.max a).x;
-      s.max_y.(i) <- (Bounded2d.Aabb2d.max a).y);
+      s.min_x.(i) <- min_x;
+      s.min_y.(i) <- min_y;
+      s.max_x.(i) <- max_x;
+      s.max_y.(i) <- max_y);
   i
 
 (** [remove store row] *)
