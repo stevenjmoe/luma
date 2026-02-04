@@ -1,12 +1,3 @@
-(** The [Rigid_body] component acts as a config and snapshot of a rigid body in the physics world.
-
-    Spawning an entity with [Rigid_body.C] will initialise the body, and querying for it will return
-    a snapshot of it's current position and velocity.
-
-    However, despite [Vec2.t] having mutable x and y fields, the [Rigid_body] component itself is
-    not mutable; directly mutating the component's position or velocity will not affect the
-    underlying store. All changes must go through the [Physics] API. *)
-
 open Luma__math
 
 type body_type =
@@ -60,7 +51,6 @@ let compute_inv_mass mass =
   assert (mass >= 0.);
   if mass > 0. then 1. else 0.
 
-(** [create_circle ?mass body_type pos radius] *)
 let create_circle ?(mass = 0.) body_type pos radius =
   let mass, inv_mass =
     match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
@@ -80,7 +70,6 @@ let create_circle ?(mass = 0.) body_type pos radius =
     shape = Circle circle;
   }
 
-(** [create_box ?mass body_type pos size] *)
 let create_box ?(mass = 1.) body_type pos size =
   let mass, inv_mass =
     match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
@@ -104,7 +93,6 @@ let create_box ?(mass = 1.) body_type pos size =
 let moi_of_circle mass radius = 0.5 *. mass *. radius *. radius
 let moi_of_aabb mass (size : Vec2.t) = mass *. ((size.x *. size.x) +. (size.y *. size.y)) /. 12.
 
-(** [moi body] calculates the moment of inertia. *)
 let moi body =
   match body.shape with
   | Circle c -> moi_of_circle body.mass (Bounded2d.Bounding_circle.radius c)

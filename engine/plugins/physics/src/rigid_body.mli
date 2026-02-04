@@ -1,3 +1,12 @@
+(** The [Rigid_body] component acts as a config and snapshot of a rigid body in the physics world.
+
+    Spawning an entity with [Rigid_body.C] will initialise the body, and querying for it will return
+    a snapshot of it's current position and velocity.
+
+    However, despite [Vec2.t] having mutable x and y fields, the [Rigid_body] component itself is
+    not mutable; directly mutating the component's position or velocity will not affect the
+    underlying store. All changes must go through the [Physics] API. *)
+
 open Luma__math
 
 type body_type =
@@ -30,11 +39,18 @@ val body_type_of_string : string -> body_type
 val encode_shape : shape -> int
 val bounding_box : t -> Bounded2d.Aabb2d.t
 val compute_inv_mass : float -> float
+
 val create_circle : ?mass:float -> body_type -> Vec2.t -> float -> t
+(** [create_circle ?mass body_type pos radius] *)
+
 val create_box : ?mass:float -> body_type -> Vec2.t -> Vec2.t -> t
+(** [create_box ?mass body_type pos size] *)
+
 val moi_of_circle : float -> float -> float
 val moi_of_aabb : float -> Vec2.t -> float
+
 val moi : t -> float
+(** [moi body] calculates the moment of inertia. *)
 
 module Velocity : sig
   type t = {
