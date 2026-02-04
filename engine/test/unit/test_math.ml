@@ -316,6 +316,34 @@ module Bounded2d_tests = struct
     let box = aabb_minmax 0. 0. 4. 4. in
     let c = circle 7. 7. 1. in
     check bool "completely outside" false (Bounding_circle.intersects_aabb c box)
+
+  let test_bounding_circle_identity_rotation_does_not_zero_center () =
+    let iso = Isometry.create Rot2.identity Vec2.zero in
+    let pts = [| v 1. 0.; v 3. 0. |] in
+    (* mean should be (2,0) *)
+    let c = Bounding_circle.of_point_cloud iso pts in
+    check_vec "center" (Bounding_circle.center c) (v 2. 0.);
+    check_float "radius" 1.0 (Bounding_circle.radius c)
+
+  let test_bounding_circle_of_point_cloud_centroid_identity () =
+    let iso = Isometry.create Rot2.identity Vec2.zero in
+    let pts = [| v 0. 0.; v 2. 0.; v 0. 2. |] in
+    (* centroid = (2/3, 2/3); max dist = sqrt(20)/3 *)
+    let c = Bounding_circle.of_point_cloud iso pts in
+    check_vec "center" (Bounding_circle.center c) (v (2. /. 3.) (2. /. 3.));
+    check_float "radius" (Float.sqrt 20. /. 3.) (Bounding_circle.radius c)
+
+  let test_bounding_circle_of_point_cloud_centroid_rot_trans () =
+    let iso = Isometry.create Rot2.half_pi (v 10. (-5.)) in
+    let pts = [| v 1. 0.; v 3. 0.; v 1. 2. |] in
+    (* local centroid = (5/3, 2/3)
+         rotate 90deg: (x,y)->(-y,x) => (-2/3, 5/3)
+         then translate (10,-5) *)
+    let expected_center = v (10. -. (2. /. 3.)) (-5. +. (5. /. 3.)) in
+    let expected_radius = Float.sqrt 20. /. 3. in
+    let c = Bounding_circle.of_point_cloud iso pts in
+    check_vec "center" (Bounding_circle.center c) expected_center;
+    check_float "radius" expected_radius (Bounding_circle.radius c)
 end
 
 module Direction = struct
@@ -455,6 +483,20 @@ module Ray = struct
     check_opt_float "start inside" (Some 0.0) (Raycast2d.circle_intersection_at ray circle)
 end
 
+module Polygon = struct
+  let test_polygon_area () =
+    let open Primitives in
+    let p =
+      {
+        Polygon.points =
+          [| { x = 0.; y = 0. }; { x = 1.; y = 0. }; { x = 1.; y = 1. }; { x = 0.; y = 1. } |];
+      }
+    in
+    let area = Polygon.area p in
+    check_float "area is 1.0" 1. area;
+    ()
+end
+
 let tests =
   ( "math",
     [
@@ -489,6 +531,12 @@ let tests =
       "Aabb2d.t circle_aabb_touching" -: Bounded2d_tests.test_circle_aabb_touching;
       "Aabb2d.t circle_aabb_corner_overlap" -: Bounded2d_tests.test_circle_aabb_corner_overlap;
       "Aabb2d.t circle_aabb_separated" -: Bounded2d_tests.test_circle_aabb_separated;
+      "Bounding_circle.t bounding_circle_identity_rotation_does_not_zero_center"
+      -: Bounded2d_tests.test_bounding_circle_identity_rotation_does_not_zero_center;
+      "Bounding_circle.t bounding_circle_of_point_cloud_centroid_identity"
+      -: Bounded2d_tests.test_bounding_circle_of_point_cloud_centroid_identity;
+      "Bounding_circle.t bounding_circle_of_point_cloud_centroid_rot_trans"
+      -: Bounded2d_tests.test_bounding_circle_of_point_cloud_centroid_rot_trans;
       "Dir2.t create" -: Direction.test_create;
       "Ray2d.t basic" -: Ray.test_intersect_plane_basic;
       "Ray2d.t intersect_plane_offset" -: Ray.test_intersect_plane_offset;
@@ -500,4 +548,5 @@ let tests =
       "Raycast2d.t circle_hit_from_left" -: Ray.test_circle_hit_from_left;
       "Raycast2d.t circle_pointing_away_miss" -: Ray.test_circle_pointing_away_miss;
       "Raycast2d.t circle_start_inside" -: Ray.test_circle_start_inside;
+      "Polygon.t area" -: Polygon.test_polygon_area;
     ] )
