@@ -1,12 +1,16 @@
-module Types = struct
-  type aabb = {
-    mutable min : Vec2.t;  (** The minimum bottom-left point of the box *)
-    mutable max : Vec2.t;  (** The maximum top-right point of the box *)
-  }
+let point_cloud_2d_center (points : Vec2.t array) =
+  let len = Array.length points in
+  if len = 0 then failwith "Cannot compute the center of an empty points array."
+  else
+    let denom = 1. /. float len in
+    let res_x = ref 0. in
+    let res_y = ref 0. in
 
-  type circle = Primitives.Circle.t
-  type capsule = Primitives.Capsule2d.t
-end
+    for i = 0 to len - 1 do
+      res_x := !res_x +. points.(i).x;
+      res_y := !res_y +. points.(i).y
+    done;
+    Vec2.scale (Vec2.create !res_x !res_y) denom
 
 module type Bounding_volume = sig
   type translation
@@ -31,6 +35,7 @@ module rec Aabb2d : sig
 
   val of_center_halfsize : Vec2.t -> Vec2.t -> t
   val of_min_max : Vec2.t -> Vec2.t -> t
+  val of_point_cloud : Isometry.t -> Vec2.t array -> t
   val min : t -> Vec2.t
   val max : t -> Vec2.t
   val area : t -> float
@@ -51,12 +56,14 @@ module rec Aabb2d : sig
   val rotate_by : t -> Rot2.t -> t*)
   val bounding_circle : t -> Bounding_circle.t
 end = struct
-  open Types
-
   type translation = Vec2.t
   type rotation = Rot2.t
   type half_size = Vec2.t
-  type t = Types.aabb
+
+  type t = {
+    mutable min : Vec2.t;
+    mutable max : Vec2.t;
+  }
 
   let closest_point aabb point = Vec2.clamp aabb.min aabb.max point
 
@@ -66,7 +73,7 @@ end = struct
 
   let of_min_max min max = { min; max }
 
-  let of_point_cloud points (isometry : Isometry.t) =
+  let of_point_cloud (isometry : Isometry.t) points =
     let n = Array.length points in
     if n = 0 then failwith "Point cloud must contain at least one point for Aabb2d construction."
     else
@@ -135,51 +142,80 @@ and Bounding_circle : sig
        and type half_size = float
 
   val create : Vec2.t -> float -> t
+  (** [create center radius] *)
+
+  val of_point_cloud : Isometry.t -> Vec2.t array -> t
+  (** [of_point_cloud isometry points] *)
+
   val center : t -> Vec2.t
   val radius : t -> float
   val aabb_2d : t -> Aabb2d.t
   val intersects_aabb : t -> Aabb2d.t -> bool
   val intersects_circle : t -> t -> bool
-  val set_center : t -> Vec2.t -> unit
 end = struct
-  open Types
-  open Primitives.Circle
-
   type translation = Vec2.t
   type rotation = Rot2.t
   type half_size = float
 
   type t = {
-    circle : circle;
-    mutable center : Vec2.t;
+    radius : float;
+    center : Vec2.t;
   }
 
   let create center radius =
     assert (radius >= 0.);
-    { circle = Primitives.Circle.create ~radius; center }
+    { radius; center }
+
+  let of_point_cloud (iso : Isometry.t) points =
+    let circle_local = point_cloud_2d_center points in
+    let radius_sq = ref 0. in
+
+    for i = 0 to Array.length points - 1 do
+      let distance_sq = Vec2.distance_squared points.(i) circle_local in
+      if distance_sq > !radius_sq then radius_sq := distance_sq
+    done;
+    let circle_world = Vec2.add (Rot2.rotate_vec iso.rotation circle_local) iso.translation in
+    { center = circle_world; radius = Float.sqrt !radius_sq }
 
   let center b = b.center
-  let radius b = b.circle.radius
+  let radius b = b.radius
   let half_size c = radius c
-  let visible_area c = Float.pi *. c.circle.radius *. c.circle.radius
-  let set_center c center = c.center <- center
+  let visible_area c = Float.pi *. c.radius *. c.radius
 
   let aabb_2d b =
-    let min = Vec2.sub b.center (Vec2.splat b.circle.radius) in
-    let max = Vec2.add b.center (Vec2.splat b.circle.radius) in
+    let min = Vec2.sub b.center (Vec2.splat b.radius) in
+    let max = Vec2.add b.center (Vec2.splat b.radius) in
     Aabb2d.of_min_max min max
 
   let intersects_aabb circle aabb = Aabb2d.intersects_circle aabb circle
 
   let intersects_circle circle1 circle2 =
     Aabb2d_raw.circle_intersects_circle ~a_center_x:circle1.center.x ~a_center_y:circle1.center.y
-      ~a_radius:circle1.circle.radius ~b_center_x:circle2.center.x ~b_center_y:circle2.center.y
-      ~b_radius:circle2.circle.radius
+      ~a_radius:circle1.radius ~b_center_x:circle2.center.x ~b_center_y:circle2.center.y
+      ~b_radius:circle2.radius
 end
 
-module type Boudned2d = sig
-  type shape
+module type Bounded2d = sig
+  type t
 
-  val aabb2d : shape -> Isometry.t -> Aabb2d.t
-  val bounding_circle : shape -> Isometry.t -> Bounding_circle.t
+  val aabb_2d : t -> Isometry.t -> Aabb2d.t
+  val bounding_circle : t -> Isometry.t -> Bounding_circle.t
+end
+
+module Bounded_circle : Bounded2d = struct
+  type t = float
+
+  let aabb_2d radius (iso : Isometry.t) =
+    let min = Vec2.sub iso.translation (Vec2.splat radius) in
+    let max = Vec2.add iso.translation (Vec2.splat radius) in
+    Aabb2d.of_min_max min max
+
+  let bounding_circle radius (iso : Isometry.t) = Bounding_circle.create iso.translation radius
+end
+
+module Bounded_polygon : Bounded2d = struct
+  type t = Vec2.t array
+
+  let aabb_2d points (iso : Isometry.t) = Aabb2d.of_point_cloud iso points
+  let bounding_circle points (iso : Isometry.t) = Bounding_circle.of_point_cloud iso points
 end
