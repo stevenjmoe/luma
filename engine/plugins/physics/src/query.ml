@@ -29,7 +29,7 @@ let sweep_ray_aabb ~origin_x ~origin_y ~dir_x ~dir_y ~min_x ~min_y ~max_x ~max_y
       in
       Some (toi, nx, ny)
 
-let sweep_circle_circle store ~row ~other ~dx ~dy =
+let sweep_circle_circle store shape_store ~row ~other ~dx ~dy =
   let open Rb_store in
   let ox = store.pos_x.(row) in
   let oy = store.pos_y.(row) in
@@ -37,7 +37,10 @@ let sweep_circle_circle store ~row ~other ~dx ~dy =
   let cy = store.pos_y.(other) in
 
   (* Relative motion: move `row` by (dx, dy) and treat `other` as fixed. *)
-  let combined_radius = store.radius.(row) +. store.radius.(other) in
+  let combined_radius =
+    Shape_store.circle_radius shape_store store.shape_handle.(row)
+    +. Shape_store.circle_radius shape_store store.shape_handle.(other)
+  in
   let a_coeff = (dx *. dx) +. (dy *. dy) in
 
   if a_coeff <= epsilon_float then None
@@ -65,12 +68,15 @@ let sweep_circle_circle store ~row ~other ~dx ~dy =
         let nx, ny = if len < 1e-8 then (0., 0.) else (n_x /. len, n_y /. len) in
         Some (t, nx, ny)
 
-let sweep_aabb_against_aabb store ~row ~other ~dx ~dy =
+let sweep_aabb_against_aabb store shape_store ~row ~other ~dx ~dy =
   let open Rb_store in
-  let half_w = store.box_hw.(row) in
-  let half_h = store.box_hh.(row) in
-  let other_hw = store.box_hw.(other) in
-  let other_hh = store.box_hh.(other) in
+  let aabb_handle = store.shape_handle.(row) in
+  let other_handle = store.shape_handle.(other) in
+
+  let half_w = Shape_store.aabb_half_width shape_store aabb_handle in
+  let half_h = Shape_store.aabb_half_height shape_store aabb_handle in
+  let other_hw = Shape_store.aabb_half_width shape_store other_handle in
+  let other_hh = Shape_store.aabb_half_height shape_store other_handle in
 
   (* Expand the target AABB by the moving AABB extents, then raycast the moving
      center through that expanded box. This is equivalent to a Minkowski-sum
@@ -85,9 +91,9 @@ let sweep_aabb_against_aabb store ~row ~other ~dx ~dy =
   sweep_ray_aabb ~origin_x:store.pos_x.(row) ~origin_y:store.pos_y.(row) ~dir_x:dx ~dir_y:dy ~min_x
     ~min_y ~max_x ~max_y
 
-let sweep_circle_against_aabb store ~row ~other ~dx ~dy =
+let sweep_circle_against_aabb store shape_store ~row ~other ~dx ~dy =
   let open Rb_store in
-  let radius = store.radius.(row) in
+  let radius = Shape_store.circle_radius shape_store store.shape_handle.(row) in
 
   (* Expand the AABB by the circle radius, then raycast the circle center. *)
   let min_x = store.min_x.(other) -. radius in
@@ -98,16 +104,22 @@ let sweep_circle_against_aabb store ~row ~other ~dx ~dy =
   sweep_ray_aabb ~origin_x:store.pos_x.(row) ~origin_y:store.pos_y.(row) ~dir_x:dx ~dir_y:dy ~min_x
     ~min_y ~max_x ~max_y
 
-let sweep_aabb_against_circle store ~row ~other ~dx ~dy =
+let sweep_aabb_against_circle store shape_store ~row ~other ~dx ~dy =
   let open Rb_store in
   let ox = store.pos_x.(row) in
   let oy = store.pos_y.(row) in
   let cx = store.pos_x.(other) in
   let cy = store.pos_y.(other) in
+  let circle_hanle = store.shape_handle.(other) in
+  let aabb_handle = store.shape_handle.(row) in
+
+  let circle_radius = Shape_store.circle_radius shape_store circle_hanle in
+  let aabb_hw = Shape_store.aabb_half_width shape_store aabb_handle in
+  let aabb_hh = Shape_store.aabb_half_height shape_store aabb_handle in
 
   (* Conservative approximation: treat the moving AABB as a circle with radius
      max(half_w, half_h) and do a circle-circle sweep. *)
-  let combined_radius = store.radius.(other) +. max store.box_hw.(row) store.box_hh.(row) in
+  let combined_radius = circle_radius +. max aabb_hw aabb_hh in
   let a_coeff = (dx *. dx) +. (dy *. dy) in
   if a_coeff <= epsilon_float then None
   else
@@ -132,13 +144,13 @@ let sweep_aabb_against_circle store ~row ~other ~dx ~dy =
         let nx, ny = if len < 1e-8 then (0., 0.) else (n_x /. len, n_y /. len) in
         Some (t, nx, ny)
 
-let kinematic_toi store ~row ~other ~dx ~dy =
+let kinematic_toi store shape_store ~row ~other ~dx ~dy =
   let open Rb_store in
   (* Time of impact for moving `row` along (dx, dy) against `other`.
      `shape` encoding: 0 = circle, 1 = AABB. *)
   match (store.shape.(row), store.shape.(other)) with
-  | 1, 1 -> sweep_aabb_against_aabb store ~row ~other ~dx ~dy
-  | 1, 0 -> sweep_aabb_against_circle store ~row ~other ~dx ~dy
-  | 0, 1 -> sweep_circle_against_aabb store ~row ~other ~dx ~dy
-  | 0, 0 -> sweep_circle_circle store ~row ~other ~dx ~dy
+  | 1, 1 -> sweep_aabb_against_aabb store shape_store ~row ~other ~dx ~dy
+  | 1, 0 -> sweep_aabb_against_circle store shape_store ~row ~other ~dx ~dy
+  | 0, 1 -> sweep_circle_against_aabb store shape_store ~row ~other ~dx ~dy
+  | 0, 0 -> sweep_circle_circle store shape_store ~row ~other ~dx ~dy
   | _ -> None

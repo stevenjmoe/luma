@@ -213,7 +213,7 @@ module Bounded_circle : Bounded2d = struct
   let bounding_circle radius (iso : Isometry.t) = Bounding_circle.create iso.translation radius
 end
 
-module Bounded_polygon : Bounded2d = struct
+module Bounded_polygon : Bounded2d with type t = Vec2.t array = struct
   type t = Vec2.t array
 
   let aabb_2d points (iso : Isometry.t) = Aabb2d.of_point_cloud iso points

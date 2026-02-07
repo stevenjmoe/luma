@@ -28,32 +28,37 @@ let aabb_aabb_collision (s : Rb_store.t) idx1 idx2 =
     ~a_max_x:s.max_x.(idx1) ~a_max_y:s.max_y.(idx1) ~b_min_x:s.min_x.(idx2) ~b_min_y:s.min_y.(idx2)
     ~b_max_x:s.max_x.(idx2) ~b_max_y:s.max_y.(idx2)
 
-let aabb_circle_collision (s : Rb_store.t) idx1 idx2 =
-  if s.shape.(idx1) <> 1 || s.shape.(idx2) <> 0 then failwith "Expected aabb circle pair";
-  Aabb2d_raw.aabb_intersects_circle ~aabb_min_x:s.min_x.(idx1) ~aabb_min_y:s.min_y.(idx1)
-    ~aabb_max_x:s.max_x.(idx1) ~aabb_max_y:s.max_y.(idx1) ~circle_center_x:s.pos_x.(idx2)
-    ~circle_center_y:s.pos_y.(idx2) ~circle_radius:s.radius.(idx2)
+let aabb_circle_collision (store : Rb_store.t) (shape_store : Shape_store.t) idx1 idx2 =
+  if store.shape.(idx1) <> 1 || store.shape.(idx2) <> 0 then failwith "Expected aabb circle pair";
+  let circle_radius = Shape_store.circle_radius shape_store store.shape_handle.(idx2) in
 
-let circle_circle_collision (s : Rb_store.t) idx1 idx2 =
-  if s.shape.(idx1) <> 0 || s.shape.(idx2) <> 0 then failwith "Expected circle circle pair";
-  Aabb2d_raw.circle_intersects_circle ~a_center_x:s.pos_x.(idx1) ~a_center_y:s.pos_y.(idx1)
-    ~a_radius:s.radius.(idx1) ~b_center_x:s.pos_x.(idx2) ~b_center_y:s.pos_y.(idx2)
-    ~b_radius:s.radius.(idx2)
+  Aabb2d_raw.aabb_intersects_circle ~aabb_min_x:store.min_x.(idx1) ~aabb_min_y:store.min_y.(idx1)
+    ~aabb_max_x:store.max_x.(idx1) ~aabb_max_y:store.max_y.(idx1)
+    ~circle_center_x:store.pos_x.(idx2) ~circle_center_y:store.pos_y.(idx2) ~circle_radius
 
-let check_collision (s : Rb_store.t) ~row_a ~row_b =
-  let shape_a = s.shape.(row_a) in
-  let shape_b = s.shape.(row_b) in
+let circle_circle_collision (store : Rb_store.t) (shape_store : Shape_store.t) idx1 idx2 =
+  if store.shape.(idx1) <> 0 || store.shape.(idx2) <> 0 then failwith "Expected circle circle pair";
+  let circle_radius_a = Shape_store.circle_radius shape_store store.shape_handle.(idx1) in
+  let circle_radius_b = Shape_store.circle_radius shape_store store.shape_handle.(idx2) in
+
+  Aabb2d_raw.circle_intersects_circle ~a_center_x:store.pos_x.(idx1) ~a_center_y:store.pos_y.(idx1)
+    ~a_radius:circle_radius_a ~b_center_x:store.pos_x.(idx2) ~b_center_y:store.pos_y.(idx2)
+    ~b_radius:circle_radius_b
+
+let check_collision (store : Rb_store.t) (shape_store : Shape_store.t) ~row_a ~row_b =
+  let shape_a = store.shape.(row_a) in
+  let shape_b = store.shape.(row_b) in
 
   (* 0: Cirlce, 1: Aabb *)
   match (shape_a, shape_b) with
   (* Aabb Aabb *)
-  | 1, 1 -> aabb_aabb_collision s row_a row_b
+  | 1, 1 -> aabb_aabb_collision store row_a row_b
   (* Circle Circle *)
-  | 0, 0 -> circle_circle_collision s row_a row_b
+  | 0, 0 -> circle_circle_collision store shape_store row_a row_b
   (* Aabb Circle *)
-  | 1, 0 -> aabb_circle_collision s row_a row_b
+  | 1, 0 -> aabb_circle_collision store shape_store row_a row_b
   (* Circle Aabb *)
-  | 0, 1 -> aabb_circle_collision s row_b row_a
+  | 0, 1 -> aabb_circle_collision store shape_store row_b row_a
   | _ -> false
 
 let pair_key_of_pairs ~entity_a ~entity_b =
@@ -69,8 +74,12 @@ let entities_of_pair_key key =
   let b = Int64.(to_int (logand key 0xFFFF_FFFFL)) |> Luma__id.Id.Entity.of_int in
   (a, b)
 
-let update_actual_collision_pairs c (s : Rb_store.t) (bp : Broad_phase.t) (index : Rb_store.Index.t)
-    =
+let update_actual_collision_pairs
+    c
+    (store : Rb_store.t)
+    (shape_store : Shape_store.t)
+    (bp : Broad_phase.t)
+    (index : Rb_store.Index.t) =
   clear c;
   let { curr_pairs; ids1; ids2; _ } = c in
 
@@ -83,7 +92,7 @@ let update_actual_collision_pairs c (s : Rb_store.t) (bp : Broad_phase.t) (index
     let entity_b = index.row_to_ent.(row_b) in
     let pair_key = pair_key_of_pairs ~entity_a ~entity_b in
 
-    if check_collision s ~row_a ~row_b && not (Hashtbl.mem curr_pairs pair_key) then (
+    if check_collision store shape_store ~row_a ~row_b && not (Hashtbl.mem curr_pairs pair_key) then (
       Hashtbl.add curr_pairs pair_key ();
       Dynarray.add_last ids1 row_a;
       Dynarray.add_last ids2 row_b)

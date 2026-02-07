@@ -32,7 +32,13 @@ let apply_normal_impulse (store : Rb_store.t) ~restitution ~a ~b ~normal_x ~norm
       store.vel_x.(b) <- vel_b_x +. (impulse_x *. inv_mass_b);
       store.vel_y.(b) <- vel_b_y +. (impulse_y *. inv_mass_b)
 
-let resolve_circle_circle (store : Rb_store.t) ~a ~b ~restitution ~position_correction =
+let resolve_circle_circle
+    (store : Rb_store.t)
+    (shape_store : Shape_store.t)
+    ~a
+    ~b
+    ~restitution
+    ~position_correction =
   (* Only handle circle-circle contacts (shape = 0). *)
   if store.shape.(a) <> 0 || store.shape.(b) <> 0 then ()
   else
@@ -41,8 +47,8 @@ let resolve_circle_circle (store : Rb_store.t) ~a ~b ~restitution ~position_corr
     let pos_a_y = store.pos_y.(a) in
     let pos_b_x = store.pos_x.(b) in
     let pos_b_y = store.pos_y.(b) in
-    let radius_a = store.radius.(a) in
-    let radius_b = store.radius.(b) in
+    let radius_a = Shape_store.circle_radius shape_store store.shape_handle.(a) in
+    let radius_b = Shape_store.circle_radius shape_store store.shape_handle.(b) in
 
     let sep_x = pos_b_x -. pos_a_x in
     let sep_y = pos_b_y -. pos_a_y in
@@ -237,6 +243,7 @@ let length vx vy = Float.sqrt ((vx *. vx) +. (vy *. vy))
 let resolve_circle_aabb
     ?(friction = 0.4)
     (store : Rb_store.t)
+    (shape_store : Shape_store.t)
     ~circle
     ~aabb
     ~restitution
@@ -253,9 +260,9 @@ let resolve_circle_aabb
     let aabb_inv_mass = store.inv_mass.(aabb) in
 
     (* Circle props *)
+    let circle_radius = Shape_store.circle_radius shape_store store.shape_handle.(circle) in
     let circle_pos_x = store.pos_x.(circle) in
     let circle_pos_y = store.pos_y.(circle) in
-    let circle_radius = store.radius.(circle) in
     let circle_vel_x = store.vel_x.(circle) in
     let circle_vel_y = store.vel_y.(circle) in
     let circle_inv_mass = store.inv_mass.(circle) in
@@ -348,10 +355,12 @@ let resolve_circle_aabb
           store.max_x.(circle) <- new_circle_x +. circle_radius;
           store.min_y.(circle) <- new_circle_y -. circle_radius;
           store.max_y.(circle) <- new_circle_y +. circle_radius;
-          let half_w = store.box_hw.(aabb) in
-          let half_h = store.box_hh.(aabb) in
+
           let new_aabb_x = store.pos_x.(aabb) in
           let new_aabb_y = store.pos_y.(aabb) in
+          let half_w = Shape_store.aabb_half_width shape_store store.shape_handle.(aabb) in
+          let half_h = Shape_store.aabb_half_height shape_store store.shape_handle.(aabb) in
+
           store.min_x.(aabb) <- new_aabb_x -. half_w;
           store.max_x.(aabb) <- new_aabb_x +. half_w;
           store.min_y.(aabb) <- new_aabb_y -. half_h;
@@ -392,23 +401,31 @@ let resolve_circle_aabb
             store.vel_x.(aabb) <- store.vel_x.(aabb) -. (friction_x *. aabb_inv_mass);
             store.vel_y.(aabb) <- store.vel_y.(aabb) -. (friction_y *. aabb_inv_mass))
 
-let resolve (store : Rb_store.t) ~a ~b ~restitution ~position_correction =
+let resolve
+    (store : Rb_store.t)
+    (shape_store : Shape_store.t)
+    ~a
+    ~b
+    ~restitution
+    ~position_correction =
   let both_immovable = store.inv_mass.(a) = 0. && store.inv_mass.(b) = 0. in
   if both_immovable then ()
   else
     match (store.shape.(a), store.shape.(b)) with
-    | 0, 0 -> resolve_circle_circle ~restitution ~position_correction store ~a ~b
+    | 0, 0 -> resolve_circle_circle ~restitution ~position_correction store shape_store ~a ~b
     | 1, 1 -> resolve_aabb_aabb store ~a ~b ~restitution ~position_correction
-    | 0, 1 -> resolve_circle_aabb store ~circle:a ~aabb:b ~restitution ~position_correction
-    | 1, 0 -> resolve_circle_aabb store ~circle:b ~aabb:a ~restitution ~position_correction
+    | 0, 1 ->
+        resolve_circle_aabb store shape_store ~circle:a ~aabb:b ~restitution ~position_correction
+    | 1, 0 ->
+        resolve_circle_aabb store shape_store ~circle:b ~aabb:a ~restitution ~position_correction
     | _ -> ()
 
-let resolve_collisions ?(restitution = 0.2) ?(position_correction = 0.8) store np =
+let resolve_collisions ?(restitution = 0.2) ?(position_correction = 0.8) store shape_store np =
   let ids1, ids2 = Narrow_phase.collisions_view np in
   if Dynarray.length ids1 != Dynarray.length ids2 then ()
   else
     Dynarray.iteri
       (fun idx id ->
         let id2 = Dynarray.get ids2 idx in
-        resolve store ~a:id ~b:id2 ~restitution ~position_correction)
+        resolve store shape_store ~a:id ~b:id2 ~restitution ~position_correction)
       ids1

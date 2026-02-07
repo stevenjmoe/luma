@@ -7,6 +7,7 @@ type rigid_body = Rigid_body.t
 type t = {
   mutable len : int;
   mutable cap : int;
+  mutable shape_handle : int array;
   mutable body_type : int array;
   mutable pos_x : float array;
   mutable pos_y : float array;
@@ -20,9 +21,6 @@ type t = {
   mutable damping : float array;
   mutable angle : float array;
   mutable shape : int array;
-  mutable radius : float array;
-  mutable box_hw : float array;
-  mutable box_hh : float array;
   mutable min_x : float array;
   mutable min_y : float array;
   mutable max_x : float array;
@@ -43,6 +41,7 @@ let create ?(initial = 128) () =
   {
     len = 0;
     cap = initial;
+    shape_handle = f 0;
     body_type = f 0;
     pos_x = f 0.;
     pos_y = f 0.;
@@ -56,9 +55,6 @@ let create ?(initial = 128) () =
     damping = f 1.;
     angle = f 0.;
     shape = f 0;
-    radius = f 0.;
-    box_hw = f 0.;
-    box_hh = f 0.;
     min_x = f 0.;
     min_y = f 0.;
     max_x = f 0.;
@@ -83,6 +79,7 @@ let ensure_capacity s need =
       b
     in
     s.cap <- new_cap;
+    s.shape_handle <- grow_int s.shape_handle;
     s.body_type <- grow_int s.body_type;
     s.pos_x <- grow_float s.pos_x;
     s.pos_y <- grow_float s.pos_y;
@@ -96,10 +93,7 @@ let ensure_capacity s need =
     s.damping <- grow_float s.damping;
     s.angle <- grow_float s.angle;
     s.active <- grow_int s.active;
-    s.radius <- grow_float s.radius;
     s.shape <- grow_int s.shape;
-    s.box_hw <- grow_float s.box_hw;
-    s.box_hh <- grow_float s.box_hh;
     s.min_x <- grow_float s.min_x;
     s.min_y <- grow_float s.min_y;
     s.max_x <- grow_float s.max_x;
@@ -115,6 +109,7 @@ let swap_rows s i j =
       a.(i) <- a.(j);
       a.(j) <- t
     in
+    swap s.shape_handle;
     swap s.body_type;
     swap s.pos_x;
     swap s.pos_y;
@@ -129,9 +124,6 @@ let swap_rows s i j =
     swap s.angle;
     swap s.active;
     swap s.shape;
-    swap s.radius;
-    swap s.box_hw;
-    swap s.box_hh;
     swap s.min_x;
     swap s.min_y;
     swap s.max_x;
@@ -139,53 +131,61 @@ let swap_rows s i j =
     swap s.last_seen_generation
 
 (** [add store rigid_body] adds the body to the store and returns the index. *)
-let add s (rb : rigid_body) =
-  ensure_capacity s (s.len + 1);
-  let i = s.len in
-  s.body_type.(i) <- Rigid_body.encode_body_type rb.body_type;
-  s.inv_mass.(i) <- rb.inv_mass;
-  s.pos_x.(i) <- rb.pos.x;
-  s.pos_y.(i) <- rb.pos.y;
-  s.prev_pos_x.(i) <- rb.pos.x;
-  s.prev_pos_y.(i) <- rb.pos.y;
-  s.vel_x.(i) <- rb.vel.x;
-  s.vel_y.(i) <- rb.vel.y;
-  s.force_acc_x.(i) <- rb.force_accumulator.x;
-  s.force_acc_y.(i) <- rb.force_accumulator.y;
-  s.inv_mass.(i) <- rb.inv_mass;
-  s.damping.(i) <- rb.damping;
-  s.angle.(i) <- rb.angle;
-  s.active.(i) <- (if rb.active then 1 else 0);
-  s.shape.(i) <- Rigid_body.encode_shape rb.shape;
-  s.len <- i + 1;
-  s.current_generation <- 0;
+let add store (shape_store : Shape_store.t) (rb : rigid_body) =
+  let new_len = store.len + 1 in
+  ensure_capacity store new_len;
+  let i = store.len in
+  store.shape_handle.(i) <- Shape_store.add shape_store rb.shape;
+  store.body_type.(i) <- Rigid_body.encode_body_type rb.body_type;
+  store.inv_mass.(i) <- rb.inv_mass;
+  store.pos_x.(i) <- rb.pos.x;
+  store.pos_y.(i) <- rb.pos.y;
+  store.prev_pos_x.(i) <- rb.pos.x;
+  store.prev_pos_y.(i) <- rb.pos.y;
+  store.vel_x.(i) <- rb.vel.x;
+  store.vel_y.(i) <- rb.vel.y;
+  store.force_acc_x.(i) <- rb.force_accumulator.x;
+  store.force_acc_y.(i) <- rb.force_accumulator.y;
+  store.inv_mass.(i) <- rb.inv_mass;
+  store.damping.(i) <- rb.damping;
+  store.angle.(i) <- rb.angle;
+  store.active.(i) <- (if rb.active then 1 else 0);
+  store.shape.(i) <- Rigid_body.encode_shape rb.shape;
+  store.len <- i + 1;
+  store.current_generation <- 0;
 
   (match rb.shape with
   | Circle radius ->
-      s.radius.(i) <- radius;
-
       (* circle aabb *)
-      let cx = s.pos_x.(i) in
-      let cy = s.pos_y.(i) in
-      s.min_x.(i) <- cx -. radius;
-      s.min_y.(i) <- cy -. radius;
-      s.max_x.(i) <- cx +. radius;
-      s.max_y.(i) <- cy +. radius;
+      let cx = store.pos_x.(i) in
+      let cy = store.pos_y.(i) in
+      store.min_x.(i) <- cx -. radius;
+      store.min_y.(i) <- cy -. radius;
+      store.max_x.(i) <- cx +. radius;
+      store.max_y.(i) <- cy +. radius;
       ()
   | Aabb half_size ->
-      let cx = s.pos_x.(i) in
-      let cy = s.pos_y.(i) in
+      let cx = store.pos_x.(i) in
+      let cy = store.pos_y.(i) in
       let min_x = cx -. half_size.x in
       let max_x = cx +. half_size.x in
       let min_y = cy -. half_size.y in
       let max_y = cy +. half_size.y in
 
-      s.box_hw.(i) <- half_size.x;
-      s.box_hh.(i) <- half_size.y;
-      s.min_x.(i) <- min_x;
-      s.min_y.(i) <- min_y;
-      s.max_x.(i) <- max_x;
-      s.max_y.(i) <- max_y);
+      store.min_x.(i) <- min_x;
+      store.min_y.(i) <- min_y;
+      store.max_x.(i) <- max_x;
+      store.max_y.(i) <- max_y
+  | Polygon points ->
+      let iso = Rigid_body.isometry rb in
+      let aabb = Bounded2d.Bounded_polygon.aabb_2d points iso in
+      let min = Bounded2d.Aabb2d.min aabb in
+      let max = Bounded2d.Aabb2d.max aabb in
+
+      store.min_x.(i) <- min.x;
+      store.min_y.(i) <- min.y;
+      store.max_x.(i) <- max.x;
+      store.max_y.(i) <- max.y);
   i
 
 (** [remove store row] *)
@@ -243,48 +243,60 @@ let apply_gravity_at s ~row ~gx ~gy =
       apply_force_at s ~row ~fx:gravity_force_x ~fy:gravity_force_y
 
 (* Semi-implicit Euler with damping expressed per-second: vel *= damping ** dt *)
-let integrate_linear_motion_at s ~row ~dt =
-  if dt > 0. && is_active s row && is_dynamic s row then (
-    let inv = s.inv_mass.(row) in
+let integrate_linear_motion_at store (shape_store : Shape_store.t) ~row ~dt =
+  if dt > 0. && is_active store row && is_dynamic store row then (
+    let inv = store.inv_mass.(row) in
 
-    let ax = s.force_acc_x.(row) *. inv in
-    let ay = s.force_acc_y.(row) *. inv in
+    let ax = store.force_acc_x.(row) *. inv in
+    let ay = store.force_acc_y.(row) *. inv in
 
-    s.vel_x.(row) <- s.vel_x.(row) +. (ax *. dt);
-    s.vel_y.(row) <- s.vel_y.(row) +. (ay *. dt);
+    store.vel_x.(row) <- store.vel_x.(row) +. (ax *. dt);
+    store.vel_y.(row) <- store.vel_y.(row) +. (ay *. dt);
 
     (* damping (frame-rate independent) *)
-    let damp = s.damping.(row) ** dt in
-    s.vel_x.(row) <- s.vel_x.(row) *. damp;
-    s.vel_y.(row) <- s.vel_y.(row) *. damp;
+    let damp = store.damping.(row) ** dt in
+    store.vel_x.(row) <- store.vel_x.(row) *. damp;
+    store.vel_y.(row) <- store.vel_y.(row) *. damp;
 
-    s.pos_x.(row) <- s.pos_x.(row) +. (s.vel_x.(row) *. dt);
-    s.pos_y.(row) <- s.pos_y.(row) +. (s.vel_y.(row) *. dt);
+    store.pos_x.(row) <- store.pos_x.(row) +. (store.vel_x.(row) *. dt);
+    store.pos_y.(row) <- store.pos_y.(row) +. (store.vel_y.(row) *. dt);
 
     (* done with forces this step *)
-    s.force_acc_x.(row) <- 0.;
-    s.force_acc_y.(row) <- 0.;
+    store.force_acc_x.(row) <- 0.;
+    store.force_acc_y.(row) <- 0.;
 
     (* 0: Circle. 1: Box *)
-    (if s.shape.(row) = 0 then (
-       let r = s.radius.(row) in
+    match store.shape.(row) with
+    | 0 ->
+        let radius = Shape_store.circle_radius shape_store store.shape_handle.(row) in
+        store.min_x.(row) <- store.pos_x.(row) -. radius;
+        store.max_x.(row) <- store.pos_x.(row) +. radius;
+        store.min_y.(row) <- store.pos_y.(row) -. radius;
+        store.max_y.(row) <- store.pos_y.(row) +. radius
+    | 1 ->
+        let half_size = Shape_store.aabb_half_size shape_store store.shape_handle.(row) in
 
-       s.min_x.(row) <- s.pos_x.(row) -. r;
-       s.max_x.(row) <- s.pos_x.(row) +. r;
-       s.min_y.(row) <- s.pos_y.(row) -. r;
-       s.max_y.(row) <- s.pos_y.(row) +. r)
-     else
-       let half_w = s.box_hw.(row) in
-       let half_h = s.box_hh.(row) in
+        store.min_x.(row) <- store.pos_x.(row) -. half_size.x;
+        store.max_x.(row) <- store.pos_x.(row) +. half_size.x;
 
-       s.min_x.(row) <- s.pos_x.(row) -. half_w;
-       s.max_x.(row) <- s.pos_x.(row) +. half_w;
+        store.min_y.(row) <- store.pos_y.(row) -. half_size.y;
+        store.max_y.(row) <- store.pos_y.(row) +. half_size.y
+    | 2 ->
+        let points = Shape_store.polygon_points shape_store store.shape_handle.(row) in
+        let iso =
+          Isometry.create
+            (Rot2.of_radians store.angle.(row))
+            (Vec2.create store.pos_x.(row) store.pos_y.(row))
+        in
+        let aabb = Bounded2d.Bounded_polygon.aabb_2d points iso in
+        let min = Bounded2d.Aabb2d.min aabb in
+        let max = Bounded2d.Aabb2d.max aabb in
 
-       s.min_y.(row) <- s.pos_y.(row) -. half_h;
-       s.max_y.(row) <- s.pos_y.(row) +. half_h;
-       ());
-
-    ())
+        store.min_x.(row) <- min.x;
+        store.min_y.(row) <- min.y;
+        store.max_x.(row) <- max.x;
+        store.max_y.(row) <- max.y
+    | _ -> ())
 
 (** [bounding_box store idx] returns the [Bounded2d.Aabb2d] representation of the raw store values
     from the given index. *)

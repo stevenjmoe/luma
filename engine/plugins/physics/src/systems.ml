@@ -10,9 +10,12 @@ module Make (L : Luma.S) = struct
       ~components:L.Ecs.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
         L.Ecs.Query.Resource.(
-          Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
+          Resource (module Rb_store.R)
+          & Resource (module Shape_store.R)
+          & Resource (module Rb_store.Index.R)
+          & End)
       "sync_to_store"
-      (fun w _ e (rb_store, (index, _)) ->
+      (fun w _ e (rb_store, (shape_store, (index, _))) ->
         rb_store.current_generation <- rb_store.current_generation + 1;
         let gen = rb_store.current_generation in
 
@@ -22,7 +25,7 @@ module Make (L : Luma.S) = struct
             let open Rigid_body in
             match get_rigid_body entity index with
             | None -> (
-                let row = Rb_store.add rb_store rb in
+                let row = Rb_store.add rb_store shape_store rb in
                 Rb_store.Index.on_add index ~entity ~row;
                 rb_store.last_seen_generation.(row) <- gen;
 
@@ -40,7 +43,7 @@ module Make (L : Luma.S) = struct
 
                 match rb.shape with
                 | Circle radius ->
-                    rb_store.radius.(row) <- radius;
+                    Shape_store.set_circle_radius shape_store rb_store.shape_handle.(row) radius;
                     let cx = rb.pos.x in
                     let cy = rb.pos.y in
                     rb_store.pos_x.(row) <- cx;
@@ -51,8 +54,7 @@ module Make (L : Luma.S) = struct
                     rb_store.min_y.(row) <- cy -. radius;
                     rb_store.max_y.(row) <- cy +. radius
                 | Aabb half_size ->
-                    rb_store.box_hw.(row) <- half_size.x;
-                    rb_store.box_hh.(row) <- half_size.y;
+                    Shape_store.set_aabb_half_size shape_store rb_store.shape_handle.(row) half_size;
 
                     let cx = rb.pos.x in
                     let cy = rb.pos.y in
@@ -62,7 +64,21 @@ module Make (L : Luma.S) = struct
                     rb_store.min_x.(row) <- cx -. half_size.x;
                     rb_store.max_x.(row) <- cx +. half_size.x;
                     rb_store.min_y.(row) <- cy -. half_size.y;
-                    rb_store.max_y.(row) <- cy +. half_size.y)
+                    rb_store.max_y.(row) <- cy +. half_size.y
+                | Polygon points ->
+                    let open Luma__math in
+                    let iso = Rigid_body.isometry rb in
+                    let aabb = Bounded2d.Bounded_polygon.aabb_2d points iso in
+                    let min = Bounded2d.Aabb2d.min aabb in
+                    let max = Bounded2d.Aabb2d.max aabb in
+
+                    rb_store.pos_x.(row) <- rb.pos.x;
+                    rb_store.pos_y.(row) <- rb.pos.y;
+
+                    rb_store.min_x.(row) <- min.x;
+                    rb_store.min_y.(row) <- min.y;
+                    rb_store.max_x.(row) <- max.x;
+                    rb_store.max_y.(row) <- max.y)
             | Some row -> rb_store.last_seen_generation.(row) <- gen)
           e;
 
@@ -106,11 +122,11 @@ module Make (L : Luma.S) = struct
           e;
         w)
 
-  let draw_circle store idx queue =
+  let draw_circle store shape_store idx queue =
     let open Rb_store in
     if store.active.(idx) = 0 then ()
     else if store.shape.(idx) = 0 then
-      let radius = store.radius.(idx) in
+      let radius = Shape_store.circle_radius shape_store store.shape_handle.(idx) in
       let center_x = store.pos_x.(idx) in
       let center_y = store.pos_y.(idx) in
       let center = L.Math.Vec2.create center_x center_y in
@@ -118,16 +134,15 @@ module Make (L : Luma.S) = struct
 
       L.Render.Renderer.push_circle_lines ~z:1000 ~radius ~center colour queue
 
-  let draw_rectangle store idx queue =
+  let draw_rectangle store shape_store idx queue =
     let open Rb_store in
     if store.active.(idx) = 0 then ()
     else if store.shape.(idx) = 1 then
-      let pos =
-        L.Math.Vec2.create
-          (store.pos_x.(idx) -. store.box_hw.(idx))
-          (store.pos_y.(idx) -. store.box_hh.(idx))
-      in
-      let size = L.Math.Vec2.create (store.box_hw.(idx) *. 2.) (store.box_hh.(idx) *. 2.) in
+      let box_hw = Shape_store.aabb_half_width shape_store store.shape_handle.(idx) in
+      let box_hh = Shape_store.aabb_half_height shape_store store.shape_handle.(idx) in
+
+      let pos = L.Math.Vec2.create (store.pos_x.(idx) -. box_hw) (store.pos_y.(idx) -. box_hh) in
+      let size = L.Math.Vec2.create (box_hw *. 2.) (box_hh *. 2.) in
       let rect = L.Math.Rect.create ~pos ~size in
       let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
 
@@ -137,13 +152,17 @@ module Make (L : Luma.S) = struct
     L.Ecs.System.make_with_resources ~components:End
       ~resources:
         L.Ecs.Query.Resource.(
-          Resource (module L.Render.Renderer.Queue.R) & Resource (module Rb_store.R) & End)
+          Resource (module L.Render.Renderer.Queue.R)
+          & Resource (module Rb_store.R)
+          & Resource (module Shape_store.R)
+          & End)
       "debug_draw"
-      (fun w _ _ (queue, (store, _)) ->
+      (fun w _ _ (queue, (store, (shape_store, _))) ->
         for i = 0 to store.len - 1 do
           match store.shape.(i) with
-          | 0 -> draw_circle store i queue
-          | 1 -> draw_rectangle store i queue
+          | 0 -> draw_circle store shape_store i queue
+          | 1 -> draw_rectangle store shape_store i queue
+          | 2 -> failwith "TODO draw polygon"
           | _ -> ()
         done;
 
@@ -157,6 +176,7 @@ module Make (L : Luma.S) = struct
           Resource (module Time.R)
           & Resource (module Config.R)
           & Resource (module Rb_store.R)
+          & Resource (module Shape_store.R)
           & Resource (module Grid.R)
           & Resource (module Broad_phase.R)
           & Resource (module Narrow_phase.R)
@@ -165,7 +185,7 @@ module Make (L : Luma.S) = struct
           & End)
       "step"
       (fun w _ _ r ->
-        L.Ecs.Query.Tuple.with8 r (fun time config store grid bp np event_store index ->
+        L.Ecs.Query.Tuple.with9 r (fun time config store shape_store grid bp np event_store index ->
             (* Clamp dt to prevent instability *)
             let dt = min (Time.dt time) config.max_step_dt in
 
@@ -175,13 +195,13 @@ module Make (L : Luma.S) = struct
               for row = 0 to store.len - 1 do
                 if store.active.(row) = 1 then (
                   Rb_store.apply_gravity_at store ~row ~gx ~gy;
-                  Rb_store.integrate_linear_motion_at store ~row ~dt)
+                  Rb_store.integrate_linear_motion_at store shape_store ~row ~dt)
               done;
 
               Broad_phase.step store grid bp;
 
-              Narrow_phase.update_actual_collision_pairs np store bp index;
-              Resolver.resolve_collisions store np;
+              Narrow_phase.update_actual_collision_pairs np store shape_store bp index;
+              Resolver.resolve_collisions store shape_store np;
               Collision_event.fill_collision_events np event_store));
         w)
 end

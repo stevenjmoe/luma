@@ -8,6 +8,7 @@ type body_type =
 type shape =
   | Circle of float (* radius *)
   | Aabb of Vec2.t (* half_size *)
+  | Polygon of Vec2.t array
 
 type t = {
   body_type : body_type;
@@ -42,7 +43,11 @@ let body_type_of_string = function
   | "Kinematic" | "kinematic" -> Kinematic
   | other -> failwith (Printf.sprintf "unsupported body type %s" other)
 
-let encode_shape = function Circle _ -> 0 | Aabb _ -> 1
+let encode_shape = function Circle _ -> 0 | Aabb _ -> 1 | Polygon _ -> 2
+
+let isometry rb =
+  let open Luma__math in
+  Isometry.create (Rot2.of_radians rb.angle) rb.pos
 
 let compute_inv_mass mass =
   assert (mass >= 0.);
@@ -73,6 +78,24 @@ let create_box ?(mass = 1.) body_type pos size =
   {
     body_type;
     shape = Aabb (Vec2.scale size 0.5);
+    pos;
+    vel = Vec2.zero;
+    acc = Vec2.zero;
+    mass;
+    inv_mass;
+    damping = 0.99;
+    active = true;
+    angle = 0.;
+    force_accumulator = Vec2.zero;
+  }
+
+let create_polygon ?(mass = 1.) body_type pos points =
+  let mass, inv_mass =
+    match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
+  in
+  {
+    shape = Polygon points;
+    body_type;
     pos;
     vel = Vec2.zero;
     acc = Vec2.zero;

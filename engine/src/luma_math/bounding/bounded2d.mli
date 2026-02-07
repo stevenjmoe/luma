@@ -52,3 +52,5 @@ module type Bounded2d = sig
   val aabb_2d : t -> Isometry.t -> Aabb2d.t
   val bounding_circle : t -> Isometry.t -> Bounding_circle.t
 end
+
+module Bounded_polygon : Bounded2d with type t = Vec2.t array

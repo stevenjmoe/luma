@@ -42,6 +42,7 @@ let rigid_body_to_value rb =
               ("min", Codecs.Math.Vec2.to_value (Vec2.create min_x min_y));
               ("max", Codecs.Math.Vec2.to_value (Vec2.create max_x max_y));
             ] )
+    | Polygon points -> failwith "TODO polygon serialize"
   in
 
   Obj [ body_type; pos; vel; acc; force_accumulator; mass; inv_mass; damping; angle; active; shape ]

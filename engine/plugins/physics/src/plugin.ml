@@ -17,6 +17,11 @@ module Make (L : Luma.S) : S = struct
     let packed_store = Resource.pack (module Rb_store.R) body_store in
     Luma__ecs.World.add_resource Rb_store.R.type_id packed_store world
 
+  let add_shape_store world =
+    let store = Shape_store.create ~initial:50 () in
+    let packed = Resource.pack (module Shape_store.R) store in
+    Luma__ecs.World.add_resource Shape_store.R.type_id packed world
+
   let add_rb_index world =
     let rb_index = Rb_store.Index.create ~initial:50 in
     let packed_index = Resource.pack (module Rb_store.Index.R) rb_index in
@@ -45,6 +50,7 @@ module Make (L : Luma.S) : S = struct
   let add_resources (config : Config.t) world =
     add_config config world
     |> add_rb_store
+    |> add_shape_store
     |> add_rb_index
     |> add_grid config.bounds
     |> add_broad_phase config.max_bodies

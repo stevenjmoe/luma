@@ -23,27 +23,31 @@ module Make (L : Luma.S) : S = struct
 
   let plugin = Plugin.plugin
 
-  let update_bounds store row =
+  let update_bounds store shape_store row =
     let open Rb_store in
-    if store.shape.(row) = 0 then (
-      let r = store.radius.(row) in
-      let x = store.pos_x.(row) in
-      let y = store.pos_y.(row) in
+    match store.shape.(row) with
+    | 0 ->
+        let radius = Shape_store.circle_radius shape_store store.shape_handle.(row) in
+        let x = store.pos_x.(row) in
+        let y = store.pos_y.(row) in
 
-      store.min_x.(row) <- x -. r;
-      store.max_x.(row) <- x +. r;
-      store.min_y.(row) <- y -. r;
-      store.max_y.(row) <- y +. r)
-    else
-      let hw = store.box_hw.(row) in
-      let hh = store.box_hh.(row) in
-      let x = store.pos_x.(row) in
-      let y = store.pos_y.(row) in
+        store.min_x.(row) <- x -. radius;
+        store.max_x.(row) <- x +. radius;
+        store.min_y.(row) <- y -. radius;
+        store.max_y.(row) <- y +. radius
+    | 1 ->
+        let hw = Shape_store.aabb_half_width shape_store store.shape_handle.(row) in
+        let hh = Shape_store.aabb_half_height shape_store store.shape_handle.(row) in
 
-      store.min_x.(row) <- x -. hw;
-      store.max_x.(row) <- x +. hw;
-      store.min_y.(row) <- y -. hh;
-      store.max_y.(row) <- y +. hh
+        let x = store.pos_x.(row) in
+        let y = store.pos_y.(row) in
+
+        store.min_x.(row) <- x -. hw;
+        store.max_x.(row) <- x +. hw;
+        store.min_y.(row) <- y -. hh;
+        store.max_y.(row) <- y +. hh
+    | 2 -> failwith "TODO"
+    | other -> invalid_arg (Printf.sprintf "Physics.update_bounds %d" other)
 
   (* Public *)
 
@@ -71,6 +75,7 @@ module Make (L : Luma.S) : S = struct
 
   let move_and_collide world entity ~(velocity : Luma__math.Vec2.t) ~dt =
     let store = get_resource (module Rb_store.R) world in
+    let shape_store = get_resource (module Shape_store.R) world in
     let grid = get_resource (module Grid.R) world in
     let index = get_resource (module Rb_store.Index.R) world in
 
@@ -113,7 +118,7 @@ module Make (L : Luma.S) : S = struct
             ~max_y:sweep_max_y ~f:(fun other ->
               if other <> row && store.active.(other) = 1 && not (Rb_store.is_dynamic store other)
               then
-                match Query.kinematic_toi store ~row ~other ~dx ~dy with
+                match Query.kinematic_toi store shape_store ~row ~other ~dx ~dy with
                 | None -> ()
                 | Some (collision_fraction, nx, ny) ->
                     if collision_fraction >= 0. && collision_fraction < !earliest_collision_fraction
@@ -139,7 +144,7 @@ module Make (L : Luma.S) : S = struct
           store.pos_y.(row) <- store.pos_y.(row) +. actual_dy;
           store.vel_x.(row) <- actual_dx /. dt;
           store.vel_y.(row) <- actual_dy /. dt;
-          update_bounds store row;
+          update_bounds store shape_store row;
 
           match !collided_row with
           | None -> None
