@@ -17,6 +17,180 @@ let aabb_intersects_aabb ~a_min_x ~a_min_y ~a_max_x ~a_max_y ~b_min_x ~b_min_y ~
   let y_overlaps = a_min_y <= b_max_y && a_max_y >= b_min_y in
   x_overlaps && y_overlaps
 
+let intervals_overlap ~a_min ~a_max ~b_min ~b_max = not (a_max < b_min || b_max < a_min)
+
+let project_aabb_on_axis ~axis_x ~axis_y ~aabb_min_x ~aabb_min_y ~aabb_max_x ~aabb_max_y =
+  (* AABB projection via center/extents avoids projecting all 4 corners. *)
+  let cx = (aabb_min_x +. aabb_max_x) *. 0.5 in
+  let cy = (aabb_min_y +. aabb_max_y) *. 0.5 in
+  let ex = (aabb_max_x -. aabb_min_x) *. 0.5 in
+  let ey = (aabb_max_y -. aabb_min_y) *. 0.5 in
+  let center_proj = (axis_x *. cx) +. (axis_y *. cy) in
+  let radius = (Float.abs axis_x *. ex) +. (Float.abs axis_y *. ey) in
+  (center_proj -. radius, center_proj +. radius)
+
+let project_convex_polygon_on_axis
+    ~axis_x
+    ~axis_y
+    ~poly_points_x
+    ~poly_points_y
+    ~poly_offset
+    ~poly_count
+    ~poly_center_x
+    ~poly_center_y
+    ~c
+    ~s =
+  let first = poly_offset in
+  let lx = poly_points_x.(first) in
+  let ly = poly_points_y.(first) in
+  let wx = poly_center_x +. ((lx *. c) -. (ly *. s)) in
+  let wy = poly_center_y +. ((lx *. s) +. (ly *. c)) in
+  let p0 = (axis_x *. wx) +. (axis_y *. wy) in
+  let min_p = ref p0 in
+  let max_p = ref p0 in
+  for i = 1 to poly_count - 1 do
+    let idx = poly_offset + i in
+    let lx = poly_points_x.(idx) in
+    let ly = poly_points_y.(idx) in
+    let wx = poly_center_x +. ((lx *. c) -. (ly *. s)) in
+    let wy = poly_center_y +. ((lx *. s) +. (ly *. c)) in
+    let p = (axis_x *. wx) +. (axis_y *. wy) in
+    if p < !min_p then min_p := p;
+    if p > !max_p then max_p := p
+  done;
+  (!min_p, !max_p)
+
+let separating_axis_exists
+    ~axis_x
+    ~axis_y
+    ~aabb_min_x
+    ~aabb_min_y
+    ~aabb_max_x
+    ~aabb_max_y
+    ~poly_points_x
+    ~poly_points_y
+    ~poly_offset
+    ~poly_count
+    ~poly_center_x
+    ~poly_center_y
+    ~c
+    ~s =
+  let a_min, a_max =
+    project_aabb_on_axis ~axis_x ~axis_y ~aabb_min_x ~aabb_min_y ~aabb_max_x ~aabb_max_y
+  in
+  let p_min, p_max =
+    project_convex_polygon_on_axis
+      ~axis_x
+      ~axis_y
+      ~poly_points_x
+      ~poly_points_y
+      ~poly_offset
+      ~poly_count
+      ~poly_center_x
+      ~poly_center_y
+      ~c
+      ~s
+  in
+  not (intervals_overlap ~a_min ~a_max ~b_min:p_min ~b_max:p_max)
+
+let aabb_intersects_convex_polygon_sat
+    ~aabb_min_x
+    ~aabb_min_y
+    ~aabb_max_x
+    ~aabb_max_y
+    ~poly_points_x
+    ~poly_points_y
+    ~poly_offset
+    ~poly_count
+    ~poly_center_x
+    ~poly_center_y
+    ~poly_angle =
+  let x_len = Array.length poly_points_x in
+  let y_len = Array.length poly_points_y in
+  let last_idx = poly_offset + poly_count - 1 in
+  if
+    poly_count < 3
+    || poly_offset < 0
+    || poly_offset >= x_len
+    || poly_offset >= y_len
+    || last_idx >= x_len
+    || last_idx >= y_len
+  then false
+  else
+    let c = Float.cos poly_angle in
+    let s = Float.sin poly_angle in
+    (* SAT: if any tested axis separates, the shapes do not intersect. *)
+    if
+      separating_axis_exists
+        ~axis_x:1.0
+        ~axis_y:0.0
+        ~aabb_min_x
+        ~aabb_min_y
+        ~aabb_max_x
+        ~aabb_max_y
+        ~poly_points_x
+        ~poly_points_y
+        ~poly_offset
+        ~poly_count
+        ~poly_center_x
+        ~poly_center_y
+        ~c
+        ~s
+      || separating_axis_exists
+           ~axis_x:0.0
+           ~axis_y:1.0
+           ~aabb_min_x
+           ~aabb_min_y
+           ~aabb_max_x
+           ~aabb_max_y
+           ~poly_points_x
+           ~poly_points_y
+           ~poly_offset
+           ~poly_count
+           ~poly_center_x
+           ~poly_center_y
+           ~c
+           ~s
+    then false
+    else
+      let eps = 1e-12 in
+      let rec loop i =
+        if i = poly_count then true
+        else
+          let j = if i = poly_count - 1 then 0 else i + 1 in
+          let i_idx = poly_offset + i in
+          let j_idx = poly_offset + j in
+          let e_lx = poly_points_x.(j_idx) -. poly_points_x.(i_idx) in
+          let e_ly = poly_points_y.(j_idx) -. poly_points_y.(i_idx) in
+
+          (* Rotate edge direction, then take a perpendicular as SAT axis. *)
+          let e_wx = (e_lx *. c) -. (e_ly *. s) in
+          let e_wy = (e_lx *. s) +. (e_ly *. c) in
+          let axis_x = -.e_wy in
+          let axis_y = e_wx in
+
+          if ((axis_x *. axis_x) +. (axis_y *. axis_y)) <= eps then loop (i + 1)
+          else if
+            separating_axis_exists
+              ~axis_x
+              ~axis_y
+              ~aabb_min_x
+              ~aabb_min_y
+              ~aabb_max_x
+              ~aabb_max_y
+              ~poly_points_x
+              ~poly_points_y
+              ~poly_offset
+              ~poly_count
+              ~poly_center_x
+              ~poly_center_y
+              ~c
+              ~s
+          then false
+          else loop (i + 1)
+      in
+      loop 0
+
 let aabb_intersects_circle
     ~aabb_min_x
     ~aabb_min_y

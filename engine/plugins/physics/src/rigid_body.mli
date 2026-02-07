@@ -19,6 +19,10 @@ type shape =
   | Aabb of Vec2.t
   | Polygon of Vec2.t array
 
+type polygon_create_error =
+  | Needs_at_least_3_points
+  | Non_convex_polygon
+
 type t = {
   body_type : body_type;
   shape : shape;
@@ -47,8 +51,13 @@ val create_circle : ?mass:float -> body_type -> Vec2.t -> float -> t
 val create_box : ?mass:float -> body_type -> Vec2.t -> Vec2.t -> t
 (** [create_box ?mass body_type pos size] *)
 
-val create_polygon : ?mass:float -> body_type -> Vec2.t -> Vec2.t array -> t
-(** [create_polygon ?mass body_type pos points] *)
+val create_polygon : ?mass:float -> body_type -> Vec2.t -> Vec2.t array -> (t, polygon_create_error) result
+(** [create_polygon ?mass body_type pos points] validates polygon input and returns [Error] on invalid
+    shape. *)
+
+val create_polygon_exn : ?mass:float -> body_type -> Vec2.t -> Vec2.t array -> t
+(** [create_polygon_exn ?mass body_type pos points] is the exception-raising wrapper over
+    [create_polygon]. *)
 
 val moi_of_circle : float -> float -> float
 val moi_of_aabb : float -> Vec2.t -> float

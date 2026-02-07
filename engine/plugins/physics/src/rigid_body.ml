@@ -10,6 +10,10 @@ type shape =
   | Aabb of Vec2.t (* half_size *)
   | Polygon of Vec2.t array
 
+type polygon_create_error =
+  | Needs_at_least_3_points
+  | Non_convex_polygon
+
 type t = {
   body_type : body_type;
   shape : shape;
@@ -90,22 +94,33 @@ let create_box ?(mass = 1.) body_type pos size =
   }
 
 let create_polygon ?(mass = 1.) body_type pos points =
-  let mass, inv_mass =
-    match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
-  in
-  {
-    shape = Polygon points;
-    body_type;
-    pos;
-    vel = Vec2.zero;
-    acc = Vec2.zero;
-    mass;
-    inv_mass;
-    damping = 0.99;
-    active = true;
-    angle = 0.;
-    force_accumulator = Vec2.zero;
-  }
+  if Array.length points < 3 then Error Needs_at_least_3_points
+  else if not (Primitives.Polygon.is_convex Primitives.Polygon.{ points }) then Error Non_convex_polygon
+  else
+    let mass, inv_mass =
+      match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
+    in
+    Ok
+      {
+        shape = Polygon points;
+        body_type;
+        pos;
+        vel = Vec2.zero;
+        acc = Vec2.zero;
+        mass;
+        inv_mass;
+        damping = 0.99;
+        active = true;
+        angle = 0.;
+        force_accumulator = Vec2.zero;
+      }
+
+let create_polygon_exn ?(mass = 1.) body_type pos points =
+  match create_polygon ~mass body_type pos points with
+  | Ok rb -> rb
+  | Error Needs_at_least_3_points ->
+      invalid_arg "Rigid_body.create_polygon_exn: need at least 3 points"
+  | Error Non_convex_polygon -> invalid_arg "Rigid_body.create_polygon_exn: polygon must be convex"
 
 let moi_of_circle mass radius = 0.5 *. mass *. radius *. radius
 let moi_of_aabb mass (size : Vec2.t) = mass *. ((size.x *. size.x) +. (size.y *. size.y)) /. 12.

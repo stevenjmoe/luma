@@ -72,6 +72,28 @@ let circle_circle_collision (store : Rb_store.t) (shape_store : Shape_store.t) i
   Aabb2d_raw.circle_intersects_circle ~a_center_x ~a_center_y ~a_radius:circle_radius_a ~b_center_x
     ~b_center_y ~b_radius:circle_radius_b
 
+let aabb_polygon_collision (store : Rb_store.t) (shape_store : Shape_store.t) idx1 idx2 =
+  let open Rb_store in
+  if shape_kind store idx1 <> 1 || shape_kind store idx2 <> 2 then
+    failwith "Expected aabb polygon pair";
+
+  let aabb_min_x = min_x store idx1 in
+  let aabb_max_x = max_x store idx1 in
+  let aabb_min_y = min_y store idx1 in
+  let aabb_max_y = max_y store idx1 in
+
+  let poly_handle = shape_handle store idx2 in
+  let poly_points_x = Shape_store.polygon_storage_x shape_store in
+  let poly_points_y = Shape_store.polygon_storage_y shape_store in
+  let poly_offset = Shape_store.polygon_offset shape_store poly_handle in
+  let poly_count = Shape_store.polygon_count shape_store poly_handle in
+  let poly_center_x = pos_x store idx2 in
+  let poly_center_y = pos_y store idx2 in
+  let poly_angle = angle store idx2 in
+
+  Aabb2d_raw.aabb_intersects_convex_polygon_sat ~aabb_min_x ~aabb_min_y ~aabb_max_x ~aabb_max_y
+    ~poly_points_x ~poly_points_y ~poly_offset ~poly_count ~poly_center_x ~poly_center_y ~poly_angle
+
 let check_collision (store : Rb_store.t) (shape_store : Shape_store.t) ~row_a ~row_b =
   let open Rb_store in
   let shape_a = shape_kind store row_a in
@@ -87,6 +109,14 @@ let check_collision (store : Rb_store.t) (shape_store : Shape_store.t) ~row_a ~r
   | 1, 0 -> aabb_circle_collision store shape_store row_a row_b
   (* Circle Aabb *)
   | 0, 1 -> aabb_circle_collision store shape_store row_b row_a
+  (* Polygon Circle *)
+  | 2, 0 -> failwith "TODO: polygon, circle"
+  (* Circle Polygon *)
+  | 0, 2 -> failwith "TODO: circle, polygon"
+  (* Polygon Aabb *)
+  | 2, 1 -> aabb_polygon_collision store shape_store row_b row_a
+  (* Aabb Polygon *)
+  | 1, 2 -> aabb_polygon_collision store shape_store row_a row_b
   | _ -> false
 
 let pair_key_of_pairs ~entity_a ~entity_b =

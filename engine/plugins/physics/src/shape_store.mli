@@ -71,6 +71,18 @@ val polygon_points_x : t -> int -> float array
 val polygon_points_y : t -> int -> float array
 (** [polygon_points_y store row] returns the y value of the polygon points at row. *)
 
+val polygon_offset : t -> int -> int
+(** [polygon_offset store row] returns the starting index of this polygon in packed point arrays. *)
+
+val polygon_count : t -> int -> int
+(** [polygon_count store row] returns the number of points in this polygon. *)
+
+val polygon_storage_x : t -> float array
+(** [polygon_storage_x store] returns the packed x buffer used internally for all polygons. *)
+
+val polygon_storage_y : t -> float array
+(** [polygon_storage_y store] returns the packed y buffer used internally for all polygons. *)
+
 val shape_at : t -> int -> shape
 (** [shape_at store row] return the shape value at row. *)
 

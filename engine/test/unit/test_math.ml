@@ -495,6 +495,26 @@ module Polygon = struct
     let area = Polygon.area p in
     check_float "area is 1.0" 1. area;
     ()
+
+  let test_polygon_is_convex_true () =
+    let open Primitives in
+    let p =
+      {
+        Polygon.points =
+          [| { x = 0.; y = 0. }; { x = 2.; y = 0. }; { x = 2.; y = 1. }; { x = 0.; y = 1. } |];
+      }
+    in
+    check bool "rectangle is convex" true (Polygon.is_convex p)
+
+  let test_polygon_is_convex_false () =
+    let open Primitives in
+    let p =
+      {
+        Polygon.points =
+          [| { x = 0.; y = 0. }; { x = 2.; y = 0. }; { x = 1.; y = 0.5 }; { x = 2.; y = 1. }; { x = 0.; y = 1. } |];
+      }
+    in
+    check bool "arrow shape is concave" false (Polygon.is_convex p)
 end
 
 let tests =
@@ -549,4 +569,6 @@ let tests =
       "Raycast2d.t circle_pointing_away_miss" -: Ray.test_circle_pointing_away_miss;
       "Raycast2d.t circle_start_inside" -: Ray.test_circle_start_inside;
       "Polygon.t area" -: Polygon.test_polygon_area;
+      "Polygon.t is_convex true" -: Polygon.test_polygon_is_convex_true;
+      "Polygon.t is_convex false" -: Polygon.test_polygon_is_convex_false;
     ] )

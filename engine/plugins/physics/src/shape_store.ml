@@ -127,6 +127,8 @@ let add_aabb s (half_size : Vec2.t) =
 
 let add_polygon s (points : Vec2.t array) =
   if Array.length points < 3 then invalid_arg "Shape_store.add_polygon: need at least 3 points";
+  if not (Primitives.Polygon.is_convex Primitives.Polygon.{ points }) then
+    invalid_arg "Shape_store.add_polygon: polygon must be convex";
   let count = Array.length points in
   let offset = s.poly_len in
   ensure_poly_capacity s (offset + count);
@@ -198,6 +200,11 @@ let polygon_points_y s row =
   let count = s.poly_count.(row) in
   let offset = s.poly_offset.(row) in
   Array.init count (fun i -> s.poly_y.(offset + i))
+
+let polygon_offset s row = s.poly_offset.(row)
+let polygon_count s row = s.poly_count.(row)
+let polygon_storage_x s = s.poly_x
+let polygon_storage_y s = s.poly_y
 
 let polygon_points_copy s row = polygon_points s row
 
