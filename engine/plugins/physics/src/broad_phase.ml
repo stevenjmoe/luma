@@ -42,11 +42,15 @@ let add_pair c id1 id2 =
 
 let update_broad_phase (s : Rb_store.t) (grid : Grid.t) =
   Grid.clear grid;
+  let len = Rb_store.len s in
 
-  if s.len > 0 then
-    for row = 0 to s.len - 1 do
-      Grid.insert grid row ~min_x:s.min_x.(row) ~min_y:s.min_y.(row) ~max_x:s.max_x.(row)
-        ~max_y:s.max_y.(row)
+  if len > 0 then
+    for row = 0 to len - 1 do
+      let min_x = Rb_store.min_x s row in
+      let max_x = Rb_store.max_x s row in
+      let min_y = Rb_store.min_y s row in
+      let max_y = Rb_store.max_y s row in
+      Grid.insert grid row ~min_x ~min_y ~max_x ~max_y
     done
 
 let update_potential_collision_pairs c grid =

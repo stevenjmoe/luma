@@ -36,6 +36,8 @@ module R = Luma__resource.Resource.Make (struct
   let name = "body_store"
 end)
 
+let len s = s.len
+
 let create ?(initial = 128) () =
   let f v = Array.make initial v in
   {
@@ -211,6 +213,46 @@ let iter_active s f =
   done
 
 let clear s = s.len <- 0
+let shape_handle s row = s.shape_handle.(row)
+let shape_kind s row = s.shape.(row)
+let set_shape_kind s row v = s.shape.(row) <- v
+let body_type s row = s.body_type.(row)
+let set_body_type s row v = s.body_type.(row) <- v
+let set_active s row v = s.active.(row) <- (if v then 1 else 0)
+let pos_x s row = s.pos_x.(row)
+let pos_y s row = s.pos_y.(row)
+let set_pos_x s row v = s.pos_x.(row) <- v
+let set_pos_y s row v = s.pos_y.(row) <- v
+let prev_pos_x s row = s.prev_pos_x.(row)
+let prev_pos_y s row = s.prev_pos_y.(row)
+let set_prev_pos_x s row v = s.prev_pos_x.(row) <- v
+let set_prev_pos_y s row v = s.prev_pos_y.(row) <- v
+let vel_x s row = s.vel_x.(row)
+let vel_y s row = s.vel_y.(row)
+let set_vel_x s row v = s.vel_x.(row) <- v
+let set_vel_y s row v = s.vel_y.(row) <- v
+let force_acc_x s row = s.force_acc_x.(row)
+let force_acc_y s row = s.force_acc_y.(row)
+let set_force_acc_x s row v = s.force_acc_x.(row) <- v
+let set_force_acc_y s row v = s.force_acc_y.(row) <- v
+let inv_mass s row = s.inv_mass.(row)
+let set_inv_mass s row v = s.inv_mass.(row) <- v
+let damping s row = s.damping.(row)
+let set_damping s row v = s.damping.(row) <- v
+let angle s row = s.angle.(row)
+let set_angle s row v = s.angle.(row) <- v
+let min_x s row = s.min_x.(row)
+let min_y s row = s.min_y.(row)
+let max_x s row = s.max_x.(row)
+let max_y s row = s.max_y.(row)
+let set_min_x s row v = s.min_x.(row) <- v
+let set_min_y s row v = s.min_y.(row) <- v
+let set_max_x s row v = s.max_x.(row) <- v
+let set_max_y s row v = s.max_y.(row) <- v
+let last_seen_generation s row = s.last_seen_generation.(row)
+let set_last_seen_generation s row v = s.last_seen_generation.(row) <- v
+let current_generation s = s.current_generation
+let set_current_generation s v = s.current_generation <- v
 
 (* Helpers *)
 let is_active s row = s.active.(row) = 1
@@ -376,4 +418,5 @@ module Index = struct
     s.len <- last
 
   let row_of_entity s entity = Hashtbl.find_opt s.ent_to_row entity
+  let entity_at_row s row = s.row_to_ent.(row)
 end

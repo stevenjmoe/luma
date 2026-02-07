@@ -22,32 +22,60 @@ let clear c =
   Dynarray.clear c.ids1;
   Dynarray.clear c.ids2
 
-let aabb_aabb_collision (s : Rb_store.t) idx1 idx2 =
-  if s.shape.(idx1) <> 1 || s.shape.(idx2) <> 1 then failwith "Expected aabb aabb pair";
-  Aabb2d_raw.aabb_intersects_aabb ~a_min_x:s.min_x.(idx1) ~a_min_y:s.min_y.(idx1)
-    ~a_max_x:s.max_x.(idx1) ~a_max_y:s.max_y.(idx1) ~b_min_x:s.min_x.(idx2) ~b_min_y:s.min_y.(idx2)
-    ~b_max_x:s.max_x.(idx2) ~b_max_y:s.max_y.(idx2)
+let aabb_aabb_collision (store : Rb_store.t) idx1 idx2 =
+  let open Rb_store in
+  if shape_kind store idx1 <> 1 || shape_kind store idx2 <> 1 then
+    failwith "Expected aabb aabb pair";
+
+  let a_min_x = min_x store idx1 in
+  let a_max_x = max_x store idx1 in
+  let a_min_y = min_y store idx1 in
+  let a_max_y = max_y store idx1 in
+  let b_min_x = min_x store idx2 in
+  let b_max_x = max_x store idx2 in
+  let b_min_y = min_y store idx2 in
+  let b_max_y = max_y store idx2 in
+
+  Aabb2d_raw.aabb_intersects_aabb ~a_min_x ~a_min_y ~a_max_x ~a_max_y ~b_min_x ~b_min_y ~b_max_x
+    ~b_max_y
 
 let aabb_circle_collision (store : Rb_store.t) (shape_store : Shape_store.t) idx1 idx2 =
-  if store.shape.(idx1) <> 1 || store.shape.(idx2) <> 0 then failwith "Expected aabb circle pair";
-  let circle_radius = Shape_store.circle_radius shape_store store.shape_handle.(idx2) in
+  let open Rb_store in
+  if shape_kind store idx1 <> 1 || shape_kind store idx2 <> 0 then
+    failwith "Expected aabb circle pair";
 
-  Aabb2d_raw.aabb_intersects_circle ~aabb_min_x:store.min_x.(idx1) ~aabb_min_y:store.min_y.(idx1)
-    ~aabb_max_x:store.max_x.(idx1) ~aabb_max_y:store.max_y.(idx1)
-    ~circle_center_x:store.pos_x.(idx2) ~circle_center_y:store.pos_y.(idx2) ~circle_radius
+  let circle_radius = Shape_store.circle_radius shape_store (shape_handle store idx2) in
+  let aabb_min_x = min_x store idx1 in
+  let aabb_max_x = max_x store idx1 in
+  let aabb_min_y = min_y store idx1 in
+  let aabb_max_y = max_y store idx1 in
+
+  let circle_center_x = pos_x store idx2 in
+  let circle_center_y = pos_y store idx2 in
+
+  Aabb2d_raw.aabb_intersects_circle ~aabb_min_x ~aabb_min_y ~aabb_max_x ~aabb_max_y ~circle_center_x
+    ~circle_center_y ~circle_radius
 
 let circle_circle_collision (store : Rb_store.t) (shape_store : Shape_store.t) idx1 idx2 =
-  if store.shape.(idx1) <> 0 || store.shape.(idx2) <> 0 then failwith "Expected circle circle pair";
-  let circle_radius_a = Shape_store.circle_radius shape_store store.shape_handle.(idx1) in
-  let circle_radius_b = Shape_store.circle_radius shape_store store.shape_handle.(idx2) in
+  let open Rb_store in
+  if shape_kind store idx1 <> 0 || shape_kind store idx2 <> 0 then
+    failwith "Expected circle circle pair";
 
-  Aabb2d_raw.circle_intersects_circle ~a_center_x:store.pos_x.(idx1) ~a_center_y:store.pos_y.(idx1)
-    ~a_radius:circle_radius_a ~b_center_x:store.pos_x.(idx2) ~b_center_y:store.pos_y.(idx2)
-    ~b_radius:circle_radius_b
+  let circle_radius_a = Shape_store.circle_radius shape_store (shape_handle store idx1) in
+  let circle_radius_b = Shape_store.circle_radius shape_store (shape_handle store idx2) in
+
+  let a_center_x = pos_x store idx1 in
+  let a_center_y = pos_y store idx1 in
+  let b_center_x = pos_x store idx2 in
+  let b_center_y = pos_y store idx2 in
+
+  Aabb2d_raw.circle_intersects_circle ~a_center_x ~a_center_y ~a_radius:circle_radius_a ~b_center_x
+    ~b_center_y ~b_radius:circle_radius_b
 
 let check_collision (store : Rb_store.t) (shape_store : Shape_store.t) ~row_a ~row_b =
-  let shape_a = store.shape.(row_a) in
-  let shape_b = store.shape.(row_b) in
+  let open Rb_store in
+  let shape_a = shape_kind store row_a in
+  let shape_b = shape_kind store row_b in
 
   (* 0: Cirlce, 1: Aabb *)
   match (shape_a, shape_b) with
@@ -88,8 +116,8 @@ let update_actual_collision_pairs
   for i = 0 to Dynarray.length bp_ids1 - 1 do
     let row_a = Dynarray.get bp_ids1 i in
     let row_b = Dynarray.get bp_ids2 i in
-    let entity_a = index.row_to_ent.(row_a) in
-    let entity_b = index.row_to_ent.(row_b) in
+    let entity_a = Rb_store.Index.entity_at_row index row_a in
+    let entity_b = Rb_store.Index.entity_at_row index row_b in
     let pair_key = pair_key_of_pairs ~entity_a ~entity_b in
 
     if check_collision store shape_store ~row_a ~row_b && not (Hashtbl.mem curr_pairs pair_key) then (

@@ -25,27 +25,28 @@ module Make (L : Luma.S) : S = struct
 
   let update_bounds store shape_store row =
     let open Rb_store in
-    match store.shape.(row) with
+    match shape_kind store row with
     | 0 ->
-        let radius = Shape_store.circle_radius shape_store store.shape_handle.(row) in
-        let x = store.pos_x.(row) in
-        let y = store.pos_y.(row) in
+        let radius = Shape_store.circle_radius shape_store (shape_handle store row) in
+        let x = pos_x store row in
+        let y = pos_y store row in
 
-        store.min_x.(row) <- x -. radius;
-        store.max_x.(row) <- x +. radius;
-        store.min_y.(row) <- y -. radius;
-        store.max_y.(row) <- y +. radius
+        set_min_x store row (x -. radius);
+        set_max_x store row (x +. radius);
+        set_min_y store row (y -. radius);
+        set_max_y store row (y +. radius)
     | 1 ->
-        let hw = Shape_store.aabb_half_width shape_store store.shape_handle.(row) in
-        let hh = Shape_store.aabb_half_height shape_store store.shape_handle.(row) in
+        let aabb_handle = shape_handle store row in
+        let hw = Shape_store.aabb_half_width shape_store aabb_handle in
+        let hh = Shape_store.aabb_half_height shape_store aabb_handle in
 
-        let x = store.pos_x.(row) in
-        let y = store.pos_y.(row) in
+        let x = pos_x store row in
+        let y = pos_y store row in
 
-        store.min_x.(row) <- x -. hw;
-        store.max_x.(row) <- x +. hw;
-        store.min_y.(row) <- y -. hh;
-        store.max_y.(row) <- y +. hh
+        set_min_x store row (x -. hw);
+        set_max_x store row (x +. hw);
+        set_min_y store row (y -. hh);
+        set_max_y store row (y +. hh)
     | 2 -> failwith "TODO"
     | other -> invalid_arg (Printf.sprintf "Physics.update_bounds %d" other)
 
@@ -60,7 +61,7 @@ module Make (L : Luma.S) : S = struct
     let* index = Resource.unpack_opt (module Rb_store.Index.R) index_packed in
 
     match Rb_store.Index.row_of_entity index entity with
-    | Some row -> Some (Vec2.create store.pos_x.(row) store.pos_y.(row))
+    | Some row -> Some (Vec2.create (Rb_store.pos_x store row) (Rb_store.pos_y store row))
     | None -> None
 
   let get_resource (type a) (module R : Resource.S with type t = a) world =
@@ -90,14 +91,14 @@ module Make (L : Luma.S) : S = struct
         let move_length = Float.sqrt ((dx *. dx) +. (dy *. dy)) in
 
         if move_length <= Float.epsilon then (
-          store.vel_x.(row) <- 0.;
-          store.vel_y.(row) <- 0.;
+          Rb_store.set_vel_x store row 0.;
+          Rb_store.set_vel_y store row 0.;
           None)
         else
-          let start_min_x = store.min_x.(row) in
-          let start_min_y = store.min_y.(row) in
-          let start_max_x = store.max_x.(row) in
-          let start_max_y = store.max_y.(row) in
+          let start_min_x = Rb_store.min_x store row in
+          let start_min_y = Rb_store.min_y store row in
+          let start_max_x = Rb_store.max_x store row in
+          let start_max_y = Rb_store.max_y store row in
 
           let end_min_x = start_min_x +. dx in
           let end_min_y = start_min_y +. dy in
@@ -116,7 +117,10 @@ module Make (L : Luma.S) : S = struct
 
           Grid.iter_aabb grid ~min_x:sweep_min_x ~min_y:sweep_min_y ~max_x:sweep_max_x
             ~max_y:sweep_max_y ~f:(fun other ->
-              if other <> row && store.active.(other) = 1 && not (Rb_store.is_dynamic store other)
+              if
+                other <> row
+                && Rb_store.is_active store other
+                && not (Rb_store.is_dynamic store other)
               then
                 match Query.kinematic_toi store shape_store ~row ~other ~dx ~dy with
                 | None -> ()
@@ -138,24 +142,24 @@ module Make (L : Luma.S) : S = struct
           let actual_dx = dx *. safe_travel_fraction in
           let actual_dy = dy *. safe_travel_fraction in
 
-          store.prev_pos_x.(row) <- store.pos_x.(row);
-          store.prev_pos_y.(row) <- store.pos_y.(row);
-          store.pos_x.(row) <- store.pos_x.(row) +. actual_dx;
-          store.pos_y.(row) <- store.pos_y.(row) +. actual_dy;
-          store.vel_x.(row) <- actual_dx /. dt;
-          store.vel_y.(row) <- actual_dy /. dt;
+          Rb_store.set_prev_pos_x store row (Rb_store.pos_x store row);
+          Rb_store.set_prev_pos_y store row (Rb_store.pos_y store row);
+          Rb_store.set_pos_x store row (Rb_store.pos_x store row +. actual_dx);
+          Rb_store.set_pos_y store row (Rb_store.pos_y store row +. actual_dy);
+          Rb_store.set_vel_x store row (actual_dx /. dt);
+          Rb_store.set_vel_y store row (actual_dy /. dt);
           update_bounds store shape_store row;
 
           match !collided_row with
           | None -> None
           | Some other ->
-              let collider = index.row_to_ent.(other) in
+              let collider = Rb_store.Index.entity_at_row index other in
               let normal = L.Math.Vec2.create !collision_normal_x !collision_normal_y in
               let travel = Vec2.create !collision_normal_x !collision_normal_y in
               let remainder = Vec2.create (dx -. actual_dx) (dy -. actual_dy) in
               let position =
-                let x = store.prev_pos_x.(row) +. (dx *. !earliest_collision_fraction) in
-                let y = store.prev_pos_y.(row) +. (dy *. !earliest_collision_fraction) in
+                let x = Rb_store.prev_pos_x store row +. (dx *. !earliest_collision_fraction) in
+                let y = Rb_store.prev_pos_y store row +. (dy *. !earliest_collision_fraction) in
                 Vec2.create x y
               in
 
