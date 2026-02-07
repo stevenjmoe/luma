@@ -8,7 +8,7 @@ open Alcotest
 let aabb_of_index store i = Rb_store.bounding_box store i
 
 let naive_pairs store =
-  let n = Rb_store.(store.len) in
+  let n = Rb_store.len store in
   let acc = ref [] in
   for i = 0 to n - 1 do
     for j = i + 1 to n - 1 do
@@ -39,17 +39,18 @@ let setup () =
   let cfg = Config.create ~gravity ~max_step_dt ~bounds:(Some bounds) () in
   let index = Rb_store.Index.create ~initial:100 in
   let store = Rb_store.create ~initial:100 () in
+  let shape_store = Shape_store.create ~initial:100 () in
   let bp = Broad_phase.create ~max_bodies:1000 () in
   let grid = Grid.create cfg.bounds 32. in
 
-  fill_store ~n:100 store index;
+  fill_store ~n:100 store shape_store index;
 
-  (cfg, index, store, grid, bp)
+  (cfg, index, store, shape_store, grid, bp)
 
 (* tests *)
 
 let test_broad_phase_has_no_false_negatives () =
-  let _cfg, _index, store, grid, bp = setup () in
+  let _cfg, _index, store, _shape_store, grid, bp = setup () in
   Broad_phase.step store grid bp;
 
   let expected = naive_pairs store in
@@ -60,7 +61,7 @@ let test_broad_phase_has_no_false_negatives () =
   ()
 
 let test_fill_store_bounding_box_sanity () =
-  let _cfg, _index, store, _grid, _bp = setup () in
+  let _cfg, _index, store, _shape_store, _grid, _bp = setup () in
   let b = Rb_store.bounding_box store 0 in
   let b2 = Rb_store.bounding_box store 2 in
   let b3 = Rb_store.bounding_box store 5 in
