@@ -39,6 +39,11 @@ module type Renderer = sig
   val draw_circle_lines : center_x:float -> center_y:float -> radius:float -> colour -> unit
   (** [draw_circle_lines center_x center_y radius color] *)
 
+  val draw_line :
+    start_pos_x:float -> start_pos_y:float -> end_pos_x:float -> end_pos_y:float -> colour -> unit
+
+  val draw_capsule : Vec2.t -> half_length:float -> radius:float -> colour -> unit
+  val draw_capsule_wires : Vec2.t -> half_length:float -> radius:float -> colour -> unit
   val plugin : App.t -> App.t
 
   module Queue : sig
@@ -50,12 +55,21 @@ module type Renderer = sig
       colour : colour;
     }
 
+    type render_line = {
+      start_pos_x : float;
+      start_pos_y : float;
+      end_pos_x : float;
+      end_pos_y : float;
+      colour : colour;
+    }
+
     type cmd =
       | Rect of Rect.t * colour
       | Rect_lines of Rect.t * float * colour
       | ScreenRect of Rect.t * colour
       | Circle of render_circle
       | Circle_lines of render_circle
+      | Line of render_line
       | Sprite of sprite_cmd
       | Capsule of Primitives.Capsule2d.t * colour
       | Capsule_wires of Primitives.Capsule2d.t * colour
@@ -98,6 +112,17 @@ module type Renderer = sig
     z:int ->
     radius:float ->
     center:Luma__math.Vec2.t ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
+
+  val push_line :
+    z:int ->
+    start_pos_x:float ->
+    start_pos_y:float ->
+    end_pos_x:float ->
+    end_pos_y:float ->
     ?layers:int64 ->
     colour ->
     Queue.item list ref ->
@@ -163,6 +188,13 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
   let draw_circle_lines ~center_x ~center_y ~radius colour =
     D.Draw.draw_circle_lines (int_of_float center_x) (int_of_float center_y) radius colour
 
+  let draw_line ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y colour =
+    let start_pos_x = int_of_float start_pos_x in
+    let start_pos_y = int_of_float start_pos_y in
+    let end_pos_x = int_of_float end_pos_x in
+    let end_pos_y = int_of_float end_pos_y in
+    D.Draw.draw_line ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y colour
+
   let draw_capsule center ~half_length ~radius colour =
     D.Draw.draw_capsule2d center ~half_length ~radius colour
 
@@ -227,12 +259,21 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
       colour : colour;
     }
 
+    type render_line = {
+      start_pos_x : float;
+      start_pos_y : float;
+      end_pos_x : float;
+      end_pos_y : float;
+      colour : colour;
+    }
+
     type cmd =
       | Rect of Rect.t * colour
       | Rect_lines of Rect.t * float * colour
       | ScreenRect of Rect.t * colour
       | Circle of render_circle
       | Circle_lines of render_circle
+      | Line of render_line
       | Sprite of sprite_cmd
       | Capsule of Primitives.Capsule2d.t * colour
       | Capsule_wires of Primitives.Capsule2d.t * colour
@@ -298,6 +339,14 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
   let push_circle_lines ~z ~radius ~center ?(layers = 1L) colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Circle_lines { center; radius; colour } }
 
+  let push_line ~z ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y ?(layers = 1L) colour q =
+    Queue.push q
+      Queue.
+        {
+          meta = { z; layers };
+          cmd = Queue.Line { start_pos_x; start_pos_y; end_pos_x; end_pos_y; colour };
+        }
+
   let push_capsule ~z ~capsule ?(layers = 1L) colour q =
     Queue.push q Queue.{ meta = { z; layers }; cmd = Queue.Capsule (capsule, colour) }
 
@@ -344,12 +393,15 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
                         draw_circle ~center_x:center.x ~center_y:center.y ~radius colour
                     | Queue.Circle_lines { center; radius; colour } ->
                         draw_circle_lines ~center_x:center.x ~center_y:center.y ~radius colour
-                    | Queue.Capsule (c, colour) ->
+                    (*| Queue.Capsule (c, colour) ->
                         draw_capsule c.center ~half_length:c.half_length ~radius:c.radius colour
                     | Queue.Capsule_wires (c, colour) ->
                         draw_capsule_wires c.center ~half_length:c.half_length ~radius:c.radius
-                          colour
-                    | Queue.ScreenRect _ -> ());
+                          colour*)
+                    | Queue.ScreenRect _ -> ()
+                    | Queue.Line { start_pos_x; start_pos_y; end_pos_x; end_pos_y; colour } ->
+                        draw_line ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y colour
+                    | _ -> ());
                 ());
             D.Window.reset_scissor ();
             ());

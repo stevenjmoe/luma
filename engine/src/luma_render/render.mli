@@ -82,6 +82,16 @@ module type Renderer = sig
       Immediate drawing is not queued and is not automatically scoped to any view or viewport. It
       should generally only be used for debug or driver-level drawing. *)
 
+  val draw_line :
+    start_pos_x:float -> start_pos_y:float -> end_pos_x:float -> end_pos_y:float -> colour -> unit
+  (** [draw_line start_pos_x start_pos_y end_pos_x end_pos_y colour] draws a line immediately in the
+      current render context, bypassing the render queue.
+
+      Immediate drawing is not queued and is not automatically scoped to any view or viewport. It
+      should generally only be used for debug or driver-level drawing. *)
+
+  val draw_capsule : Vec2.t -> half_length:float -> radius:float -> colour -> unit
+  val draw_capsule_wires : Vec2.t -> half_length:float -> radius:float -> colour -> unit
   val plugin : App.t -> App.t
 
   module Queue : sig
@@ -100,12 +110,21 @@ module type Renderer = sig
       colour : colour;
     }
 
+    type render_line = {
+      start_pos_x : float;
+      start_pos_y : float;
+      end_pos_x : float;
+      end_pos_y : float;
+      colour : colour;
+    }
+
     type cmd =
       | Rect of Rect.t * colour
       | Rect_lines of Rect.t * float * colour
       | ScreenRect of Rect.t * colour
       | Circle of render_circle
       | Circle_lines of render_circle
+      | Line of render_line
       | Sprite of sprite_cmd
       | Capsule of Primitives.Capsule2d.t * colour
       | Capsule_wires of Primitives.Capsule2d.t * colour
@@ -163,6 +182,19 @@ module type Renderer = sig
     unit
   (** [push_circle z radius center ?layers colour queue] enqueues world-space circle lines draw
       command. *)
+
+  val push_line :
+    z:int ->
+    start_pos_x:float ->
+    start_pos_y:float ->
+    end_pos_x:float ->
+    end_pos_y:float ->
+    ?layers:int64 ->
+    colour ->
+    Queue.item list ref ->
+    unit
+  (** [push_line z start_pos_x start_pos_y end_pos_x end_pos_y ?layers colour queue] enqueues
+      world-space a line draw command. *)
 
   val push_capsule :
     z:int ->

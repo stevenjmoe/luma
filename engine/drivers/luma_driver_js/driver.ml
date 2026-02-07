@@ -93,6 +93,7 @@ module Js_driver : Luma__driver.Driver.S = struct
         (Js.number_of_float (2. *. Float.pi))
         Js._false
 
+    let draw_line ~start_pos_x:_ ~start_pos_y:_ ~end_pos_x:_ ~end_pos_y:_ _colour = ()
     let draw_capsule2d _ ~half_length:_ ~radius:_ _ = ()
     let draw_capsule2d_wires _ ~half_length:_ ~radius:_ _ = ()
 

@@ -65,6 +65,12 @@ val polygon_points : t -> int -> Vec2.t array
 val polygon_points_copy : t -> int -> Vec2.t array
 (** [polygon_points_copy store row] return a copy of the polygon points at row. *)
 
+val polygon_points_x : t -> int -> float array
+(** [polygon_points_x store row] returns the x value of the polygon points at row. *)
+
+val polygon_points_y : t -> int -> float array
+(** [polygon_points_y store row] returns the y value of the polygon points at row. *)
+
 val shape_at : t -> int -> shape
 (** [shape_at store row] return the shape value at row. *)
 

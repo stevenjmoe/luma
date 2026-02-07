@@ -189,6 +189,16 @@ let polygon_points s row =
   let offset = s.poly_offset.(row) in
   Array.init count (fun i -> Vec2.create s.poly_x.(offset + i) s.poly_y.(offset + i))
 
+let polygon_points_x s row =
+  let count = s.poly_count.(row) in
+  let offset = s.poly_offset.(row) in
+  Array.init count (fun i -> s.poly_x.(offset + i))
+
+let polygon_points_y s row =
+  let count = s.poly_count.(row) in
+  let offset = s.poly_offset.(row) in
+  Array.init count (fun i -> s.poly_y.(offset + i))
+
 let polygon_points_copy s row = polygon_points s row
 
 let shape_at s row =

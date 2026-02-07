@@ -153,6 +153,43 @@ module Make (L : Luma.S) = struct
 
       L.Render.Renderer.push_rect_lines ~z:1000 ~rect colour queue
 
+  let draw_polygon store shape_store idx queue =
+    let open Rb_store in
+    if not (is_active store idx) then ()
+    else if shape_kind store idx = 2 then (
+      let points_x = Shape_store.polygon_points_x shape_store (shape_handle store idx) in
+      let points_y = Shape_store.polygon_points_y shape_store (shape_handle store idx) in
+      let pos_x = pos_x store idx in
+      let pos_y = pos_y store idx in
+      let angle = angle store idx in
+      let rot = L.Math.Rot2.of_radians angle in
+      let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
+
+      let count = Array.length points_x in
+      if count >= 2 then (
+        let to_world i =
+          let local = L.Math.Vec2.create points_x.(i) points_y.(i) in
+          let rotated = L.Math.Rot2.rotate_vec rot local in
+          (rotated.x +. pos_x, rotated.y +. pos_y)
+        in
+
+        let first_x, first_y = to_world 0 in
+        let prev_x = ref first_x in
+        let prev_y = ref first_y in
+
+        for i = 1 to count - 1 do
+          let cur_x, cur_y = to_world i in
+          L.Render.Renderer.push_line ~z:1000 ~start_pos_x:!prev_x ~start_pos_y:!prev_y
+            ~end_pos_x:cur_x ~end_pos_y:cur_y colour queue;
+          prev_x := cur_x;
+          prev_y := cur_y
+        done;
+
+        L.Render.Renderer.push_line ~z:1000 ~start_pos_x:!prev_x ~start_pos_y:!prev_y
+          ~end_pos_x:first_x ~end_pos_y:first_y colour queue)
+      else ();
+      ())
+
   let debug_draw () =
     L.Ecs.System.make_with_resources ~components:End
       ~resources:
@@ -167,7 +204,7 @@ module Make (L : Luma.S) = struct
           match Rb_store.shape_kind store i with
           | 0 -> draw_circle store shape_store i queue
           | 1 -> draw_rectangle store shape_store i queue
-          | 2 -> failwith "TODO draw polygon"
+          | 2 -> draw_polygon store shape_store i queue
           | _ -> ()
         done;
 

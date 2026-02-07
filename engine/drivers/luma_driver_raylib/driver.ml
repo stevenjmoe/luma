@@ -31,6 +31,9 @@ module Raylib_driver : Luma__driver.Driver.S = struct
     let draw_circle_lines center_x center_y radius colour =
       Raylib.draw_circle_lines center_x center_y radius colour
 
+    let draw_line ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y colour =
+      Raylib.draw_line start_pos_x start_pos_y end_pos_x end_pos_y colour
+
     let draw_capsule2d center ~half_length ~radius colour =
       let cx = center.Vec2.x in
       let cy = center.Vec2.y in
