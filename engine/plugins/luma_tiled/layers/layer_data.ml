@@ -1,6 +1,6 @@
 type layer_type =
   | Tiles of Tile_data.t
-  | Object of Object_data.t
+  | Objects of Object_data.t
 
 type t = {
   name : string;
@@ -39,7 +39,7 @@ let from_json json path infinite tilesets =
         Ok (Tiles t)
     | "objectgroup" ->
         let* o = Object_data.from_json json path tilesets in
-        Ok (Object o)
+        Ok (Objects o)
     | _ -> Error (Luma__core.Error.io_finalize path "Only tiles and objects currently supported")
   in
 

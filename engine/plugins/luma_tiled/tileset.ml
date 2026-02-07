@@ -1,9 +1,6 @@
-let ( let* ) = Result.bind
+open Luma__math
 
-type point = {
-  x : float;
-  y : float;
-}
+let ( let* ) = Result.bind
 
 type object_ = {
   id : int;
@@ -12,7 +9,7 @@ type object_ = {
   rotation : float;
   visible : bool;
   point : bool;
-  polygon : point array option;
+  polygon : Vec2.t array option;
   x : float;
   y : float;
 }
@@ -84,11 +81,11 @@ let parse_image json path : (Types.image option, Luma__core.Error.error) result 
         (Some { source = full_path; width; height; transparent_colour = None } : Types.image option)
   | None -> Ok None
 
-let parse_point json =
+let parse_point json : (Vec2.t, Luma__core__Error.error) result =
   let open Luma__serialize.Json_helpers in
   let* x = parse_float "x" json in
   let* y = parse_float "y" json in
-  Ok { x; y }
+  Ok (Vec2.create x y)
 
 let parse_polygon_opt json =
   let open Luma__serialize.Json_helpers in

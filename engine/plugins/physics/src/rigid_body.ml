@@ -93,12 +93,15 @@ let create_box ?(mass = 1.) body_type pos size =
     force_accumulator = Vec2.zero;
   }
 
-let create_polygon ?(mass = 1.) body_type pos points =
+let create_polygon ?(mass = 1.) ?(angle = 0.) body_type pos points =
   if Array.length points < 3 then Error Needs_at_least_3_points
-  else if not (Primitives.Polygon.is_convex Primitives.Polygon.{ points }) then Error Non_convex_polygon
+  else if not (Primitives.Polygon.is_convex Primitives.Polygon.{ points }) then
+    Error Non_convex_polygon
   else
     let mass, inv_mass =
-      match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
+      match body_type with
+      | Static | Kinematic -> (0., 0.)
+      | Dynamic -> (mass, compute_inv_mass mass)
     in
     Ok
       {
@@ -111,12 +114,12 @@ let create_polygon ?(mass = 1.) body_type pos points =
         inv_mass;
         damping = 0.99;
         active = true;
-        angle = 0.;
+        angle;
         force_accumulator = Vec2.zero;
       }
 
-let create_polygon_exn ?(mass = 1.) body_type pos points =
-  match create_polygon ~mass body_type pos points with
+let create_polygon_exn ?(mass = 1.) ?(angle = 0.) body_type pos points =
+  match create_polygon ~mass ~angle body_type pos points with
   | Ok rb -> rb
   | Error Needs_at_least_3_points ->
       invalid_arg "Rigid_body.create_polygon_exn: need at least 3 points"

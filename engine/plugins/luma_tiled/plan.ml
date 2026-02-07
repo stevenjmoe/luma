@@ -217,7 +217,7 @@ module Make (Map : Map.S) : S with type map = Map.t = struct
         let meta = { parallax; offset; opacity = layer.opacity } in
 
         match layer.layer_type with
-        | Object object_data -> (build_object_layer layer_index object_data.objects tilesets, meta)
+        | Objects object_data -> (build_object_layer layer_index object_data.objects tilesets, meta)
         | Tiles tile_data -> (build_tile_layer layer_index tile_data, meta)
     in
 

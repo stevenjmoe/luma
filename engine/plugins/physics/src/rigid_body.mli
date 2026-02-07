@@ -51,12 +51,18 @@ val create_circle : ?mass:float -> body_type -> Vec2.t -> float -> t
 val create_box : ?mass:float -> body_type -> Vec2.t -> Vec2.t -> t
 (** [create_box ?mass body_type pos size] *)
 
-val create_polygon : ?mass:float -> body_type -> Vec2.t -> Vec2.t array -> (t, polygon_create_error) result
-(** [create_polygon ?mass body_type pos points] validates polygon input and returns [Error] on invalid
-    shape. *)
+val create_polygon :
+  ?mass:float ->
+  ?angle:float ->
+  body_type ->
+  Vec2.t ->
+  Vec2.t array ->
+  (t, polygon_create_error) result
+(** [create_polygon ?mass ?angle body_type pos points] validates polygon input and returns [Error]
+    on invalid shape. *)
 
-val create_polygon_exn : ?mass:float -> body_type -> Vec2.t -> Vec2.t array -> t
-(** [create_polygon_exn ?mass body_type pos points] is the exception-raising wrapper over
+val create_polygon_exn : ?mass:float -> ?angle:float -> body_type -> Vec2.t -> Vec2.t array -> t
+(** [create_polygon_exn ?mass ?angle body_type pos points] is the exception-raising wrapper over
     [create_polygon]. *)
 
 val moi_of_circle : float -> float -> float
