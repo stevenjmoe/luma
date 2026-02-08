@@ -94,6 +94,105 @@ let aabb_polygon_collision (store : Rb_store.t) (shape_store : Shape_store.t) id
   Aabb2d_raw.aabb_intersects_convex_polygon_sat ~aabb_min_x ~aabb_min_y ~aabb_max_x ~aabb_max_y
     ~poly_points_x ~poly_points_y ~poly_offset ~poly_count ~poly_center_x ~poly_center_y ~poly_angle
 
+let polygon_circle_collision (store : Rb_store.t) (shape_store : Shape_store.t) poly_idx circle_idx
+    =
+  let open Rb_store in
+  if shape_kind store poly_idx <> 2 || shape_kind store circle_idx <> 0 then
+    failwith "Expected polygon circle pair";
+
+  let circle_radius = Shape_store.circle_radius shape_store (shape_handle store circle_idx) in
+  let circle_center_x = pos_x store circle_idx in
+  let circle_center_y = pos_y store circle_idx in
+
+  let poly_handle = shape_handle store poly_idx in
+  let poly_points_x = Shape_store.polygon_storage_x shape_store in
+  let poly_points_y = Shape_store.polygon_storage_y shape_store in
+  let poly_offset = Shape_store.polygon_offset shape_store poly_handle in
+  let poly_count = Shape_store.polygon_count shape_store poly_handle in
+  let poly_center_x = pos_x store poly_idx in
+  let poly_center_y = pos_y store poly_idx in
+  let poly_angle = angle store poly_idx in
+
+  let x_len = Array.length poly_points_x in
+  let y_len = Array.length poly_points_y in
+  let last_idx = poly_offset + poly_count - 1 in
+  if
+    poly_count < 3
+    || poly_offset < 0
+    || poly_offset >= x_len
+    || poly_offset >= y_len
+    || last_idx >= x_len
+    || last_idx >= y_len
+  then false
+  else
+    let c = Float.cos poly_angle in
+    let s = Float.sin poly_angle in
+
+    (* Circle center in polygon-local space: apply inverse transform. *)
+    let rel_x = circle_center_x -. poly_center_x in
+    let rel_y = circle_center_y -. poly_center_y in
+    let circle_local_x = (rel_x *. c) +. (rel_y *. s) in
+    let circle_local_y = (-.rel_x *. s) +. (rel_y *. c) in
+    let radius_sq = circle_radius *. circle_radius in
+
+    (* Check if inside convex polygon *)
+    let eps = 1e-12 in
+    let sign = ref 0 in
+    let inside = ref true in
+    let i = ref 0 in
+
+    while !inside && !i < poly_count do
+      let j = if !i = poly_count - 1 then 0 else !i + 1 in
+      let i_idx = poly_offset + !i in
+      let j_idx = poly_offset + j in
+      let ax = poly_points_x.(i_idx) in
+      let ay = poly_points_y.(i_idx) in
+      let bx = poly_points_x.(j_idx) in
+      let by = poly_points_y.(j_idx) in
+      let edge_x = bx -. ax in
+      let edge_y = by -. ay in
+      let to_p_x = circle_local_x -. ax in
+      let to_p_y = circle_local_y -. ay in
+      let cross = (edge_x *. to_p_y) -. (edge_y *. to_p_x) in
+      if Float.abs cross > eps then (
+        let cur = if cross > 0. then 1 else -1 in
+        if !sign = 0 then sign := cur else if cur <> !sign then inside := false;
+        incr i)
+    done;
+
+    if !inside then true
+    else
+      (* edge distance check *)
+      let intersects = ref false in
+      let i = ref 0 in
+      while (not !intersects) && !i < poly_count do
+        let j = if !i = poly_count - 1 then 0 else !i + 1 in
+        let i_idx = poly_offset + !i in
+        let j_idx = poly_offset + j in
+        let ax = poly_points_x.(i_idx) in
+        let ay = poly_points_y.(i_idx) in
+        let bx = poly_points_x.(j_idx) in
+        let by = poly_points_y.(j_idx) in
+
+        let edge_x = bx -. ax in
+        let edge_y = by -. ay in
+        let edge_len_sq = (edge_x *. edge_x) +. (edge_y *. edge_y) in
+
+        (if edge_len_sq > eps then
+           let ap_x = circle_local_x -. ax in
+           let ap_y = circle_local_y -. ay in
+           let t = ((ap_x *. edge_x) +. (ap_y *. edge_y)) /. edge_len_sq in
+           let t = if t < 0. then 0. else if t > 1. then 1. else t in
+           let closest_x = ax +. (edge_x *. t) in
+           let closest_y = ay +. (edge_y *. t) in
+           let dx = circle_local_x -. closest_x in
+           let dy = circle_local_y -. closest_y in
+           let dist_sq = (dx *. dx) +. (dy *. dy) in
+           if dist_sq <= radius_sq then intersects := true);
+        incr i
+      done;
+      !intersects
+
 let check_collision (store : Rb_store.t) (shape_store : Shape_store.t) ~row_a ~row_b =
   let open Rb_store in
   let shape_a = shape_kind store row_a in
@@ -110,9 +209,9 @@ let check_collision (store : Rb_store.t) (shape_store : Shape_store.t) ~row_a ~r
   (* Circle Aabb *)
   | 0, 1 -> aabb_circle_collision store shape_store row_b row_a
   (* Polygon Circle *)
-  | 2, 0 -> failwith "TODO: polygon, circle"
+  | 2, 0 -> polygon_circle_collision store shape_store row_a row_b
   (* Circle Polygon *)
-  | 0, 2 -> failwith "TODO: circle, polygon"
+  | 0, 2 -> polygon_circle_collision store shape_store row_b row_a
   (* Polygon Aabb *)
   | 2, 1 -> aabb_polygon_collision store shape_store row_b row_a
   (* Aabb Polygon *)
