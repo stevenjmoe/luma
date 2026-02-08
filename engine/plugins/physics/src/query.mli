@@ -3,6 +3,6 @@ val kinematic_toi :
   Shape_store.t ->
   row:int ->
   other:int ->
-  dx:float ->
-  dy:float ->
+  delta_x:float ->
+  delta_y:float ->
   (float * float * float) option

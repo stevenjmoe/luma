@@ -86,9 +86,9 @@ module Make (L : Luma.S) : S = struct
         (* ensure grid reflects current positions *)
         Broad_phase.update_broad_phase store grid |> ignore;
 
-        let dx = velocity.x *. dt in
-        let dy = velocity.y *. dt in
-        let move_length = Float.sqrt ((dx *. dx) +. (dy *. dy)) in
+        let delta_x = velocity.x *. dt in
+        let delta_y = velocity.y *. dt in
+        let move_length = Float.sqrt ((delta_x *. delta_x) +. (delta_y *. delta_y)) in
 
         if move_length <= Float.epsilon then (
           Rb_store.set_vel_x store row 0.;
@@ -100,10 +100,10 @@ module Make (L : Luma.S) : S = struct
           let start_max_x = Rb_store.max_x store row in
           let start_max_y = Rb_store.max_y store row in
 
-          let end_min_x = start_min_x +. dx in
-          let end_min_y = start_min_y +. dy in
-          let end_max_x = start_max_x +. dx in
-          let end_max_y = start_max_y +. dy in
+          let end_min_x = start_min_x +. delta_x in
+          let end_min_y = start_min_y +. delta_y in
+          let end_max_x = start_max_x +. delta_x in
+          let end_max_y = start_max_y +. delta_y in
 
           let sweep_min_x = Float.min start_min_x end_min_x in
           let sweep_min_y = Float.min start_min_y end_min_y in
@@ -122,7 +122,7 @@ module Make (L : Luma.S) : S = struct
                 && Rb_store.is_active store other
                 && not (Rb_store.is_dynamic store other)
               then
-                match Query.kinematic_toi store shape_store ~row ~other ~dx ~dy with
+                match Query.kinematic_toi store shape_store ~row ~other ~delta_x ~delta_y with
                 | None -> ()
                 | Some (collision_fraction, nx, ny) ->
                     if collision_fraction >= 0. && collision_fraction < !earliest_collision_fraction
@@ -139,8 +139,8 @@ module Make (L : Luma.S) : S = struct
             else 1.
           in
 
-          let actual_dx = dx *. safe_travel_fraction in
-          let actual_dy = dy *. safe_travel_fraction in
+          let actual_dx = delta_x *. safe_travel_fraction in
+          let actual_dy = delta_y *. safe_travel_fraction in
 
           Rb_store.set_prev_pos_x store row (Rb_store.pos_x store row);
           Rb_store.set_prev_pos_y store row (Rb_store.pos_y store row);
@@ -156,10 +156,14 @@ module Make (L : Luma.S) : S = struct
               let collider = Rb_store.Index.entity_at_row index other in
               let normal = L.Math.Vec2.create !collision_normal_x !collision_normal_y in
               let travel = Vec2.create !collision_normal_x !collision_normal_y in
-              let remainder = Vec2.create (dx -. actual_dx) (dy -. actual_dy) in
+              let remainder = Vec2.create (delta_x -. actual_dx) (delta_y -. actual_dy) in
               let position =
-                let x = Rb_store.prev_pos_x store row +. (dx *. !earliest_collision_fraction) in
-                let y = Rb_store.prev_pos_y store row +. (dy *. !earliest_collision_fraction) in
+                let x =
+                  Rb_store.prev_pos_x store row +. (delta_x *. !earliest_collision_fraction)
+                in
+                let y =
+                  Rb_store.prev_pos_y store row +. (delta_y *. !earliest_collision_fraction)
+                in
                 Vec2.create x y
               in
 
