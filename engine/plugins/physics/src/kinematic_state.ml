@@ -28,7 +28,7 @@ let on_ceiling k = k.on_ceiling
 let floor_normal k = Luma__math.Vec2.create k.floor_normal_x k.floor_normal_y
 let set_is_on_floor k on_floor = k.on_floor <- on_floor
 let set_is_on_wall k on_wall = k.on_wall <- on_wall
-let set_is_on_ceiling k on_ceiling = k.on_wall <- on_ceiling
+let set_is_on_ceiling k on_ceiling = k.on_ceiling <- on_ceiling
 let set_floor_normal_x k normal_x = k.floor_normal_x <- normal_x
 let set_floor_normal_y k normal_y = k.floor_normal_y <- normal_y
 
