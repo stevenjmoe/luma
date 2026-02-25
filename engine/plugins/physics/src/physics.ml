@@ -14,6 +14,17 @@ module type S = sig
 
   val move_and_slide : ?max_iterations:int -> World.t -> Id.Entity.t -> Vec2.t -> float -> bool
   val plugin : ?world_config:Config.t -> Luma__app.App.t -> Luma__app.App.t
+
+  module Kinematic_state : sig
+    type t
+
+    val on_floor : t -> bool
+    val on_wall : t -> bool
+    val on_ceiling : t -> bool
+    val floor_normal : t -> Luma__math__Vec2.t
+
+    module C : Component.S with type t = t
+  end
 end
 
 module Make (L : Luma.S) : S = struct
@@ -232,4 +243,15 @@ module Make (L : Luma.S) : S = struct
             iter := !iter + 1
     done;
     !collided
+
+  module Kinematic_state = struct
+    type t = Kinematic_state.t
+
+    let on_floor = Kinematic_state.on_floor
+    let on_wall = Kinematic_state.on_wall
+    let on_ceiling = Kinematic_state.on_ceiling
+    let floor_normal = Kinematic_state.floor_normal
+
+    module C = Kinematic_state.C
+  end
 end

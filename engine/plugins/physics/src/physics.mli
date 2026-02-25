@@ -12,6 +12,17 @@ module type S = sig
 
   val move_and_slide : ?max_iterations:int -> World.t -> Id.Entity.t -> Vec2.t -> float -> bool
   val plugin : ?world_config:Config.t -> Luma__app.App.t -> Luma__app.App.t
+
+  module Kinematic_state : sig
+    type t
+
+    val on_floor : t -> bool
+    val on_wall : t -> bool
+    val on_ceiling : t -> bool
+    val floor_normal : t -> Luma__math__Vec2.t
+
+    module C : Component.S with type t = t
+  end
 end
 
 module Make (_ : Luma.S) : S
