@@ -6,6 +6,8 @@ type t = {
   ids2 : int Dynarray.t;
   mutable prev_pairs : (int64, unit) Hashtbl.t;
   mutable curr_pairs : (int64, unit) Hashtbl.t;
+  mutable prev_sensor_pairs : (int64, unit) Hashtbl.t;
+  mutable curr_sensor_pairs : (int64, unit) Hashtbl.t;
 }
 
 let create ?(pairs_cap = 0) ?(set_cap = 16384) () =
@@ -15,10 +17,18 @@ let create ?(pairs_cap = 0) ?(set_cap = 16384) () =
     Dynarray.ensure_capacity ids1 pairs_cap;
     Dynarray.ensure_capacity ids2 pairs_cap);
 
-  { ids1; ids2; prev_pairs = Hashtbl.create set_cap; curr_pairs = Hashtbl.create set_cap }
+  {
+    ids1;
+    ids2;
+    prev_pairs = Hashtbl.create set_cap;
+    curr_pairs = Hashtbl.create set_cap;
+    prev_sensor_pairs = Hashtbl.create set_cap;
+    curr_sensor_pairs = Hashtbl.create set_cap;
+  }
 
 let clear c =
   Hashtbl.clear c.curr_pairs;
+  Hashtbl.clear c.curr_sensor_pairs;
   Dynarray.clear c.ids1;
   Dynarray.clear c.ids2
 
@@ -238,7 +248,7 @@ let update_actual_collision_pairs
     (bp : Broad_phase.t)
     (index : Rb_store.Index.t) =
   clear c;
-  let { curr_pairs; ids1; ids2; _ } = c in
+  let { curr_pairs; curr_sensor_pairs; ids1; ids2; _ } = c in
 
   let bp_ids1, bp_ids2 = Broad_phase.pairs_view bp in
 
@@ -250,6 +260,8 @@ let update_actual_collision_pairs
     let pair_key = pair_key_of_pairs ~entity_a ~entity_b in
 
     if check_collision store shape_store ~row_a ~row_b && not (Hashtbl.mem curr_pairs pair_key) then (
+      if Rb_store.is_sensor store row_a || Rb_store.is_sensor store row_b then
+        Hashtbl.replace curr_sensor_pairs pair_key ();
       Hashtbl.add curr_pairs pair_key ();
       Dynarray.add_last ids1 row_a;
       Dynarray.add_last ids2 row_b)

@@ -26,6 +26,12 @@ type t = {
   flags : Flags.t;
 }
 
+let entity_a c = c.entity_a
+let entity_b c = c.entity_b
+let phase c = c.phase
+let is_start c = c.phase = Start
+let is_stay c = c.phase = Stay
+let is_stop c = c.phase = Stop
 let is_sensor c = Flags.(has c.flags sensor)
 let is_removed c = Flags.(has c.flags removed)
 
@@ -93,7 +99,7 @@ let fill_collision_events narrow events =
   let open Narrow_phase in
   let open Collision_events_store in
   clear events;
-  let { prev_pairs; curr_pairs; _ } = narrow in
+  let { prev_pairs; curr_pairs; prev_sensor_pairs; curr_sensor_pairs; _ } = narrow in
 
   Hashtbl.iter
     (fun key _ ->
@@ -101,7 +107,9 @@ let fill_collision_events narrow events =
       if entity_a <> Utils.sentinel_entity && entity_b <> Utils.sentinel_entity then
         (* 0 = Start. 1 = Stay *)
         let phase = if Hashtbl.mem prev_pairs key then 1 else 0 in
-        let flags = 0 in
+        let flags =
+          if Hashtbl.mem curr_sensor_pairs key then Flags.sensor else 0
+        in
         add events ~entity_a ~entity_b ~phase ~flags)
     curr_pairs;
 
@@ -111,13 +119,20 @@ let fill_collision_events narrow events =
         let entity_a, entity_b = entities_of_pair_key key in
         if entity_a <> Utils.sentinel_entity && entity_b <> Utils.sentinel_entity then
           let phase = 2 in
-          let flags = Flags.removed in
+          let flags =
+            let flags = Flags.removed in
+            if Hashtbl.mem prev_sensor_pairs key then Flags.add flags Flags.sensor else flags
+          in
           add events ~entity_a ~entity_b ~phase ~flags)
     prev_pairs;
 
   let tmp = narrow.prev_pairs in
   narrow.prev_pairs <- narrow.curr_pairs;
-  narrow.curr_pairs <- tmp
+  narrow.curr_pairs <- tmp;
+
+  let tmp_sensor = narrow.prev_sensor_pairs in
+  narrow.prev_sensor_pairs <- narrow.curr_sensor_pairs;
+  narrow.curr_sensor_pairs <- tmp_sensor
 
 let iter_events (world : Luma__ecs.World.t) (f : t -> unit) =
   let open Luma__ecs in
@@ -153,3 +168,17 @@ let iter_events_for_entity
       if Id.Entity.eq entity entity_a then f ~other:entity_b phase ~flags
       else if Id.Entity.eq entity entity_b then f ~other:entity_a phase ~flags
       else ())
+
+let iter_sensor_events_for_entity
+    ~entity
+    (world : Luma__ecs.World.t)
+    (f : other:Id.Entity.t -> phase -> unit) =
+  iter_events_for_entity ~entity world (fun ~other phase ~flags ->
+      if Flags.has flags Flags.sensor then f ~other phase else ())
+
+let iter_sensor_enters_for_entity
+    ~entity
+    (world : Luma__ecs.World.t)
+    (f : other:Id.Entity.t -> unit) =
+  iter_sensor_events_for_entity ~entity world (fun ~other phase ->
+      if phase = Start then f ~other else ())

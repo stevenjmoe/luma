@@ -17,6 +17,7 @@ type polygon_create_error =
 type t = {
   body_type : body_type;
   shape : shape;
+  is_sensor : bool;
   pos : Vec2.t;
   vel : Vec2.t;
   acc : Vec2.t;
@@ -57,12 +58,13 @@ let compute_inv_mass mass =
   assert (mass >= 0.);
   if mass > 0. then 1. else 0.
 
-let create_circle ?(mass = 0.) body_type pos radius =
+let create_circle ?(mass = 0.) ?(is_sensor = false) body_type pos radius =
   let mass, inv_mass =
     match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
   in
   {
     body_type;
+    is_sensor;
     pos;
     vel = Vec2.zero;
     acc = Vec2.zero;
@@ -75,12 +77,13 @@ let create_circle ?(mass = 0.) body_type pos radius =
     shape = Circle radius;
   }
 
-let create_box ?(mass = 1.) body_type pos size =
+let create_box ?(mass = 1.) ?(is_sensor = false) body_type pos size =
   let mass, inv_mass =
     match body_type with Static | Kinematic -> (0., 0.) | Dynamic -> (mass, compute_inv_mass mass)
   in
   {
     body_type;
+    is_sensor;
     shape = Aabb (Vec2.scale size 0.5);
     pos;
     vel = Vec2.zero;
@@ -93,7 +96,7 @@ let create_box ?(mass = 1.) body_type pos size =
     force_accumulator = Vec2.zero;
   }
 
-let create_polygon ?(mass = 1.) ?(angle = 0.) body_type pos points =
+let create_polygon ?(mass = 1.) ?(angle = 0.) ?(is_sensor = false) body_type pos points =
   if Array.length points < 3 then Error Needs_at_least_3_points
   else if not (Primitives.Polygon.is_convex Primitives.Polygon.{ points }) then
     Error Non_convex_polygon
@@ -107,6 +110,7 @@ let create_polygon ?(mass = 1.) ?(angle = 0.) body_type pos points =
       {
         shape = Polygon points;
         body_type;
+        is_sensor;
         pos;
         vel = Vec2.zero;
         acc = Vec2.zero;
@@ -118,8 +122,8 @@ let create_polygon ?(mass = 1.) ?(angle = 0.) body_type pos points =
         force_accumulator = Vec2.zero;
       }
 
-let create_polygon_exn ?(mass = 1.) ?(angle = 0.) body_type pos points =
-  match create_polygon ~mass ~angle body_type pos points with
+let create_polygon_exn ?(mass = 1.) ?(angle = 0.) ?(is_sensor = false) body_type pos points =
+  match create_polygon ~mass ~angle ~is_sensor body_type pos points with
   | Ok rb -> rb
   | Error Needs_at_least_3_points ->
       invalid_arg "Rigid_body.create_polygon_exn: need at least 3 points"

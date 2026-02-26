@@ -33,6 +33,7 @@ module Make (L : Luma.S) = struct
                 Rb_store.set_damping rb_store row rb.damping;
                 Rb_store.set_body_type rb_store row (Rigid_body.encode_body_type rb.body_type);
                 Rb_store.set_shape_kind rb_store row (Rigid_body.encode_shape rb.shape);
+                Rb_store.set_sensor rb_store row rb.is_sensor;
 
                 (match rb.body_type with
                 | Kinematic ->

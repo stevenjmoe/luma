@@ -26,6 +26,7 @@ type t = {
   mutable max_x : float array;
   mutable max_y : float array;
   mutable active : int array;
+  mutable sensor : int array;
   mutable last_seen_generation : int array;
   mutable current_generation : int;
 }
@@ -62,6 +63,7 @@ let create ?(initial = 128) () =
     max_x = f 0.;
     max_y = f 0.;
     active = f 1;
+    sensor = f 0;
     last_seen_generation = f 0;
     current_generation = 0;
   }
@@ -100,7 +102,8 @@ let ensure_capacity s need =
     s.min_y <- grow_float s.min_y;
     s.max_x <- grow_float s.max_x;
     s.max_y <- grow_float s.max_y;
-    s.last_seen_generation <- grow_int s.last_seen_generation
+    s.last_seen_generation <- grow_int s.last_seen_generation;
+    s.sensor <- grow_int s.sensor
 
 (** [swap_rows store row1 row2] *)
 let swap_rows s i j =
@@ -130,6 +133,7 @@ let swap_rows s i j =
     swap s.min_y;
     swap s.max_x;
     swap s.max_y;
+    swap s.sensor;
     swap s.last_seen_generation
 
 (** [add store rigid_body] adds the body to the store and returns the index. *)
@@ -152,6 +156,7 @@ let add store (shape_store : Shape_store.t) (rb : rigid_body) =
   store.damping.(i) <- rb.damping;
   store.angle.(i) <- rb.angle;
   store.active.(i) <- (if rb.active then 1 else 0);
+  store.sensor.(i) <- (if rb.is_sensor then 1 else 0);
   store.shape.(i) <- Rigid_body.encode_shape rb.shape;
   store.len <- i + 1;
   store.current_generation <- 0;
@@ -219,6 +224,8 @@ let set_shape_kind s row v = s.shape.(row) <- v
 let body_type s row = s.body_type.(row)
 let set_body_type s row v = s.body_type.(row) <- v
 let set_active s row v = s.active.(row) <- (if v then 1 else 0)
+let is_sensor s row = s.sensor.(row) = 1
+let set_sensor s row v = s.sensor.(row) <- (if v then 1 else 0)
 let pos_x s row = s.pos_x.(row)
 let pos_y s row = s.pos_y.(row)
 let set_pos_x s row v = s.pos_x.(row) <- v

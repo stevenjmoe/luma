@@ -20,6 +20,7 @@ let rigid_body_to_value rb =
   let damping = ("damping", Float rb.damping) in
   let angle = ("angle", Float rb.angle) in
   let active = ("active", Bool rb.active) in
+  let is_sensor = ("is_sensor", Bool rb.is_sensor) in
   let shape =
     match rb.shape with
     | Circle radius ->
@@ -42,10 +43,24 @@ let rigid_body_to_value rb =
               ("min", Codecs.Math.Vec2.to_value (Vec2.create min_x min_y));
               ("max", Codecs.Math.Vec2.to_value (Vec2.create max_x max_y));
             ] )
-    | Polygon points -> failwith "TODO polygon serialize"
+    | Polygon _points -> failwith "TODO polygon serialize"
   in
 
-  Obj [ body_type; pos; vel; acc; force_accumulator; mass; inv_mass; damping; angle; active; shape ]
+  Obj
+    [
+      body_type;
+      pos;
+      vel;
+      acc;
+      force_accumulator;
+      mass;
+      inv_mass;
+      damping;
+      angle;
+      active;
+      is_sensor;
+      shape;
+    ]
 
 module Codecs = struct
   open Luma__codecs
@@ -109,6 +124,12 @@ module Codecs = struct
       in
       let* active = bool active_v in
 
+      let* is_sensor =
+        match get_field_opt "is_sensor" fields with
+        | Some is_sensor_v -> bool is_sensor_v
+        | None -> Ok false
+      in
+
       let* shape_v =
         get_field "shape" ~on_missing:(fun s -> Error.expected_string [ Field s ]) fields
       in
@@ -160,6 +181,7 @@ module Codecs = struct
           damping;
           angle;
           active;
+          is_sensor;
         }
 
     let to_value rb = Serialize.Serialize_value.Obj [ (C.name, rigid_body_to_value rb) ]

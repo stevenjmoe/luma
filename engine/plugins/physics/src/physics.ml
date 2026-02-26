@@ -132,6 +132,7 @@ module Make (L : Luma.S) : S = struct
                 other <> row
                 && Rb_store.is_active store other
                 && not (Rb_store.is_dynamic store other)
+                && not (Rb_store.is_sensor store other)
               then
                 match Query.kinematic_toi store shape_store ~row ~other ~delta_x ~delta_y with
                 | None -> ()

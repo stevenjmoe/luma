@@ -7,9 +7,9 @@ module Flags : sig
 
   val sensor : t
   val removed : t
-  val has : int -> int -> bool
-  val add : int -> int -> t
-  val remove : int -> int -> t
+  val has : t -> t -> bool
+  val add : t -> t -> t
+  val remove : t -> t -> t
 end
 
 type phase =
@@ -21,6 +21,12 @@ val phase_to_string : phase -> string
 
 type t
 
+val entity_a : t -> Id.Entity.t
+val entity_b : t -> Id.Entity.t
+val phase : t -> phase
+val is_start : t -> bool
+val is_stay : t -> bool
+val is_stop : t -> bool
 val is_sensor : t -> bool
 val is_removed : t -> bool
 
@@ -40,3 +46,13 @@ val iter_events_for_entity :
   Luma__ecs__World.t ->
   (other:Id.Entity.t -> phase -> flags:Flags.t -> unit) ->
   unit
+
+val iter_sensor_events_for_entity :
+  entity:Id.Entity.t -> Luma__ecs__World.t -> (other:Id.Entity.t -> phase -> unit) -> unit
+(** [iter_sensor_events_for_entity ~entity world f] iterates only sensor events touching [entity].
+*)
+
+val iter_sensor_enters_for_entity :
+  entity:Id.Entity.t -> Luma__ecs__World.t -> (other:Id.Entity.t -> unit) -> unit
+(** [iter_sensor_enters_for_entity ~entity world f] iterates only [Start] sensor events touching
+    [entity]. *)

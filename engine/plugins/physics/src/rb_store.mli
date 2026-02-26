@@ -69,6 +69,12 @@ val is_active : t -> int -> bool
 val set_active : t -> int -> bool -> unit
 (** [set_active store row active] set active state for a row. *)
 
+val is_sensor : t -> int -> bool
+(** [is_sensor store row] return true if the row is configured as a sensor. *)
+
+val set_sensor : t -> int -> bool -> unit
+(** [set_sensor store row sensor] set sensor state for a row. *)
+
 val is_static : t -> int -> bool
 (** [is_static store row] return true if the row is static. *)
 

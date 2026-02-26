@@ -757,8 +757,9 @@ let resolve
     ~restitution
     ~position_correction =
   let open Rb_store in
+  let is_sensor_pair = is_sensor store a || is_sensor store b in
   let both_immovable = inv_mass store a = 0. && inv_mass store b = 0. in
-  if both_immovable then ()
+  if is_sensor_pair || both_immovable then ()
   else
     match (shape_kind store a, shape_kind store b) with
     | 0, 0 -> resolve_circle_circle ~restitution ~position_correction store shape_store ~a ~b

@@ -26,6 +26,7 @@ type polygon_create_error =
 type t = {
   body_type : body_type;
   shape : shape;
+  is_sensor : bool;
   pos : Vec2.t;
   vel : Vec2.t;
   acc : Vec2.t;
@@ -45,25 +46,27 @@ val encode_shape : shape -> int
 val isometry : t -> Isometry.t
 val compute_inv_mass : float -> float
 
-val create_circle : ?mass:float -> body_type -> Vec2.t -> float -> t
-(** [create_circle ?mass body_type pos radius] *)
+val create_circle : ?mass:float -> ?is_sensor:bool -> body_type -> Vec2.t -> float -> t
+(** [create_circle ?mass ?is_sensor body_type pos radius] *)
 
-val create_box : ?mass:float -> body_type -> Vec2.t -> Vec2.t -> t
-(** [create_box ?mass body_type pos size] *)
+val create_box : ?mass:float -> ?is_sensor:bool -> body_type -> Vec2.t -> Vec2.t -> t
+(** [create_box ?mass ?is_sensor body_type pos size] *)
 
 val create_polygon :
   ?mass:float ->
   ?angle:float ->
+  ?is_sensor:bool ->
   body_type ->
   Vec2.t ->
   Vec2.t array ->
   (t, polygon_create_error) result
-(** [create_polygon ?mass ?angle body_type pos points] validates polygon input and returns [Error]
-    on invalid shape. *)
+(** [create_polygon ?mass ?angle ?is_sensor body_type pos points] validates polygon input and
+    returns [Error] on invalid shape. *)
 
-val create_polygon_exn : ?mass:float -> ?angle:float -> body_type -> Vec2.t -> Vec2.t array -> t
-(** [create_polygon_exn ?mass ?angle body_type pos points] is the exception-raising wrapper over
-    [create_polygon]. *)
+val create_polygon_exn :
+  ?mass:float -> ?angle:float -> ?is_sensor:bool -> body_type -> Vec2.t -> Vec2.t array -> t
+(** [create_polygon_exn ?mass ?angle ?is_sensor body_type pos points] is the exception-raising
+    wrapper over [create_polygon]. *)
 
 val moi_of_circle : float -> float -> float
 val moi_of_aabb : float -> Vec2.t -> float
