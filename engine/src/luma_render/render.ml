@@ -483,14 +483,21 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
                   match texture_atlas with Some ta -> Texture_atlas.get_frame ta | None -> None
                 in
 
-                let size =
+                let base_size =
                   match src with
                   | Some r -> Vec2.create (Rect.width r) (Rect.height r)
                   | None -> Vec2.create texture_width texture_height
                 in
 
-                let flip_x = Sprite.flip_x sprite in
-                let flip_y = Sprite.flip_y sprite in
+                let sx = transform.scale.x in
+                let sy = transform.scale.y in
+
+                let size =
+                  Vec2.create (base_size.x *. abs_float sx) (base_size.y *. abs_float sy)
+                in
+
+                let flip_x = Sprite.flip_x sprite <> (sx < 0.) in
+                let flip_y = Sprite.flip_y sprite <> (sy < 0.) in
                 let z = int_of_float transform.position.z in
                 let position = Vec2.create transform.position.x transform.position.y in
                 let rotation = transform.rotation in
