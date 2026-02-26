@@ -80,6 +80,9 @@ let load (type a) (module A : Asset.S with type t = a) server path world =
         | Ok handle -> Ok handle
         | Error e -> Error e)
 
+let load_exn (type a) (module A : Asset.S with type t = a) server path world =
+  load (module A) server path world |> Result.get_ok
+
 module R = Luma__resource.Resource.Make (struct
   type inner = t
 

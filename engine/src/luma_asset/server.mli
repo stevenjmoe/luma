@@ -19,6 +19,11 @@ val load :
 (** Load an asset from a path. Automatically dispatches to the appropriate loader based on file
     extension. Returns an asset handle or an error. *)
 
+val load_exn :
+  (module Asset.S with type t = 'a) -> t -> string -> Luma__ecs.World.t -> Assets.handle
+(** Load an asset from a path. Automatically dispatches to the appropriate loader based on file
+    extension. Returns an asset handle or throws. *)
+
 val loader_hooks : (t -> unit) list ref
 (** Global list of loader hooks registered by asset types. These are not run automatically — you
     must call [run_loader_hooks]. *)
