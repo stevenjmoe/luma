@@ -23,8 +23,8 @@ let parse_int_like key j =
   match field key j with
   | `Int i -> Ok i
   | `Float f -> Ok (int_of_float f)
-  | `Null -> int_error key
-  | _ -> int_error key
+  | `Null -> Error (Error.expected_int [ Field key ])
+  | _ -> Error (Error.expected_int [ Field key ])
 
 (** Parses an int or float field with the given key as an int.
 

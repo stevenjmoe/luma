@@ -38,13 +38,19 @@ let from_bits bits tilesets =
     Some { tileset_index; id; flip_h; flip_v; flip_d }
 
 let decode_csv csv path tilesets =
+  let int_like = function
+    | `Int i -> Some i
+    | `Float f -> Some (int_of_float f)
+    | `Intlit s -> ( try Some (int_of_string s) with _ -> None)
+    | _ -> None
+  in
   let* rev =
     List.fold_left
       (fun acc d ->
         match acc with
         | Error _ as e -> e
         | Ok acc_list -> (
-            match Yojson.Safe.Util.to_int_option d with
+            match int_like d with
             | Some i ->
                 let tile = from_bits i tilesets in
                 Ok (tile :: acc_list)
