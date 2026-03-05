@@ -59,10 +59,13 @@ val exists : t -> handle -> bool
 val is_loaded : t -> handle -> bool
 (** [true] if the entry exists (same generation) and is [Ready]. *)
 
+val all_loaded_by_type : (module Asset.S with type t = 'a) -> t -> bool
+(** [true] if all entries of the same asset type have finished loaded. *)
+
 val unload : t -> handle -> unit
 (** Unload an asset from the store by handle. *)
 
-val resolve : (module Asset.S with type t = 'a) -> t -> handle -> Asset.packed -> unit
+val resolve : t -> handle -> Asset.packed -> unit
 (** Resolve a pending asset with a pre-packed payload. *)
 
 val fail : t -> handle -> failed -> unit

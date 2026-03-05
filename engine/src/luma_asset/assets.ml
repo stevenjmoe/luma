@@ -42,14 +42,10 @@ let add (type a) (module A : Asset.S with type t = a) ?path assets asset =
   Hashtbl.replace assets id record;
   { id; type_id = A.type_id; generation; path }
 
-let resolve
-    (type a)
-    (module A : Asset.S with type t = a)
-    (assets : t)
-    (h : handle)
-    (asset : Asset.packed) : unit =
+let resolve (assets : t) (h : handle) (asset : Asset.packed) : unit =
   match Hashtbl.find_opt assets h.id with
-  | Some r when r.generation = h.generation && Luma__id.Id.Asset_type.eq r.type_id A.type_id ->
+  | Some r
+    when r.generation = h.generation && Luma__id.Id.Asset_type.eq r.type_id (Asset.type_id asset) ->
       r.status <- Ready asset
   | _ -> ()
 
@@ -90,6 +86,16 @@ let is_loaded assets handle =
   | Some { status = Ready _; generation; _ } -> generation = handle.generation
   | _ -> false
 
+let all_loaded_by_type (type a) (module A : Asset.S with type t = a) (assets : t) =
+  assets
+  |> Hashtbl.to_seq
+  |> Seq.fold_left
+       (fun res (_, (record : asset_record)) ->
+         if Luma__id.Id.Asset_type.eq record.type_id A.type_id then
+           match record.status with Ready _ -> true | _ -> false
+         else res)
+       false
+
 let unload (assets : t) handle =
   match Hashtbl.find_opt assets handle.id with
   | None -> ()
@@ -126,7 +132,7 @@ struct
 
   let add ?path assets v = add (module A) ?path assets v
   let add_pending ?path assets = add_pending (module A) ?path assets
-  let resolve assets handle packed = resolve (module A) assets handle packed
+  let resolve assets handle packed = resolve assets handle packed
   let fail = fail
   let exists = exists
   let is_loaded = is_loaded
