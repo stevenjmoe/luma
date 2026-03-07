@@ -95,7 +95,10 @@ val has_resource : Id.Resource.t -> t -> bool
     world. *)
 
 val get_resource : t -> Id.Resource.t -> Resource.packed option
-(** Returns [Some packed] if found, otherwise [None] *)
+(** Returns [Some packed] if found, otherwise [None]. *)
+
+val get_resource_exn : t -> Id.Resource.t -> Resource.packed
+(** Returns packed resource if found, otherwise throws an exception. *)
 
 val query :
   'a. t -> ?filter:Query.Component.Filter.t -> 'a Query.Component.t -> (Id.Entity.t * 'a) list

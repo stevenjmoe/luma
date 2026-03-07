@@ -65,6 +65,7 @@ let entities w = w.entity_to_archetype |> Hashtbl.to_seq_keys |> List.of_seq
 let resources w = w.resources
 let has_resource key w = Hashtbl.mem w.resources key
 let get_resource w key = Hashtbl.find_opt w.resources key
+let get_resource_exn w key = get_resource w key |> Option.get
 
 let add_resource id res w =
   if Hashtbl.mem w.resources id then (
