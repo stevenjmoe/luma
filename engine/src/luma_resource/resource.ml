@@ -59,6 +59,9 @@ let unpack : type a. (module S with type t = a) -> packed -> (a, Luma__core.Erro
 let unpack_opt : type a. (module S with type t = a) -> packed -> a option =
  fun (module M) p -> match unpack (module M) p with Ok v -> Some v | Error _ -> None
 
+let unpack_exn : type a. (module S with type t = a) -> packed -> a =
+ fun (module M) p -> unpack (module M) p |> Result.get_ok
+
 let type_id : packed -> Luma__id.Id.Resource.t = function Packed ((module R), _) -> R.type_id
 let name : packed -> string = function Packed ((module R), _) -> R.name
 let pp_packed fmt (Packed ((module R), value)) = Fmt.pf fmt "%a" R.pp value

@@ -22,6 +22,7 @@ type packed = Packed : (module S with type t = 'a) * 'a -> packed
 val pack : 'a. (module S with type t = 'a) -> 'a -> packed
 val unpack : 'a. (module S with type t = 'a) -> packed -> ('a, Luma__core.Error.error) result
 val unpack_opt : 'a. (module S with type t = 'a) -> packed -> 'a option
+val unpack_exn : 'a. (module S with type t = 'a) -> packed -> 'a
 val type_id : packed -> Luma__id.Id.Resource.t
 val name : packed -> string
 
