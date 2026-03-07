@@ -69,44 +69,76 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   end
 
   module IO = struct
-    type path = string
+    let next_id =
+      let r = ref 0 in
+      fun () ->
+        incr r;
+        !r
 
-    let run_io_loop () = Luv.Loop.run ~mode:`NOWAIT ~loop:(Luv.Loop.default ()) () |> ignore
+    let events : Io.Event.t Queue.t = Queue.create ()
 
-    let read_file path ~k =
+    let drain_events q =
+      let rec go acc = if Queue.is_empty q then List.rev acc else go (Queue.pop q :: acc) in
+      go []
+
+    let pump () =
+      Luv.Loop.run ~mode:`NOWAIT ~loop:(Luv.Loop.default ()) () |> ignore;
+      drain_events events
+
+    let read_file (path : string) : int =
+      let id = next_id () in
       let flags = [ `RDONLY ] in
       Luv.File.open_ path flags (function
         | Error e ->
             let msg = Luv.Error.strerror e in
-            k (Error (Error.io_read path msg))
+            Queue.push (Io.Event.File_read_err { id; path; err = Error.io_read path msg }) events
         | Ok file ->
-            let buffer = Luv.Buffer.create 65536 in
-            let acc = Stdlib.Buffer.create 65536 in
+            let buf = Luv.Buffer.create 65536 in
+            let chunks : bytes list ref = ref [] in
+            let total = ref 0 in
 
             let rec loop offset =
-              Luv.File.read file [ buffer ] ~file_offset:offset (function
+              Luv.File.read file [ buf ] ~file_offset:offset (function
                 | Error e ->
                     Luv.File.close file (fun _ ->
                         let msg = Luv.Error.strerror e in
-                        k (Error (Error.io_read path msg)))
+                        Queue.push
+                          (Io.Event.File_read_err { id; path; err = Error.io_read path msg })
+                          events)
                 | Ok n ->
                     let n = Unsigned.Size_t.to_int n in
                     if n = 0 then
                       Luv.File.close file (fun _ ->
-                          let s = Stdlib.Buffer.contents acc in
-                          k (Ok (Bytes.unsafe_of_string s)))
+                          let out = Bytes.create !total in
+                          let pos = ref 0 in
+                          List.iter
+                            (fun b ->
+                              Bytes.blit b 0 out !pos (Bytes.length b);
+                              pos := !pos + Bytes.length b)
+                            (List.rev !chunks);
+                          Queue.push (Io.Event.File_read_ok { id; path; bytes = out }) events)
                     else
-                      let chunk = Bytes.sub_string (Luv.Buffer.to_bytes buffer) 0 n in
-                      Stdlib.Buffer.add_string acc chunk;
+                      let b = Bytes.create n in
+                      Bytes.blit (Luv.Buffer.to_bytes buf) 0 b 0 n;
+                      chunks := b :: !chunks;
+                      total := !total + n;
                       loop Int64.(add offset (of_int n)))
             in
-            loop 0L)
+            loop 0L);
+      id
 
-    let read_file_blocking path =
-      let ic = In_channel.open_text path in
-      In_channel.input_all ic
+    let read_file_blocking (path : string) =
+      try
+        let ic = open_in_bin path in
+        Fun.protect
+          ~finally:(fun () -> close_in_noerr ic)
+          (fun () ->
+            let len = in_channel_length ic in
+            let b = Bytes.create len in
+            really_input ic b 0 len;
+            Ok b)
+      with exn -> Error (Error.io_read path (Printexc.to_string exn))
 
-    (* TODO: Error *)
     let write_file (path : string) (bytes : bytes) : unit =
       let flags = [ `CREAT; `TRUNC; `WRONLY ] in
       Luv.File.open_ path flags (function
@@ -114,9 +146,9 @@ module Raylib_driver : Luma__driver.Driver.S = struct
         | Ok file ->
             let s = Bytes.unsafe_to_string bytes in
             let buf = Luv.Buffer.from_string s in
-            Luv.File.write file [ buf ] ~file_offset:0L (function
-              | Error _ -> Luv.File.close file (fun _ -> ())
-              | Ok _ -> Luv.File.close file (fun _ -> ())))
+            Luv.File.write file [ buf ] ~file_offset:0L (fun _ -> Luv.File.close file (fun _ -> ())))
+
+    let cancel (_id : int) = ()
   end
 
   module Window = Window

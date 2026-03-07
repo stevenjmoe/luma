@@ -24,9 +24,6 @@ module type LOADER = sig
   type t
   (** Asset value type produced by this loader. *)
 
-  type decode
-  (** Intermediate data produced by [begin_load]. *)
-
   type ctx
   (** Loader-specific context required by [finalize]. *)
 
@@ -38,18 +35,17 @@ module type LOADER = sig
   val exts : string list
   (** [exts] list of supported file extensions (lowercased, with dot). *)
 
-  val begin_load : string -> k:((decode, Error.error) result -> unit) -> unit
-  (** [begin_load path ~k] reads/decodes [path] off-thread and calls [k] with [decode]. *)
+  val begin_load : string -> int
 
-  val finalize : ctx -> string -> decode -> (Asset.packed, Error.error) result
+  val finalize : ctx -> string -> bytes -> (Asset.packed, Error.error) result
   (** [finalize ctx path d] converts [d] to a packed asset using [ctx]. *)
 end
 
 (** Existential wrapper pairing a loader with its context provider. *)
 type loader_packed =
   | Packed : {
-      l : (module LOADER with type t = 't and type ctx = 'c);
-      cp : 'c Context_provider.t;
+      loader : (module LOADER with type t = 't and type ctx = 'c);
+      ctx_provider : 'c Context_provider.t;
     }
       -> loader_packed
 

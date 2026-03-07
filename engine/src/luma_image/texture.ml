@@ -21,19 +21,15 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Texture.t = struct
 
   module Assets = Luma__asset.Assets.For (A)
 
-  module Texture_loader :
-    Loader.LOADER with type t = D.Texture.t and type decode = bytes and type ctx = unit = struct
+  module Texture_loader : Loader.LOADER with type t = D.Texture.t and type ctx = unit = struct
     type t = D.Texture.t
-    type decode = bytes
     type ctx = unit
 
     module A = A
 
     let exts = [ ".png"; ".jpg" ]
     let type_id = A.type_id
-
-    let begin_load path ~k =
-      D.IO.read_file path ~k:(function Ok bytes -> k (Ok bytes) | Error msg -> k (Error msg))
+    let begin_load path = D.IO.read_file path
 
     let finalize _ path data =
       let data = Bytes.to_string data in

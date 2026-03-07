@@ -14,7 +14,7 @@ module type S = sig
   val inject_into_world_safe : t -> World.t -> World.t
   val to_world : t -> World.t
   val write : t -> World.t -> unit
-  val read : string -> string
+  val read : string -> (bytes, Error.error) result
   val add_plugin : App.t -> App.t
   val ctx_of_world : World.t -> (Serialize.ctx, Error.error) result
 
@@ -110,20 +110,15 @@ module Make (D : Driver.S) : S = struct
     type inner = t
   end)
 
-  module Scene_loader :
-    Loader.LOADER with type t = Types.t and type decode = bytes and type ctx = Serialize.ctx =
-  struct
+  module Scene_loader : Loader.LOADER with type t = Types.t and type ctx = Serialize.ctx = struct
     type t = Types.t
-    type decode = bytes
     type ctx = Serialize.ctx
 
     module A = A
 
     let type_id = A.type_id
     let exts = [ ".scn" ]
-
-    let begin_load path ~k =
-      D.IO.read_file path ~k:(function Ok bytes -> k (Ok bytes) | Error e -> k (Error e))
+    let begin_load path = D.IO.read_file path
 
     let finalize ctx path bytes =
       try

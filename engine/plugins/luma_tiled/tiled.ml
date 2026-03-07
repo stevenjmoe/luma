@@ -34,7 +34,7 @@ module Make (L : Luma.S) = struct
     in
     match server with
     | Some server -> (
-        match L.Asset_server.load (module Tilemap_asset) server path world with
+        match L.Asset_server.load (module Tilemap_asset) server path with
         | Ok handle ->
             let r =
               { origin; scale; layers = None; z_base = z; phase = Init; background_colour = None }
@@ -72,10 +72,10 @@ module Make (L : Luma.S) = struct
           ~ctx_provider:L.Asset_loader.Context_provider.no_ctx;
         w)
 
-  let start_loading_textures server (map : Map.t) world =
+  let start_loading_textures server (map : Map.t) =
     let textures_by_tileset = Hashtbl.create (List.length map.tilesets) in
     let load path =
-      match L.Asset_server.load (module L.Image.Texture.A) server path world with
+      match L.Asset_server.load (module L.Image.Texture.A) server path with
       | Ok h -> Some h
       | _ -> None
     in
@@ -154,7 +154,7 @@ module Make (L : Luma.S) = struct
                 | Init -> (
                     match Tilemap_assets.get assets tilemap_handle with
                     | Some map ->
-                        let handles = start_loading_textures server map w in
+                        let handles = start_loading_textures server map in
                         render_map.phase <- Loading_textures { textures_by_tileset = handles };
                         ()
                     | None -> ())

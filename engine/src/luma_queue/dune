@@ -1,4 +1,0 @@
-(library 
-  (public_name luma.task_queue)
-  (name luma__task_queue)
-  (libraries luma.core))

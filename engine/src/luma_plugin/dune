@@ -4,6 +4,7 @@
   (libraries 
     luma.audio
     luma.codecs
+    luma.runtime
     luma.render 
     luma.time 
     luma.window 

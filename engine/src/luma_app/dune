@@ -2,6 +2,7 @@
   (public_name luma.app)
   (name luma__app)
   (libraries 
+    luma.asset
     luma.ecs
     luma.driver
     luma.state

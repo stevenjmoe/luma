@@ -1,7 +1,7 @@
 open Luma__ecs
 open Luma__type_register
 open Luma__resource
-open Luma__task_queue
+open Luma__asset
 
 type t = {
   world : World.t;
@@ -174,15 +174,21 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
   in
   let app = { app with world } in
 
+  let server =
+    World.get_resource_exn world Server.R.type_id |> Resource.unpack_exn (module Server.R)
+  in
+
   let rec loop app =
     if D.Window.should_close () then (
       world |> Scheduler.run_stage Cleanup app.scheduler |> ignore;
       D.Window.shutdown ())
     else (
-      D.IO.run_io_loop ();
-      Task_queue.Complete.apply ();
       D.Window.begin_frame ();
       let app = step app in
+
+      let events = D.IO.pump () in
+      Server.apply_io_events server world events |> ignore;
+
       D.Window.end_frame ();
       D.Window.schedule_next_frame (fun () -> loop app) |> ignore)
   in

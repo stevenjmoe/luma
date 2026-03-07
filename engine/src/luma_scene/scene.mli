@@ -11,7 +11,7 @@ module type S = sig
   val inject_into_world_safe : t -> World.t -> World.t
   val to_world : t -> World.t
   val write : t -> World.t -> unit
-  val read : string -> string
+  val read : string -> (bytes, Error.error) result
   val add_plugin : App.t -> App.t
   val ctx_of_world : World.t -> (Serialize.ctx, Error.error) result
 

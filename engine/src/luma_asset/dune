@@ -3,7 +3,8 @@
   (name luma__asset)
   (libraries 
     lwt
-    luma.app
+    luma.resource
+    luma.ecs
     luma.driver
     luma.task_queue)
   (preprocess

@@ -1,5 +1,4 @@
 open Luma__math
-open Luma__core
 
 module type S = sig
   type camera
@@ -25,12 +24,18 @@ module type S = sig
   end
 
   module IO : sig
-    type path = string
+    val pump : unit -> Luma__core.Io.Event.t list
+    (** Progress underlying IO runtime without blocking the frame. Returns completions since last
+        pump. *)
 
-    val run_io_loop : unit -> unit
-    val read_file : path -> k:((bytes, Error.error) result -> unit) -> unit
-    val read_file_blocking : path -> string
-    val write_file : path -> bytes -> unit
+    val read_file : string -> int
+    (** Start an async read. Must return immediately and never block. *)
+
+    val read_file_blocking : string -> (bytes, Luma__core.Error.error) result
+    (** Blocking read *)
+
+    val write_file : string -> bytes -> unit
+    val cancel : int -> unit
   end
 
   module Window : sig

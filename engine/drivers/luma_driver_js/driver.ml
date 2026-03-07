@@ -286,61 +286,18 @@ module Js_driver : Luma__driver.Driver.S = struct
   end
 
   module IO = struct
-    type path = string
+    (*let next_id =
+      let r = ref 0 in
+      fun () ->
+        incr r;
+        !r*)
 
-    let run_io_loop () = ()
-    let blocking_cache : (path, string) Hashtbl.t = Hashtbl.create 128
-
-    let bytes_of_binary_string (s : string) : bytes =
-      Bytes.init (String.length s) (fun i -> Char.chr (Char.code s.[i] land 0xFF))
-
-    let xhr_read_bytes_async (path : path) ~(k : (bytes, Error.error) result -> unit) : unit =
-      let xhr = Js.Unsafe.new_obj (Js.Unsafe.pure_js_expr "XMLHttpRequest") [||] in
-      ignore
-        (Js.Unsafe.meth_call xhr "open"
-           [|
-             Js.Unsafe.inject (Js.string "GET");
-             Js.Unsafe.inject (Js.string path);
-             Js.Unsafe.inject Js._true;
-           |]);
-      ignore
-        (Js.Unsafe.meth_call xhr "overrideMimeType"
-           [| Js.Unsafe.inject (Js.string "text/plain; charset=x-user-defined") |]);
-      Js.Unsafe.set xhr "onload"
-        (Js.wrap_callback (fun _ ->
-             let status = int_of_float (Js.float_of_number (Js.Unsafe.get xhr "status")) in
-             if (status >= 200 && status < 300) || status = 0 then (
-               let txt = Js.to_string (Js.Unsafe.get xhr "responseText") in
-               let b = bytes_of_binary_string txt in
-               Hashtbl.replace blocking_cache path txt;
-               k (Ok b))
-             else
-               k
-                 (Error
-                    (Error.io_read path (Printf.sprintf "HTTP request failed. status=%d" status)))));
-      Js.Unsafe.set xhr "onerror"
-        (Js.wrap_callback (fun _ ->
-             k (Error (Error.io_read path "Network error while loading asset."))));
-      ignore (Js.Unsafe.meth_call xhr "send" [| Js.Unsafe.inject Js.null |])
-
-    let read_file_blocking (path : path) =
-      try Sys_js.read_file ~name:path
-      with _ -> (
-        match Hashtbl.find_opt blocking_cache path with
-        | Some s -> s
-        | None ->
-            raise
-              (Error.Engine_error
-                 (Error.io_read path
-                    "Blocking IO unavailable for browser HTTP assets. Use async IO.read_file first.")))
-
-    let read_file path ~k =
-      try
-        let s = read_file_blocking path in
-        k (Ok (bytes_of_binary_string s))
-      with Error.Engine_error _ -> xhr_read_bytes_async path ~k
-
-    let write_file path bytes = Sys_js.create_file ~name:path ~content:(Bytes.to_string bytes)
+    (*let events : io_event Queue.t = Queue.create ()*)
+    let pump () = failwith "TODO"
+    let read_file (_path : string) : int = failwith "TODO"
+    let read_file_blocking (_path : string) = failwith "TODO"
+    let write_file (_path : string) (_bytes : bytes) : unit = failwith "TODO"
+    let cancel (_id : int) = ()
   end
 
   module Window = struct
@@ -493,12 +450,11 @@ module Js_driver : Luma__driver.Driver.S = struct
   module Image = struct
     type t = Dom_html.imageElement Js.t
 
-    let base64_table =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    let base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
     let base64_encode_bytes (s : string) (len : int) : string =
       let len = min len (String.length s) in
-      let out = Buffer.create (((len + 2) / 3) * 4) in
+      let out = Buffer.create ((len + 2) / 3 * 4) in
       let rec loop i =
         if i >= len then ()
         else

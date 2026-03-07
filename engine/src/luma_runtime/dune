@@ -1,0 +1,4 @@
+(library
+  (public_name luma.runtime)
+  (libraries luma.app luma.asset luma.ecs)
+  (name luma__runtime))

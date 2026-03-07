@@ -1,3 +1,5 @@
+open Luma__core
+
 type t
 
 val create : Assets.t -> t
@@ -10,17 +12,11 @@ val register_loader :
   unit
 (** Register a loader directly with the server. *)
 
-val load :
-  (module Asset.S with type t = 'a) ->
-  t ->
-  string ->
-  Luma__ecs.World.t ->
-  (Assets.handle, Luma__core.Error.error) result
+val load : (module Asset.S with type t = 'a) -> t -> string -> (Assets.handle, Error.error) result
 (** Load an asset from a path. Automatically dispatches to the appropriate loader based on file
     extension. Returns an asset handle or an error. *)
 
-val load_exn :
-  (module Asset.S with type t = 'a) -> t -> string -> Luma__ecs.World.t -> Assets.handle
+val load_exn : (module Asset.S with type t = 'a) -> t -> string -> Assets.handle
 (** Load an asset from a path. Automatically dispatches to the appropriate loader based on file
     extension. Returns an asset handle or throws. *)
 
@@ -34,5 +30,9 @@ val register_loader_hook : (t -> unit) -> unit
 val run_loader_hooks : t -> unit
 (** Run all registered loader hooks against the given asset server. Typically called once after the
     server is created. *)
+
+val apply_io_events : t -> Luma__ecs__World.t -> Io.Event.t list -> unit
+(** Iterates completed IO events for assets and attempts to finalize them. Once finalised, the asset
+    is resolved and can be retrieved via [Assets.get]. *)
 
 module R : Luma__resource.Resource.S with type t = t

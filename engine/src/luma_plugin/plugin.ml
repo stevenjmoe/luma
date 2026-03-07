@@ -7,6 +7,7 @@ open Luma__input
 open Luma__time
 open Luma__audio
 open Luma__debug
+open Luma__runtime
 
 module type Config = sig
   type t
@@ -63,7 +64,7 @@ struct
   type window = Config.window
   type app = Luma__app.App.t
 
-  let asset_plugin = Luma__asset.Plugin.plugin
+  let asset_plugin = Runtime.asset_plugin
   let window_plugin = Window.plugin
   let time_plugin = Time.plugin
   let input_plugin = Input.Keyboard.plugin
