@@ -24,7 +24,6 @@
    luma.input
    luma.types
    luma.ui
-   luma.task_queue
    luma.serialize
    ppx_component
    fmt.tty)

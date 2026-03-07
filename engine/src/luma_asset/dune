@@ -5,7 +5,6 @@
     lwt
     luma.resource
     luma.ecs
-    luma.driver
-    luma.task_queue)
+    luma.driver)
   (preprocess
     (pps lwt_ppx)))
