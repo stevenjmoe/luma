@@ -1,6 +1,13 @@
 open Luma__math
 
 module type S = sig
+  type source = {
+    json : Yojson.Safe.t;
+    path : string;
+    infinite : bool;
+    tileset_paths_by_gid : (int * string) list;
+  }
+
   type t = {
     background_colour : string option;
     version : string;
@@ -18,7 +25,8 @@ module type S = sig
     parallax_origin : Vec2.t;
   }
 
-  val from_json : Yojson.Safe.t -> string -> (t, Luma__core__Error.error) result
+  val source_from_json : Yojson.Safe.t -> string -> (source, Luma__core__Error.error) result
+  val from_source : source -> Tileset.map_tileset list -> (t, Luma__core__Error.error) result
 
   module Format : sig
     val pp : Format.formatter -> t -> unit
@@ -28,6 +36,13 @@ end
 
 module Tilemap (D : Luma__driver.Driver.S) : S = struct
   let ( let* ) = Result.bind
+
+  type source = {
+    json : Yojson.Safe.t;
+    path : string;
+    infinite : bool;
+    tileset_paths_by_gid : (int * string) list;
+  }
 
   type t = {
     background_colour : string option;
@@ -60,7 +75,7 @@ module Tilemap (D : Luma__driver.Driver.S) : S = struct
     Ok (List.rev rev)
 
   (* TODO: support embedded tilesets *)
-  let parse_tileset_external_references json path =
+  let parse_tileset_paths json path =
     let open Luma__serialize.Json_helpers in
     let* rev =
       List.fold_left
@@ -72,19 +87,31 @@ module Tilemap (D : Luma__driver.Driver.S) : S = struct
               let* source_path = parse_string "source" j in
               let path = Filename.dirname path in
               let full_path = Filename.concat path source_path in
-              let* source = D.IO.read_file_blocking full_path in
-              let source = source |> Bytes.to_string |> Yojson.Safe.from_string in
-              let* tileset = Tileset.from_json source full_path in
-
-              Ok (({ first_gid; tileset } : Tileset.map_tileset) :: r))
+              Ok ((first_gid, full_path) :: r))
         (Ok []) json
     in
     Ok (List.rev rev)
 
-  let from_json json path =
+  let source_from_json json path =
     let open Luma__serialize.Json_helpers in
-    let* colour = parse_string_opt "backgroundcolor" json in
     let* infinite = parse_bool_opt "infinite" json in
+    let infinite = Option.value ~default:false infinite in
+    let* tileset_paths_by_gid =
+      match field "tilesets" json with
+      | `List l -> parse_tileset_paths l path
+      | other ->
+          let s = Yojson.Safe.pretty_to_string other in
+          Error
+            (Luma__core.Error.io_finalize path
+               (Printf.sprintf "Expected a list of tilesets. Got %s" s))
+    in
+    Ok { json; path; infinite; tileset_paths_by_gid }
+
+  let from_source (source : source) tilesets =
+    let open Luma__serialize.Json_helpers in
+    let json = source.json in
+    let path = source.path in
+    let* colour = parse_string_opt "backgroundcolor" json in
     let* stagger_axis = parse_string_opt "staggeraxis" json in
     let* stagger_index = parse_string_opt "staggerindex" json in
     let* hex_side_length = parse_int_opt "hexsidelength" json in
@@ -119,16 +146,7 @@ module Tilemap (D : Luma__driver.Driver.S) : S = struct
       match stagger_index with Some "even" -> Ok Types.Even | _ -> Ok Types.Odd
     in
 
-    let infinite = Option.value ~default:false infinite in
-    let* tilesets =
-      match field "tilesets" json with
-      | `List l -> parse_tileset_external_references l path
-      | other ->
-          let s = Yojson.Safe.pretty_to_string other in
-          Error
-            (Luma__core.Error.io_finalize path
-               (Printf.sprintf "Expected a list of tilesets. Got %s" s))
-    in
+    let infinite = source.infinite in
     let* layers =
       match field "layers" json with
       | `List l -> parse_layers l path infinite tilesets

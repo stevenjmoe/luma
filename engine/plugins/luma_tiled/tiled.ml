@@ -5,18 +5,26 @@ open Luma__ecs
 
 module Make (L : Luma.S) = struct
   include Types
+
+  let ( let* ) = Result.bind
+
   module Map = Map.Tilemap (L.Driver)
   module Plan = Plan.Make (Map)
   module Tiled_render = Render.Make (Plan) (L)
   open Tiled_render
 
   (* Internal assets. Public facing API should only see the final Tilemap type and the resource. *)
-  module Tilemap_asset = Luma__asset.Asset.Make (struct
-    type inner = Map.t
+  module Tilemap_source_asset = Luma__asset.Asset.Make (struct
+    type inner = Map.source
   end)
 
-  module Tilemap_assets = Luma__asset.Assets.For (Tilemap_asset)
-  module Loader = Loader.Make (L) (Map) (Tilemap_asset)
+  module Tileset_asset = Luma__asset.Asset.Make (struct
+    type inner = Tileset.t
+  end)
+
+  module Tilemap_source_assets = Luma__asset.Assets.For (Tilemap_source_asset)
+  module Tileset_assets = Luma__asset.Assets.For (Tileset_asset)
+  module Loader = Loader.Make (L) (Map) (Tilemap_source_asset) (Tileset_asset)
   module Collision = Collision.Collision (L) (Map)
 
   type maps = Tiled_render.map_tbl
@@ -34,7 +42,7 @@ module Make (L : Luma.S) = struct
     in
     match server with
     | Some server -> (
-        match L.Asset_server.load (module Tilemap_asset) server path with
+        match L.Asset_server.load (module Tilemap_source_asset) server path with
         | Ok handle ->
             let r =
               { origin; scale; layers = None; z_base = z; phase = Init; background_colour = None }
@@ -70,7 +78,42 @@ module Make (L : Luma.S) = struct
         L.Asset_server.register_loader server
           (module Loader.Tilemap_loader)
           ~ctx_provider:L.Asset_loader.Context_provider.no_ctx;
+
+        L.Asset_server.register_loader server
+          (module Loader.Tileset_loader)
+          ~ctx_provider:L.Asset_loader.Context_provider.no_ctx;
         w)
+
+  let resolve_map_tilesets assets (handles : (int * L.Assets.handle) list) =
+    let* rev =
+      List.fold_left
+        (fun acc (first_gid, handle) ->
+          match acc with
+          | Error _ as e -> e
+          | Ok rev -> (
+              match Tileset_assets.get assets handle with
+              | Some tileset -> Ok (Tileset.{ first_gid; tileset } :: rev)
+              | None -> Error (Error.asset_load "tileset handle not loaded")))
+        (Ok []) handles
+    in
+    Ok (List.rev rev)
+
+  let start_loading_tilesets server (source : Map.source) =
+    let* rev =
+      List.fold_left
+        (fun acc (first_gid, path) ->
+          match acc with
+          | Error _ as e -> e
+          | Ok rev -> (
+              match L.Asset_server.load (module Tileset_asset) server path with
+              | Ok handle -> Ok ((first_gid, handle) :: rev)
+              | Error e -> Error e))
+        (Ok []) source.tileset_paths_by_gid
+    in
+    Ok (List.rev rev)
+
+  let all_tilesets_loaded (assets : L.Assets.t) (tilesets : (int * L.Assets.handle) list) : bool =
+    List.for_all (fun (_, handle) -> L.Assets.is_loaded assets handle) tilesets
 
   let start_loading_textures server (map : Map.t) =
     let textures_by_tileset = Hashtbl.create (List.length map.tilesets) in
@@ -152,24 +195,48 @@ module Make (L : Luma.S) = struct
               (fun tilemap_handle (render_map : map_inner) ->
                 match render_map.phase with
                 | Init -> (
-                    match Tilemap_assets.get assets tilemap_handle with
-                    | Some map ->
-                        let handles = start_loading_textures server map in
-                        render_map.phase <- Loading_textures { textures_by_tileset = handles };
-                        ()
+                    match Tilemap_source_assets.get assets tilemap_handle with
+                    | Some source -> (
+                        match start_loading_tilesets server source with
+                        | Ok handles ->
+                            render_map.phase <-
+                              Loading_tilesets { tileset_handles_by_gid = handles }
+                        | Error e -> render_map.phase <- Failed e)
                     | None -> ())
-                | Loading_textures { textures_by_tileset } ->
+                | Loading_tilesets { tileset_handles_by_gid } ->
+                    if all_tilesets_loaded assets tileset_handles_by_gid then
+                      match Tilemap_source_assets.get assets tilemap_handle with
+                      | Some source -> (
+                          match resolve_map_tilesets assets tileset_handles_by_gid with
+                          | Ok map_tilesets -> (
+                              match Map.from_source source map_tilesets with
+                              | Ok map ->
+                                  let textures = start_loading_textures server map in
+                                  render_map.phase <-
+                                    Loading_textures
+                                      { tileset_handles_by_gid; textures_by_tileset = textures }
+                              | Error e -> render_map.phase <- Failed e)
+                          | Error e -> render_map.phase <- Failed e)
+                      | None -> ()
+                    else ()
+                | Loading_textures { tileset_handles_by_gid; textures_by_tileset } ->
                     if all_textures_loaded assets textures_by_tileset then
-                      match Tilemap_assets.get assets tilemap_handle with
-                      | Some map ->
-                          let tilesets = finalize_maps map textures_by_tileset in
-                          let z_base = render_map.z_base in
-                          let plan = Plan.make_plan ~z_base map tilesets in
+                      match Tilemap_source_assets.get assets tilemap_handle with
+                      | Some source -> (
+                          match resolve_map_tilesets assets tileset_handles_by_gid with
+                          | Ok map_tilesets -> (
+                              match Map.from_source source map_tilesets with
+                              | Ok map ->
+                                  let tilesets = finalize_maps map textures_by_tileset in
+                                  let z_base = render_map.z_base in
+                                  let plan = Plan.make_plan ~z_base map tilesets in
 
-                          render_map.background_colour <- map.background_colour;
-                          Collision.extract_colliders map cmd;
+                                  render_map.background_colour <- map.background_colour;
+                                  Collision.extract_colliders map cmd;
 
-                          render_map.phase <- Ready { tilesets; plan }
+                                  render_map.phase <- Ready { tilesets; plan }
+                              | Error e -> render_map.phase <- Failed e)
+                          | Error e -> render_map.phase <- Failed e)
                       | None -> ()
                     else ()
                 | _ -> ())

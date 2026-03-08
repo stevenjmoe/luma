@@ -66,7 +66,11 @@ type tileset_texture =
 
 type 'plan phase =
   | Init
-  | Loading_textures of { textures_by_tileset : (int, tileset_texture) Hashtbl.t }
+  | Loading_tilesets of { tileset_handles_by_gid : (int * Assets.handle) list }
+  | Loading_textures of {
+      tileset_handles_by_gid : (int * Assets.handle) list;
+      textures_by_tileset : (int, tileset_texture) Hashtbl.t;
+    }
   | Ready of {
       tilesets : (int, tileset_loaded) Hashtbl.t;
       plan : 'plan;
