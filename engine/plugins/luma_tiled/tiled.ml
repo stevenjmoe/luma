@@ -2,11 +2,13 @@ open Luma__math
 open Luma__core
 open Luma__resource
 open Luma__ecs
+(* TODO: Debugging this plugin is a nightmare *)
 
 module Make (L : Luma.S) = struct
   include Types
 
   let ( let* ) = Result.bind
+  let log = Log.sub_log "tiled_plugin"
 
   module Map = Map.Tilemap (L.Driver)
   module Plan = Plan.Make (Map)
@@ -198,9 +200,8 @@ module Make (L : Luma.S) = struct
                     match Tilemap_source_assets.get assets tilemap_handle with
                     | Some source -> (
                         match start_loading_tilesets server source with
-                        | Ok handles ->
-                            render_map.phase <-
-                              Loading_tilesets { tileset_handles_by_gid = handles }
+                        | Ok tileset_handles_by_gid ->
+                            render_map.phase <- Loading_tilesets { tileset_handles_by_gid }
                         | Error e -> render_map.phase <- Failed e)
                     | None -> ())
                 | Loading_tilesets { tileset_handles_by_gid } ->
@@ -215,7 +216,12 @@ module Make (L : Luma.S) = struct
                                   render_map.phase <-
                                     Loading_textures
                                       { tileset_handles_by_gid; textures_by_tileset = textures }
-                              | Error e -> render_map.phase <- Failed e)
+                              | Error e ->
+                                  let msg =
+                                    Format.asprintf "Failed to load tileset: %a" Error.pp e
+                                  in
+                                  log.error (fun l -> l " %s" msg);
+                                  render_map.phase <- Failed e)
                           | Error e -> render_map.phase <- Failed e)
                       | None -> ()
                     else ()
@@ -235,8 +241,19 @@ module Make (L : Luma.S) = struct
                                   Collision.extract_colliders map cmd;
 
                                   render_map.phase <- Ready { tilesets; plan }
-                              | Error e -> render_map.phase <- Failed e)
-                          | Error e -> render_map.phase <- Failed e)
+                              | Error e ->
+                                  let msg =
+                                    Format.asprintf "Failed to load tilemap: %a" Luma__core.Error.pp
+                                      e
+                                  in
+                                  log.error (fun l -> l "%s" msg);
+                                  render_map.phase <- Failed e)
+                          | Error e ->
+                              let msg =
+                                Format.asprintf "Failed to load tilemap: %a" Luma__core.Error.pp e
+                              in
+                              log.error (fun l -> l "%s" msg);
+                              render_map.phase <- Failed e)
                       | None -> ()
                     else ()
                 | _ -> ())

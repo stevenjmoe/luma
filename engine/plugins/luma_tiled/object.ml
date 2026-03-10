@@ -14,21 +14,22 @@ module Object_tile_data = struct
 
   (** [from_bits bits tilesets for_tileset] *)
   let from_bits bits tilesets for_tileset =
+    let open Int32 in
     let ( let* ) = Option.bind in
-    let flags = bits land Types.all_flip_flags in
-    let gid = bits land lnot Types.all_flip_flags in
-    let flip_d = flags land Types.flipped_diagonally_flag = Types.flipped_diagonally_flag in
-    let flip_h = flags land Types.flipped_horizontally_flag = Types.flipped_horizontally_flag in
-    let flip_v = flags land Types.flipped_vertically_flag = Types.flipped_vertically_flag in
+    let flags = logand bits Types.all_flip_flags in
+    let gid = logand bits (lognot Types.all_flip_flags) in
+    let flip_d = logand flags Types.flipped_diagonally_flag = Types.flipped_diagonally_flag in
+    let flip_h = logand flags Types.flipped_horizontally_flag = Types.flipped_horizontally_flag in
+    let flip_v = logand flags Types.flipped_vertically_flag = Types.flipped_vertically_flag in
 
-    if gid = 0 then None
+    if equal gid 0l then None
     else
       let* tileset_location, id =
         match for_tileset with
         | Some _ -> failwith "unsupported for now"
         | None ->
-            let* tileset_idx, tileset = Util.get_tileset_for_gid tilesets gid in
-            let id = gid - tileset.first_gid in
+            let* tileset_idx, tileset = Util.get_tileset_for_gid tilesets (Int32.to_int gid) in
+            let id = sub gid (Int32.of_int tileset.first_gid) |> Int32.to_int in
             Some (tileset_idx, id)
       in
       Some { tileset_location; id; flip_h; flip_v; flip_d }
@@ -143,7 +144,7 @@ module Object_data = struct
     let ( let* ) = Result.bind in
 
     let* id = parse_int_opt "id" json in
-    let* gid = parse_int_opt "gid" json in
+    let* gid = parse_int32_bits_opt "gid" json in
     let* name = parse_string_opt "name" json in
     let* width = parse_float_opt "width" json in
     let* height = parse_float_opt "height" json in

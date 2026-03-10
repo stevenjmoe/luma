@@ -78,6 +78,16 @@ let parse_int_opt key json =
   | `Null -> Ok None
   | _ -> Error (Error.expected_int [ Field key ])
 
+let parse_int32_bits_opt key json =
+  match member key json with
+  | `Int v -> Ok (Some (Int32.of_int v))
+  | `Intlit v -> (
+      match Int64.of_string_opt v with
+      | Some v -> Ok (Some (Int64.to_int32 v))
+      | None -> Error (Error.expected_int [ Field key ]))
+  | `Null -> Ok None
+  | _ -> Error (Error.expected_int [ Field key ])
+
 let parse_bool key json =
   match member key json with `Bool v -> Ok v | _ -> Error (Error.expected_bool [ Field key ])
 

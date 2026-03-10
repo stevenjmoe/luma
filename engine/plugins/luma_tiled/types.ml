@@ -2,12 +2,13 @@ open Luma__asset
 open Luma__math
 open Luma__core
 
-let flipped_horizontally_flag = 0x8000_0000
-let flipped_vertically_flag = 0x4000_0000
-let flipped_diagonally_flag = 0x2000_0000
+let flipped_horizontally_flag = 0x8000_0000l
+let flipped_vertically_flag = 0x4000_0000l
+let flipped_diagonally_flag = 0x2000_0000l
 
 let all_flip_flags =
-  flipped_horizontally_flag lor flipped_vertically_flag lor flipped_diagonally_flag
+  let open Int32 in
+  logor flipped_horizontally_flag (logor flipped_vertically_flag flipped_diagonally_flag)
 
 type stagger_axis =
   | X

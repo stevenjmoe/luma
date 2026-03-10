@@ -21,18 +21,19 @@ type t =
   | Infinite
 
 let from_bits bits tilesets =
+  let open Int32 in
   let ( let* ) = Option.bind in
-  let flags = bits land Types.all_flip_flags in
-  let gid = bits land lnot Types.all_flip_flags in
-  let flip_d = flags land Types.flipped_diagonally_flag = Types.flipped_diagonally_flag in
-  let flip_h = flags land Types.flipped_horizontally_flag = Types.flipped_horizontally_flag in
-  let flip_v = flags land Types.flipped_vertically_flag = Types.flipped_vertically_flag in
+  let flags = logand bits Types.all_flip_flags in
+  let gid = logand bits (lognot Types.all_flip_flags) in
+  let flip_d = logand flags Types.flipped_diagonally_flag = Types.flipped_diagonally_flag in
+  let flip_h = logand flags Types.flipped_horizontally_flag = Types.flipped_horizontally_flag in
+  let flip_v = logand flags Types.flipped_vertically_flag = Types.flipped_vertically_flag in
 
-  if gid = 0 then None
+  if equal gid 0l then None
   else
     let* tileset_index, id =
-      let* tileset_index, tileset = Util.get_tileset_for_gid tilesets gid in
-      let id = gid - tileset.first_gid in
+      let* tileset_index, tileset = Util.get_tileset_for_gid tilesets (Int32.to_int gid) in
+      let id = sub gid (Int32.of_int tileset.first_gid) |> Int32.to_int in
       Some (tileset_index, id)
     in
     Some { tileset_index; id; flip_h; flip_v; flip_d }
@@ -52,7 +53,7 @@ let decode_csv csv path tilesets =
         | Ok acc_list -> (
             match int_like d with
             | Some i ->
-                let tile = from_bits i tilesets in
+                let tile = from_bits (Int32.of_int i) tilesets in
                 Ok (tile :: acc_list)
             | None -> Util.fail path "tilelayer.data must be a list of ints"))
       (Ok []) csv
