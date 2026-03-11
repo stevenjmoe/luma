@@ -1,0 +1,7 @@
+(executable
+ (name unit)
+ (libraries alcotest luma.driver.js luma.math))
+
+(rule
+ (alias runtest)
+ (action (run %{exe:unit.exe})))

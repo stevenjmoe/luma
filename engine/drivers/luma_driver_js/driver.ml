@@ -1,5 +1,6 @@
 module Js_driver : Luma__driver.Driver.S = struct
   open Js_of_ocaml
+  open Js_of_ocaml_lwt
   open Luma__math
   open Luma__core
 
@@ -34,6 +35,7 @@ module Js_driver : Luma__driver.Driver.S = struct
   let cur_cam : camera option ref = ref None
   let cam_depth = ref 0
   let scissor_depth = ref 0
+  let window_handlers_installed = ref false
   let input_handlers_installed = ref false
   let should_close_ref = ref false
   let is_hidden_ref = ref false
@@ -286,25 +288,57 @@ module Js_driver : Luma__driver.Driver.S = struct
   end
 
   module IO = struct
-    (*let next_id =
+    let next_id =
       let r = ref 0 in
       fun () ->
         incr r;
-        !r*)
+        !r
 
-    (*let events : io_event Queue.t = Queue.create ()*)
-    let pump () = failwith "TODO"
-    let read_file (_path : string) : int = failwith "TODO"
-    let read_file_blocking (_path : string) = failwith "TODO"
+    let ( >>= ) = Lwt.bind
+
+    let http_get url =
+      XmlHttpRequest.perform_raw ~response_type:XmlHttpRequest.ArrayBuffer url >>= fun r ->
+      let code = r.XmlHttpRequest.code in
+      let msg = r.XmlHttpRequest.content in
+      if code = 0 || code = 200 then Lwt.return msg else fst (Lwt.wait ())
+
+    let events : Io.Event.t Queue.t = Queue.create ()
+
+    let pump () =
+      let rec go acc =
+        if Queue.is_empty events then List.rev acc else go (Queue.pop events :: acc)
+      in
+      go []
+
+    let read_file (path : string) : int =
+      let ( let* ) = Lwt.bind in
+      let id = next_id () in
+      Lwt.async (fun () ->
+          Lwt.catch
+            (fun () ->
+              let* contents_opt = http_get path in
+              match contents_opt |> Js.Opt.to_option with
+              | Some buf ->
+                  let bytes = Typed_array.Bytes.of_arrayBuffer buf in
+                  Queue.push (Io.Event.File_read_ok { id; path; bytes }) events;
+                  Lwt.return_unit
+              | None -> Lwt.return_unit)
+            (fun exn ->
+              let msg = Printexc.to_string exn in
+              Queue.push (Io.Event.File_read_err { id; path; err = Error.io_read path msg }) events;
+              Lwt.return_unit));
+      id
+
+    let read_file_blocking (_path : string) = failwith ""
     let write_file (_path : string) (_bytes : bytes) : unit = failwith "TODO"
     let cancel (_id : int) = ()
   end
 
   module Window = struct
     let install_window_handlers () =
-      if !input_handlers_installed then ()
+      if !window_handlers_installed then ()
       else (
-        input_handlers_installed := true;
+        window_handlers_installed := true;
         Dom_html.addEventListener Dom_html.window Dom_html.Event.focus
           (Dom_html.handler (fun _ ->
                is_focused_ref := true;
@@ -515,32 +549,34 @@ module Js_driver : Luma__driver.Driver.S = struct
       let natural_width = int_of_float (Js.float_of_number (Js.Unsafe.get t "naturalWidth")) in
       if (not complete) || natural_width <= 0 then ()
       else
-        let sx, sy, sw, sh = rect_xywh src in
         let dx, dy, dw, dh = rect_xywh dst in
+        let p = Texture_math.plan ~src ~dst ~origin in
+        if not (Texture_math.should_draw p ~dst) then ()
+        else (
+          ctx##save;
+          ctx##.globalAlpha := Js.number_of_float (float_of_int tint.a /. 255.);
+          ctx##translate (Js.number_of_float dx) (Js.number_of_float dy);
+          ctx##rotate (Js.number_of_float rot);
+          ctx##scale
+            (Js.number_of_float (if p.flip_x then -1. else 1.))
+            (Js.number_of_float (if p.flip_y then -1. else 1.));
 
-        ctx##save;
-        ctx##.globalAlpha := Js.number_of_float (float_of_int tint.a /. 255.);
-        ctx##translate
-          (Js.number_of_float (dx +. Vec2.x origin))
-          (Js.number_of_float (dy +. Vec2.y origin));
-        ctx##rotate (Js.number_of_float rot);
+          ignore
+            (Js.Unsafe.meth_call ctx "drawImage"
+               [|
+                 Js.Unsafe.inject t;
+                 Js.Unsafe.inject (Js.number_of_float p.sx);
+                 Js.Unsafe.inject (Js.number_of_float p.sy);
+                 Js.Unsafe.inject (Js.number_of_float p.sw);
+                 Js.Unsafe.inject (Js.number_of_float p.sh);
+                 Js.Unsafe.inject (Js.number_of_float p.draw_x);
+                 Js.Unsafe.inject (Js.number_of_float p.draw_y);
+                 Js.Unsafe.inject (Js.number_of_float dw);
+                 Js.Unsafe.inject (Js.number_of_float dh);
+               |]);
 
-        ignore
-          (Js.Unsafe.meth_call ctx "drawImage"
-             [|
-               Js.Unsafe.inject t;
-               Js.Unsafe.inject (Js.number_of_float sx);
-               Js.Unsafe.inject (Js.number_of_float sy);
-               Js.Unsafe.inject (Js.number_of_float sw);
-               Js.Unsafe.inject (Js.number_of_float sh);
-               Js.Unsafe.inject (Js.number_of_float (-.Vec2.x origin));
-               Js.Unsafe.inject (Js.number_of_float (-.Vec2.y origin));
-               Js.Unsafe.inject (Js.number_of_float dw);
-               Js.Unsafe.inject (Js.number_of_float dh);
-             |]);
-
-        ctx##.globalAlpha := Js.number_of_float 1.;
-        ctx##restore
+          ctx##.globalAlpha := Js.number_of_float 1.;
+          ctx##restore)
 
     let load_texture_from_image (img : Image.t) = img
   end
@@ -661,6 +697,125 @@ module Js_driver : Luma__driver.Driver.S = struct
       | 3 -> Some Mouse_button.Back
       | 4 -> Some Mouse_button.Forward
       | _ -> None
+
+    let is_key_code_suffix code suffix =
+      let code_len = String.length code in
+      let suffix_len = String.length suffix in
+      code_len >= suffix_len && String.sub code (code_len - suffix_len) suffix_len = suffix
+
+    let dom_code_to_keycode (code : string) : Key.t option =
+      let open Key in
+      match code with
+      | "Space" -> Some Space
+      | "Escape" -> Some Escape
+      | "Enter" -> Some Enter
+      | "Tab" -> Some Tab
+      | "Backspace" -> Some Backspace
+      | "Insert" -> Some Insert
+      | "Delete" -> Some Delete
+      | "ArrowRight" -> Some Right
+      | "ArrowLeft" -> Some Left
+      | "ArrowDown" -> Some Down
+      | "ArrowUp" -> Some Up
+      | "Home" -> Some Home
+      | "End" -> Some End
+      | "PageUp" -> Some Page_up
+      | "PageDown" -> Some Page_down
+      | "CapsLock" -> Some Caps_lock
+      | "ScrollLock" -> Some Scroll_lock
+      | "NumLock" -> Some Num_lock
+      | "PrintScreen" -> Some Print_screen
+      | "Pause" -> Some Pause
+      | "F1" -> Some F1
+      | "F2" -> Some F2
+      | "F3" -> Some F3
+      | "F4" -> Some F4
+      | "F5" -> Some F5
+      | "F6" -> Some F6
+      | "F7" -> Some F7
+      | "F8" -> Some F8
+      | "F9" -> Some F9
+      | "F10" -> Some F10
+      | "F11" -> Some F11
+      | "F12" -> Some F12
+      | "ShiftLeft" -> Some Left_shift
+      | "ShiftRight" -> Some Right_shift
+      | "ControlLeft" -> Some Left_control
+      | "ControlRight" -> Some Right_control
+      | "AltLeft" -> Some Left_alt
+      | "AltRight" -> Some Right_alt
+      | "MetaLeft" -> Some Left_super
+      | "MetaRight" -> Some Right_super
+      | "ContextMenu" -> Some Menu
+      | "Semicolon" -> Some Semicolon
+      | "Equal" -> Some Equal
+      | "Comma" -> Some Comma
+      | "Minus" -> Some Minus
+      | "Period" -> Some Period
+      | "Slash" -> Some Slash
+      | "Backquote" -> Some Grave
+      | "BracketLeft" -> Some Left_bracket
+      | "Backslash" -> Some Backslash
+      | "BracketRight" -> Some Right_bracket
+      | "Quote" -> Some Apostrophe
+      | "Digit0" -> Some Zero
+      | "Digit1" -> Some One
+      | "Digit2" -> Some Two
+      | "Digit3" -> Some Three
+      | "Digit4" -> Some Four
+      | "Digit5" -> Some Five
+      | "Digit6" -> Some Six
+      | "Digit7" -> Some Seven
+      | "Digit8" -> Some Eight
+      | "Digit9" -> Some Nine
+      | "KeyA" -> Some A
+      | "KeyB" -> Some B
+      | "KeyC" -> Some C
+      | "KeyD" -> Some D
+      | "KeyE" -> Some E
+      | "KeyF" -> Some F
+      | "KeyG" -> Some G
+      | "KeyH" -> Some H
+      | "KeyI" -> Some I
+      | "KeyJ" -> Some J
+      | "KeyK" -> Some K
+      | "KeyL" -> Some L
+      | "KeyM" -> Some M
+      | "KeyN" -> Some N
+      | "KeyO" -> Some O
+      | "KeyP" -> Some P
+      | "KeyQ" -> Some Q
+      | "KeyR" -> Some R
+      | "KeyS" -> Some S
+      | "KeyT" -> Some T
+      | "KeyU" -> Some U
+      | "KeyV" -> Some V
+      | "KeyW" -> Some W
+      | "KeyX" -> Some X
+      | "KeyY" -> Some Y
+      | "KeyZ" -> Some Z
+      | _ when is_key_code_suffix code "Numpad0" -> Some Kp_0
+      | _ when is_key_code_suffix code "Numpad1" -> Some Kp_1
+      | _ when is_key_code_suffix code "Numpad2" -> Some Kp_2
+      | _ when is_key_code_suffix code "Numpad3" -> Some Kp_3
+      | _ when is_key_code_suffix code "Numpad4" -> Some Kp_4
+      | _ when is_key_code_suffix code "Numpad5" -> Some Kp_5
+      | _ when is_key_code_suffix code "Numpad6" -> Some Kp_6
+      | _ when is_key_code_suffix code "Numpad7" -> Some Kp_7
+      | _ when is_key_code_suffix code "Numpad8" -> Some Kp_8
+      | _ when is_key_code_suffix code "Numpad9" -> Some Kp_9
+      | _ when is_key_code_suffix code "NumpadDecimal" -> Some Kp_decimal
+      | _ when is_key_code_suffix code "NumpadDivide" -> Some Kp_divide
+      | _ when is_key_code_suffix code "NumpadMultiply" -> Some Kp_multiply
+      | _ when is_key_code_suffix code "NumpadSubtract" -> Some Kp_subtract
+      | _ when is_key_code_suffix code "NumpadAdd" -> Some Kp_add
+      | _ when is_key_code_suffix code "NumpadEnter" -> Some Kp_enter
+      | _ when is_key_code_suffix code "NumpadEqual" -> Some Kp_equal
+      | _ -> None
+
+    let event_code (ev : Dom_html.keyboardEvent Js.t) : string option =
+      let raw : Js.js_string Js.t Js.optdef = Js.Unsafe.get ev "code" in
+      Js.Optdef.to_option raw |> Option.map Js.to_string
 
     let dom_code_to_key ~(ev : Dom_html.keyboardEvent Js.t) (kc : int) : Key.t option =
       let open Key in
@@ -789,6 +944,25 @@ module Js_driver : Luma__driver.Driver.S = struct
       | 25 -> Some Volume_down
       | _ -> None
 
+    let dom_event_to_key (ev : Dom_html.keyboardEvent Js.t) : Key.t option =
+      match event_code ev with
+      | Some code -> (
+          match dom_code_to_keycode code with
+          | Some k -> Some k
+          | None -> dom_code_to_key ~ev ev##.keyCode)
+      | None -> dom_code_to_key ~ev ev##.keyCode
+
+    let handle_key_event ~is_down (ev : Dom_html.keyboardEvent Js.t) =
+      match dom_event_to_key ev with
+      | Some k ->
+          if is_down then (
+            if not (Hashtbl.mem key_down k) then Hashtbl.replace key_pressed k ();
+            Hashtbl.replace key_down k ())
+          else (
+            if Hashtbl.mem key_down k then Hashtbl.replace key_released k ();
+            Hashtbl.remove key_down k)
+      | None -> ()
+
     let install_handlers () =
       if !input_handlers_installed then ()
       else
@@ -797,31 +971,20 @@ module Js_driver : Luma__driver.Driver.S = struct
           ignore (ensure_canvas ());
           ignore (ensure_ctx ())
         in
-        let doc = Dom_html.document in
         let canvas = ensure_canvas () in
 
-        Dom_html.addEventListener doc Dom_html.Event.keydown
-          (Dom_html.handler (fun ev ->
-               let code = ev##.keyCode in
-               (match dom_code_to_key ~ev code with
-               | Some k ->
-                   if not (Hashtbl.mem key_down k) then Hashtbl.replace key_pressed k ();
-                   Hashtbl.replace key_down k ()
-               | None -> ());
+        Dom_html.addEventListener Dom_html.window Dom_html.Event.keydown
+          (Dom_html.handler (fun (ev : Dom_html.keyboardEvent Js.t) ->
+               handle_key_event ~is_down:true ev;
                Js._true))
-          Js._false
+          Js._true
         |> ignore;
 
-        Dom_html.addEventListener doc Dom_html.Event.keyup
-          (Dom_html.handler (fun ev ->
-               let code = ev##.keyCode in
-               (match dom_code_to_key ~ev code with
-               | Some k ->
-                   if Hashtbl.mem key_down k then Hashtbl.replace key_released k ();
-                   Hashtbl.remove key_down k
-               | None -> ());
+        Dom_html.addEventListener Dom_html.window Dom_html.Event.keyup
+          (Dom_html.handler (fun (ev : Dom_html.keyboardEvent Js.t) ->
+               handle_key_event ~is_down:false ev;
                Js._true))
-          Js._false
+          Js._true
         |> ignore;
 
         Dom_html.addEventListener canvas Dom_html.Event.mousedown
