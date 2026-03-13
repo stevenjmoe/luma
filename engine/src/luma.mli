@@ -9,15 +9,6 @@ module type S = sig
     val draw_text : string -> int -> int -> int -> colour -> unit
   end
 
-  module Ecs : sig
-    module System : module type of Luma__ecs.System
-    module Scheduler : module type of Luma__ecs.Scheduler
-    module Command : module type of Luma__ecs.Command
-    module World : module type of Luma__ecs.World
-    module Component : module type of Luma__ecs.Component
-    module Query : module type of Luma__ecs.Query
-  end
-
   module Window_config : Luma__window.Window.Window_config with type colour = colour
   module Camera : module type of Luma__camera.Camera
 
@@ -87,3 +78,12 @@ module type S = sig
 end
 
 module Make : functor (_ : Luma__driver.Driver.S) -> S
+
+module Ecs : sig
+  module System : module type of Luma__ecs.System
+  module Scheduler : module type of Luma__ecs.Scheduler
+  module Command : module type of Luma__ecs.Command
+  module World : module type of Luma__ecs.World
+  module Component : module type of Luma__ecs.Component
+  module Query : module type of Luma__ecs.Query
+end
