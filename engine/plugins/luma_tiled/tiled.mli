@@ -1,10 +1,12 @@
 module Make (L : Luma.S) : sig
+  open Luma
+
   type maps
 
-  module R : L.Resource.S with type t = maps
+  module R : Luma.Resource.S with type t = maps
 
   val add :
-    L.Ecs.World.t ->
+    Ecs.World.t ->
     string ->
     Luma__math.Vec2.t ->
     float ->
@@ -14,11 +16,11 @@ module Make (L : Luma.S) : sig
   (** [add world path origin scale z tilemaps] returns [Ok (handle)] if the asset server
       successfully starts loading the map, otherwise an [Error]. *)
 
-  val tilemap_loaded : L.Ecs.World.t -> L.Assets.handle -> bool
+  val tilemap_loaded : Ecs.World.t -> L.Assets.handle -> bool
   (** [tilemap_loaded world handle] returns true if the map with the given handle has finished
       loading all assets. *)
 
-  val tilemaps_loaded : L.Ecs.World.t -> bool
+  val tilemaps_loaded : Luma.Ecs.World.t -> bool
   (** [tilemaps_loaded world] returns true if all maps added to the world have finished loading all
       assets. *)
 

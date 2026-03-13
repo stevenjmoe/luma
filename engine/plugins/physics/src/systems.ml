@@ -1,5 +1,6 @@
 module Make (L : Luma.S) = struct
   open Luma__time
+  open Luma
 
   let get_rigid_body entity index =
     match Rb_store.Index.row_of_entity index entity with None -> None | Some row -> Some row
@@ -7,9 +8,9 @@ module Make (L : Luma.S) = struct
   let sync_to_store () =
     let open Luma__ecs in
     System.make_with_resources
-      ~components:L.Ecs.Query.Component.(Required (module Rigid_body.C) & End)
+      ~components:Luma.Ecs.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
-        L.Ecs.Query.Resource.(
+        Ecs.Query.Resource.(
           Resource (module Rb_store.R)
           & Resource (module Shape_store.R)
           & Resource (module Rb_store.Index.R)
@@ -38,8 +39,8 @@ module Make (L : Luma.S) = struct
                 (match rb.body_type with
                 | Kinematic ->
                     let c = Kinematic_state.default () in
-                    let packed = L.Ecs.Component.pack (module Kinematic_state.C) c in
-                    L.Ecs.World.add_component w packed entity
+                    let packed = Ecs.Component.pack (module Kinematic_state.C) c in
+                    Ecs.World.add_component w packed entity
                 | _ -> ());
 
                 match rb.shape with
@@ -109,11 +110,10 @@ module Make (L : Luma.S) = struct
         w)
 
   let sync_from_store () =
-    L.Ecs.System.make_with_resources
-      ~components:L.Ecs.Query.Component.(Required (module Rigid_body.C) & End)
+    Ecs.System.make_with_resources
+      ~components:Ecs.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
-        L.Ecs.Query.Resource.(
-          Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
+        Ecs.Query.Resource.(Resource (module Rb_store.R) & Resource (module Rb_store.Index.R) & End)
       "sync_from_store"
       (fun w _ e (store, (index, _)) ->
         List.iter
@@ -135,7 +135,7 @@ module Make (L : Luma.S) = struct
       let radius = Shape_store.circle_radius shape_store (shape_handle store idx) in
       let center_x = pos_x store idx in
       let center_y = pos_y store idx in
-      let center = L.Math.Vec2.create center_x center_y in
+      let center = Math.Vec2.create center_x center_y in
       let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
 
       L.Render.Renderer.push_circle_lines ~z:1000 ~radius ~center colour queue
@@ -147,9 +147,9 @@ module Make (L : Luma.S) = struct
       let box_hw = Shape_store.aabb_half_width shape_store (shape_handle store idx) in
       let box_hh = Shape_store.aabb_half_height shape_store (shape_handle store idx) in
 
-      let pos = L.Math.Vec2.create (pos_x store idx -. box_hw) (pos_y store idx -. box_hh) in
-      let size = L.Math.Vec2.create (box_hw *. 2.) (box_hh *. 2.) in
-      let rect = L.Math.Rect.create ~pos ~size in
+      let pos = Math.Vec2.create (pos_x store idx -. box_hw) (pos_y store idx -. box_hh) in
+      let size = Math.Vec2.create (box_hw *. 2.) (box_hh *. 2.) in
+      let rect = Math.Rect.create ~pos ~size in
       let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
 
       L.Render.Renderer.push_rect_lines ~z:1000 ~rect colour queue
@@ -163,14 +163,14 @@ module Make (L : Luma.S) = struct
       let pos_x = pos_x store idx in
       let pos_y = pos_y store idx in
       let angle = angle store idx in
-      let rot = L.Math.Rot2.of_radians angle in
+      let rot = Math.Rot2.of_radians angle in
       let colour = L.Colour.rgb ~r:255 ~g:0 ~b:0 in
 
       let count = Array.length points_x in
       if count >= 2 then (
         let to_world i =
-          let local = L.Math.Vec2.create points_x.(i) points_y.(i) in
-          let rotated = L.Math.Rot2.rotate_vec rot local in
+          let local = Math.Vec2.create points_x.(i) points_y.(i) in
+          let rotated = Math.Rot2.rotate_vec rot local in
           (rotated.x +. pos_x, rotated.y +. pos_y)
         in
 
@@ -192,9 +192,9 @@ module Make (L : Luma.S) = struct
       ())
 
   let debug_draw () =
-    L.Ecs.System.make_with_resources ~components:End
+    Ecs.System.make_with_resources ~components:End
       ~resources:
-        L.Ecs.Query.Resource.(
+        Ecs.Query.Resource.(
           Resource (module L.Render.Renderer.Queue.R)
           & Resource (module Rb_store.R)
           & Resource (module Shape_store.R)
@@ -212,10 +212,10 @@ module Make (L : Luma.S) = struct
         w)
 
   let step () =
-    L.Ecs.System.make_with_resources
-      ~components:L.Ecs.Query.Component.(Required (module Rigid_body.C) & End)
+    Ecs.System.make_with_resources
+      ~components:Ecs.Query.Component.(Required (module Rigid_body.C) & End)
       ~resources:
-        L.Ecs.Query.Resource.(
+        Ecs.Query.Resource.(
           Resource (module Time.R)
           & Resource (module Config.R)
           & Resource (module Rb_store.R)
@@ -228,7 +228,7 @@ module Make (L : Luma.S) = struct
           & End)
       "step"
       (fun w _ _ r ->
-        L.Ecs.Query.Tuple.with9 r (fun time config store shape_store grid bp np event_store index ->
+        Ecs.Query.Tuple.with9 r (fun time config store shape_store grid bp np event_store index ->
             (* Clamp dt to prevent instability *)
             let dt = min (Time.dt time) config.max_step_dt in
 

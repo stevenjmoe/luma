@@ -1,8 +1,14 @@
-module Luma = Luma.Make (Luma_driver_raylib.Driver)
-module Physics_plugin = Luma_physics.Physics.Make (Luma)
+module L = Luma.Make (Luma_driver_raylib.Driver)
+module Physics_plugin = Luma_physics.Physics.Make (L)
+
+module Luma = struct
+  include Luma
+  include L
+end
+
 open Luma
+open Luma.Ecs
 open Luma_physics
-open Ecs
 module Query = Luma.Ecs.Query
 
 let gc_metrics () =
@@ -74,13 +80,14 @@ let setup_rigid_bodies () =
       World.add_resource Player_ref.R.type_id packed_player w |> ignore;
 
       let circle_pos1 = Math.Vec2.create 350. 50. in
-      let circle = Math.Primitives.Circle.create 50. circle_pos1 in
+      let radius = 50. in
+      let circle = Math.Primitives.Circle.create ~radius in
       let circle_rb = Rigid_body.create_circle Dynamic circle_pos1 circle.radius ~mass:1. in
 
       Command.spawn cmd [ Component ((module Rigid_body.C), circle_rb) ] |> ignore;
 
       let circle_pos2 = Math.Vec2.create 460. 50. in
-      let circle2 = Math.Primitives.Circle.create 50. circle_pos2 in
+      let circle2 = Math.Primitives.Circle.create ~radius in
       let circle_rb2 = Rigid_body.create_circle Dynamic circle_pos2 circle2.radius ~mass:1. in
 
       Command.spawn cmd [ Component ((module Rigid_body.C), circle_rb2) ] |> ignore;

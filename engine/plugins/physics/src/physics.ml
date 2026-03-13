@@ -1,6 +1,5 @@
 open Luma__math
-open Luma__resource
-open Luma__id
+open Luma
 
 module type S = sig
   open Luma__ecs
@@ -131,7 +130,7 @@ module Make (L : Luma.S) : S = struct
               if
                 other <> row
                 && Rb_store.is_active store other
-                && not (Rb_store.is_dynamic store other)
+                && (not (Rb_store.is_dynamic store other))
                 && not (Rb_store.is_sensor store other)
               then
                 match Query.kinematic_toi store shape_store ~row ~other ~delta_x ~delta_y with
@@ -166,7 +165,7 @@ module Make (L : Luma.S) : S = struct
           | None -> None
           | Some other ->
               let collider = Rb_store.Index.entity_at_row index other in
-              let normal = L.Math.Vec2.create !collision_normal_x !collision_normal_y in
+              let normal = Math.Vec2.create !collision_normal_x !collision_normal_y in
               let travel = Vec2.create !collision_normal_x !collision_normal_y in
               let remainder = Vec2.create (delta_x -. actual_dx) (delta_y -. actual_dy) in
               let position =
@@ -191,10 +190,10 @@ module Make (L : Luma.S) : S = struct
     let collided = ref false in
 
     let k_state =
-      match L.Ecs.World.get_component world (module Kinematic_state.C) entity with
+      match Ecs.World.get_component world (module Kinematic_state.C) entity with
       | Some s -> s
       | None ->
-          L.Log.error (fun l ->
+          Luma.Log.error (fun l ->
               l
                 "move_and_slide: missing Kinematic_state. Expected Kinematic_state to exist before \
                  any call to move_and_slide. Ensure movement logic does not run before PreUpdate");
@@ -213,7 +212,7 @@ module Make (L : Luma.S) : S = struct
       if rem_len <= epsilon then iter := max_iterations
       else
         let vel_step =
-          L.Math.Vec2.create (!remaining_x /. !remaining_dt) (!remaining_y /. !remaining_dt)
+          Math.Vec2.create (!remaining_x /. !remaining_dt) (!remaining_y /. !remaining_dt)
         in
         match move_and_collide world entity ~velocity:vel_step ~dt:!remaining_dt with
         | None -> iter := max_iterations

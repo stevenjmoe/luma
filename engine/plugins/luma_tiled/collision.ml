@@ -1,5 +1,7 @@
 (* TODO: Currently only supports rect. Handle other shapes *)
 module Collision (L : Luma.S) (Map : Map.S) = struct
+  open Luma
+
   let deg_to_rad d = d *. Float.pi /. 180.
 
   let get_tile_data_for_object (map : Map.t) (tile : Object.Object_tile_data.t) :
@@ -22,17 +24,17 @@ module Collision (L : Luma.S) (Map : Map.S) = struct
 
   (* Applies Tiled gid flip flags in tile-local space.
      Uses normalized [0..1] coordinates so it works for scaled tile objects. *)
-  let apply_tile_flip ~tile_w ~tile_h ~flip_h ~flip_v ~flip_d (point : L.Math.Vec2.t) :
-      L.Math.Vec2.t =
+  let apply_tile_flip ~tile_w ~tile_h ~flip_h ~flip_v ~flip_d (point : Math.Vec2.t) : Math.Vec2.t =
     let u = if tile_w = 0. then 0. else point.x /. tile_w in
     let v = if tile_h = 0. then 0. else point.y /. tile_h in
     let u, v = if flip_d then (v, u) else (u, v) in
     let u = if flip_h then 1. -. u else u in
     let v = if flip_v then 1. -. v else v in
-    L.Math.Vec2.create (u *. tile_w) (v *. tile_h)
+    Math.Vec2.create (u *. tile_w) (v *. tile_h)
 
   let spawn_rb cmd rb =
-    L.Ecs.Command.spawn cmd [ L.Ecs.Component.component (module Luma_physics.Rigid_body.C) rb ]
+    Luma.Ecs.Command.spawn cmd
+      [ Luma.Ecs.Component.component (module Luma_physics.Rigid_body.C) rb ]
     |> ignore
 
   let extract_colliders (map : Map.t) cmd =
@@ -86,10 +88,10 @@ module Collision (L : Luma.S) (Map : Map.S) = struct
                                      Keeps rect colliders valid even with diagonal flip. *)
                                   let corners =
                                     [|
-                                      L.Math.Vec2.create ox oy;
-                                      L.Math.Vec2.create (ox +. w) oy;
-                                      L.Math.Vec2.create (ox +. w) (oy +. h);
-                                      L.Math.Vec2.create ox (oy +. h);
+                                      Math.Vec2.create ox oy;
+                                      Math.Vec2.create (ox +. w) oy;
+                                      Math.Vec2.create (ox +. w) (oy +. h);
+                                      Math.Vec2.create ox (oy +. h);
                                     |]
                                   in
 
@@ -113,8 +115,8 @@ module Collision (L : Luma.S) (Map : Map.S) = struct
                                   if width > 0. && height > 0. then
                                     let cx = tile_left +. !min_x +. (width /. 2.) in
                                     let cy = tile_top +. !min_y +. (height /. 2.) in
-                                    let pos = L.Math.Vec2.create cx cy in
-                                    let size = L.Math.Vec2.create width height in
+                                    let pos = Math.Vec2.create cx cy in
+                                    let size = Math.Vec2.create width height in
                                     let rb =
                                       Luma_physics.Rigid_body.create_box
                                         Luma_physics.Rigid_body.Static pos size
@@ -126,7 +128,7 @@ module Collision (L : Luma.S) (Map : Map.S) = struct
                                   Array.map
                                     (fun (point : Luma__math.Vec2.t) ->
                                       let point' =
-                                        L.Math.Vec2.create
+                                        Math.Vec2.create
                                           (ox +. (point.x *. sx))
                                           (oy +. (point.y *. sy))
                                       in
@@ -136,7 +138,7 @@ module Collision (L : Luma.S) (Map : Map.S) = struct
 
                                 let tile_left = layer_object.x in
                                 let tile_top = layer_object.y -. r.height in
-                                let pos = L.Math.Vec2.create tile_left tile_top in
+                                let pos = Math.Vec2.create tile_left tile_top in
                                 let angle = deg_to_rad tileset_object.rotation in
                                 match
                                   Luma_physics.Rigid_body.create_polygon ~angle

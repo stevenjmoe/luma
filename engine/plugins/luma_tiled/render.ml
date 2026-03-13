@@ -1,8 +1,9 @@
-open Luma__math
 open Types
 
 module Make (Plan : Plan.S) (L : Luma.S) = struct
   open L
+  open Luma
+  open Luma.Math
 
   type map_inner = {
     mutable background_colour : string option;
@@ -22,7 +23,7 @@ module Make (Plan : Plan.S) (L : Luma.S) = struct
   end)
 
   let render () =
-    Ecs.System.make_with_resources
+    Luma.Ecs.System.make_with_resources
       ~components:Ecs.Query.Component.(Required (module Camera.C) & End)
       ~resources:
         Ecs.Query.Resource.(

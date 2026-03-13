@@ -7,6 +7,7 @@ module Make
     (Tileset_asset : L.Asset.S with type t = Tileset.t) =
 struct
   include Types
+  open Luma
 
   module Tilemap_loader : L.Asset_loader.LOADER with type t = Map.source and type ctx = unit =
   struct
@@ -28,10 +29,9 @@ struct
             let* tilemap = Map.source_from_json json path in
             Ok (L.Asset.pack (module A) tilemap)
         | `String other ->
-            Error
-              (L.Error.io_finalize path (Printf.sprintf "expected Tiled type=map, got %s" other))
-        | _ -> Error (L.Error.io_finalize path "missing top-level \"type\"")
-      with _ -> Error (L.Error.io_finalize path "invalid json")
+            Error (Error.io_finalize path (Printf.sprintf "expected Tiled type=map, got %s" other))
+        | _ -> Error (Error.io_finalize path "missing top-level \"type\"")
+      with _ -> Error (Error.io_finalize path "invalid json")
   end
 
   module Tileset_loader : L.Asset_loader.LOADER with type t = Tileset.t and type ctx = unit = struct
@@ -49,6 +49,6 @@ struct
         let json = Yojson.Safe.from_string (Bytes.to_string bytes) in
         let* tileset = Tileset.from_json json path in
         Ok (L.Asset.pack (module A) tileset)
-      with _ -> Error (L.Error.io_finalize path "invalid json")
+      with _ -> Error (Error.io_finalize path "invalid json")
   end
 end

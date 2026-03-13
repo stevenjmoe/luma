@@ -35,15 +35,11 @@ module type S = sig
   module Time : module type of Luma__time.Time
   module Time_plugin : Luma__time.Time.PLUGIN
   module Scene : Luma__scene.Scene.S
-  module Resource : module type of Luma__resource.Resource
-  module Transform : module type of Luma__transform.Transform
-  module Id : module type of Luma__id.Id
   module State : module type of Luma__state.State
   module Asset : module type of Luma__asset.Asset
   module Assets : module type of Luma__asset.Assets
   module Asset_loader : module type of Luma__asset.Loader
   module Asset_server : module type of Luma__asset.Server
-  module Math : module type of Luma__math
   module Serialize : module type of Luma__serialize.Serialize
 
   val screen_width : unit -> int
@@ -58,14 +54,6 @@ module type S = sig
     val from_string : string -> (t, Luma__core.Error.error) result
   end
 
-  module Log : sig
-    val log : ('a, Format.formatter, unit, unit) format4 -> 'a
-    val error : ('a, unit) Luma__core__Log.conditional_log
-    val warn : ('a, unit) Luma__core__Log.conditional_log
-    val debug : ('a, unit) Luma__core__Log.conditional_log
-    val info : ('a, unit) Luma__core__Log.conditional_log
-  end
-
   module App : sig
     include module type of Luma__app.App
 
@@ -74,7 +62,6 @@ module type S = sig
   end
 
   module Plugin : Luma__plugin.Plugin.S with type app = App.t and type window = Window_config.t
-  module Error : module type of Luma__core.Error
 end
 
 module Make : functor (_ : Luma__driver.Driver.S) -> S
@@ -87,3 +74,18 @@ module Ecs : sig
   module Component : module type of Luma__ecs.Component
   module Query : module type of Luma__ecs.Query
 end
+
+module Id : module type of Luma__id.Id
+module Resource : module type of Luma__resource.Resource
+module Transform : module type of Luma__transform.Transform
+
+module Log : sig
+  val log : ('a, Format.formatter, unit, unit) format4 -> 'a
+  val error : ('a, unit) Luma__core__Log.conditional_log
+  val warn : ('a, unit) Luma__core__Log.conditional_log
+  val debug : ('a, unit) Luma__core__Log.conditional_log
+  val info : ('a, unit) Luma__core__Log.conditional_log
+end
+
+module Math : module type of Luma__math
+module Error : module type of Luma__core.Error

@@ -34,15 +34,11 @@ module type S = sig
   module Time : module type of Luma__time.Time
   module Time_plugin : Luma__time.Time.PLUGIN
   module Scene : Luma__scene.Scene.S
-  module Resource : module type of Luma__resource.Resource
-  module Transform : module type of Luma__transform.Transform
-  module Id : module type of Luma__id.Id
   module State : module type of Luma__state.State
   module Asset : module type of Luma__asset.Asset
   module Assets : module type of Luma__asset.Assets
   module Asset_loader : module type of Luma__asset.Loader
   module Asset_server : module type of Luma__asset.Server
-  module Math : module type of Luma__math
   module Serialize : module type of Luma__serialize.Serialize
 
   val screen_width : unit -> int
@@ -57,14 +53,6 @@ module type S = sig
     val from_string : string -> (t, Luma__core.Error.error) result
   end
 
-  module Log : sig
-    val log : ('a, Format.formatter, unit, unit) format4 -> 'a
-    val error : ('a, unit) Luma__core__Log.conditional_log
-    val warn : ('a, unit) Luma__core__Log.conditional_log
-    val debug : ('a, unit) Luma__core__Log.conditional_log
-    val info : ('a, unit) Luma__core__Log.conditional_log
-  end
-
   module App : sig
     include module type of Luma__app.App
 
@@ -72,7 +60,6 @@ module type S = sig
   end
 
   module Plugin : Luma__plugin.Plugin.S with type app = App.t and type window = Window_config.t
-  module Error : module type of Luma__core.Error
 end
 
 module Make (D : Luma__driver.Driver.S) : S = struct
@@ -135,15 +122,11 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   end
 
   module Sprite = Luma__sprite.Sprite
-  module Resource = Luma__resource.Resource
-  module Transform = Luma__transform.Transform
-  module Id = Luma__id.Id
   module State = Luma__state.State
   module Asset = Luma__asset.Asset
   module Assets = Luma__asset.Assets
   module Asset_loader = Luma__asset.Loader
   module Asset_server = Luma__asset.Server
-  module Math = Luma__math
   module Debug = Luma__debug.Debug.Make (D) (R)
 
   module Plugin =
@@ -166,17 +149,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   let () =
     Fmt_tty.setup_std_outputs ();
     Luma__core.Log.init ()
-
-  module Log = struct
-    let default_log = Luma__core.Log.sub_log (Logs.Src.name Logs.default)
-    let log = Luma__core.Log.app_log
-    let error = default_log.error
-    let warn = default_log.warn
-    let debug = default_log.debug
-    let info = default_log.info
-  end
-
-  module Error = Luma__core.Error
 end
 
 module Ecs = struct
@@ -187,3 +159,19 @@ module Ecs = struct
   module Scheduler = Luma__ecs.Scheduler
   module Command = Luma__ecs.Command
 end
+
+module Transform = Luma__transform.Transform
+module Math = Luma__math
+module Resource = Luma__resource.Resource
+module Id = Luma__id.Id
+
+module Log = struct
+  let default_log = Luma__core.Log.sub_log (Logs.Src.name Logs.default)
+  let log = Luma__core.Log.app_log
+  let error = default_log.error
+  let warn = default_log.warn
+  let debug = default_log.debug
+  let info = default_log.info
+end
+
+module Error = Luma__core.Error
