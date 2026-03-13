@@ -36,10 +36,6 @@ module type S = sig
   module Time_plugin : Luma__time.Time.PLUGIN
   module Scene : Luma__scene.Scene.S
   module State : module type of Luma__state.State
-  module Asset : module type of Luma__asset.Asset
-  module Assets : module type of Luma__asset.Assets
-  module Asset_loader : module type of Luma__asset.Loader
-  module Asset_server : module type of Luma__asset.Server
   module Serialize : module type of Luma__serialize.Serialize
 
   val screen_width : unit -> int
@@ -78,6 +74,10 @@ end
 module Id : module type of Luma__id.Id
 module Resource : module type of Luma__resource.Resource
 module Transform : module type of Luma__transform.Transform
+module Asset : module type of Luma__asset.Asset
+module Assets : module type of Luma__asset.Assets
+module Asset_loader : module type of Luma__asset.Loader
+module Asset_server : module type of Luma__asset.Server
 
 module Log : sig
   val log : ('a, Format.formatter, unit, unit) format4 -> 'a

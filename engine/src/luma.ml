@@ -35,10 +35,6 @@ module type S = sig
   module Time_plugin : Luma__time.Time.PLUGIN
   module Scene : Luma__scene.Scene.S
   module State : module type of Luma__state.State
-  module Asset : module type of Luma__asset.Asset
-  module Assets : module type of Luma__asset.Assets
-  module Asset_loader : module type of Luma__asset.Loader
-  module Asset_server : module type of Luma__asset.Server
   module Serialize : module type of Luma__serialize.Serialize
 
   val screen_width : unit -> int
@@ -123,10 +119,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
 
   module Sprite = Luma__sprite.Sprite
   module State = Luma__state.State
-  module Asset = Luma__asset.Asset
-  module Assets = Luma__asset.Assets
-  module Asset_loader = Luma__asset.Loader
-  module Asset_server = Luma__asset.Server
   module Debug = Luma__debug.Debug.Make (D) (R)
 
   module Plugin =
@@ -164,6 +156,10 @@ module Transform = Luma__transform.Transform
 module Math = Luma__math
 module Resource = Luma__resource.Resource
 module Id = Luma__id.Id
+module Asset = Luma__asset.Asset
+module Assets = Luma__asset.Assets
+module Asset_loader = Luma__asset.Loader
+module Asset_server = Luma__asset.Server
 
 module Log = struct
   let default_log = Luma__core.Log.sub_log (Logs.Src.name Logs.default)

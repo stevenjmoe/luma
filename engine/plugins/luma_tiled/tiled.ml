@@ -1,14 +1,13 @@
 open Luma__math
-open Luma__core
-open Luma__resource
 open Luma__ecs
 (* TODO: Debugging this plugin is a nightmare *)
 
 module Make (L : Luma.S) = struct
   include Types
+  open Luma
 
   let ( let* ) = Result.bind
-  let log = Log.sub_log "tiled_plugin"
+  let log = Luma__core.Log.sub_log "tiled_plugin"
 
   module Map = Map.Tilemap (L.Driver)
   module Plan = Plan.Make (Map)
@@ -39,12 +38,12 @@ module Make (L : Luma.S) = struct
 
   let add world path origin scale z tilemaps =
     let server =
-      Option.bind (World.get_resource world L.Asset_server.R.type_id) (fun p ->
-          Resource.unpack_opt (module L.Asset_server.R) p)
+      Option.bind (World.get_resource world Asset_server.R.type_id) (fun p ->
+          Resource.unpack_opt (module Asset_server.R) p)
     in
     match server with
     | Some server -> (
-        match L.Asset_server.load (module Tilemap_source_asset) server path with
+        match Asset_server.load (module Tilemap_source_asset) server path with
         | Ok handle ->
             let r =
               { origin; scale; layers = None; z_base = z; phase = Init; background_colour = None }
@@ -74,19 +73,19 @@ module Make (L : Luma.S) = struct
 
   let register_map_loader () =
     System.make_with_resources ~components:End
-      ~resources:Query.Resource.(Resource (module L.Asset_server.R) & End)
+      ~resources:Query.Resource.(Resource (module Asset_server.R) & End)
       "register_map_loader"
       (fun w _ _ (server, _) ->
-        L.Asset_server.register_loader server
+        Asset_server.register_loader server
           (module Loader.Tilemap_loader)
-          ~ctx_provider:L.Asset_loader.Context_provider.no_ctx;
+          ~ctx_provider:Asset_loader.Context_provider.no_ctx;
 
-        L.Asset_server.register_loader server
+        Asset_server.register_loader server
           (module Loader.Tileset_loader)
-          ~ctx_provider:L.Asset_loader.Context_provider.no_ctx;
+          ~ctx_provider:Asset_loader.Context_provider.no_ctx;
         w)
 
-  let resolve_map_tilesets assets (handles : (int * L.Assets.handle) list) =
+  let resolve_map_tilesets assets (handles : (int * Assets.handle) list) =
     let* rev =
       List.fold_left
         (fun acc (first_gid, handle) ->
@@ -107,20 +106,20 @@ module Make (L : Luma.S) = struct
           match acc with
           | Error _ as e -> e
           | Ok rev -> (
-              match L.Asset_server.load (module Tileset_asset) server path with
+              match Asset_server.load (module Tileset_asset) server path with
               | Ok handle -> Ok ((first_gid, handle) :: rev)
               | Error e -> Error e))
         (Ok []) source.tileset_paths_by_gid
     in
     Ok (List.rev rev)
 
-  let all_tilesets_loaded (assets : L.Assets.t) (tilesets : (int * L.Assets.handle) list) : bool =
-    List.for_all (fun (_, handle) -> L.Assets.is_loaded assets handle) tilesets
+  let all_tilesets_loaded (assets : Assets.t) (tilesets : (int * Assets.handle) list) : bool =
+    List.for_all (fun (_, handle) -> Assets.is_loaded assets handle) tilesets
 
   let start_loading_textures server (map : Map.t) =
     let textures_by_tileset = Hashtbl.create (List.length map.tilesets) in
     let load path =
-      match L.Asset_server.load (module L.Image.Texture.A) server path with
+      match Asset_server.load (module L.Image.Texture.A) server path with
       | Ok h -> Some h
       | _ -> None
     in
@@ -151,13 +150,13 @@ module Make (L : Luma.S) = struct
       map.tilesets;
     textures_by_tileset
 
-  let all_textures_loaded (assets : L.Assets.t) (by_ts : (int, tileset_texture) Hashtbl.t) : bool =
+  let all_textures_loaded (assets : Assets.t) (by_ts : (int, tileset_texture) Hashtbl.t) : bool =
     Hashtbl.to_seq by_ts
     |> Seq.for_all (function
-      | _ts, Image h -> L.Assets.is_loaded assets h
+      | _ts, Image h -> Assets.is_loaded assets h
       | _ts, Collection_of_images id2h ->
           Hashtbl.to_seq id2h
-          |> Seq.for_all (fun (_, { handle; _ }) -> L.Assets.is_loaded assets handle))
+          |> Seq.for_all (fun (_, { handle; _ }) -> Assets.is_loaded assets handle))
 
   let finalize_maps (map : Map.t) (textures_by_tileset : (int, tileset_texture) Hashtbl.t) =
     let finalized_tilesets = Hashtbl.create (List.length map.tilesets) in
@@ -186,10 +185,7 @@ module Make (L : Luma.S) = struct
     System.make_with_resources ~components:End
       ~resources:
         Query.Resource.(
-          Resource (module L.Assets.R)
-          & Resource (module L.Asset_server.R)
-          & Resource (module R)
-          & End)
+          Resource (module Assets.R) & Resource (module Asset_server.R) & Resource (module R) & End)
       "resolve_tilemaps"
       (fun w cmd _ r ->
         Query.Tuple.with3 r (fun assets server tilemap_map ->

@@ -12,11 +12,11 @@ module Make (L : Luma.S) : sig
     float ->
     int ->
     maps ->
-    (L.Assets.handle, Luma__core.Error.error) result
+    (Assets.handle, Luma__core.Error.error) result
   (** [add world path origin scale z tilemaps] returns [Ok (handle)] if the asset server
       successfully starts loading the map, otherwise an [Error]. *)
 
-  val tilemap_loaded : Ecs.World.t -> L.Assets.handle -> bool
+  val tilemap_loaded : Ecs.World.t -> Assets.handle -> bool
   (** [tilemap_loaded world handle] returns true if the map with the given handle has finished
       loading all assets. *)
 
