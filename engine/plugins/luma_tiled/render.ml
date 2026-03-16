@@ -1,9 +1,33 @@
 open Types
+open Luma
+open Luma.Math
 
-module Make (Plan : Plan.S) (L : Luma.S) = struct
+module type S = sig
+  type plan
+  type camera
+
+  type map_inner = {
+    mutable background_colour : string option;
+    origin : Vec2.t; (* world-space top-left of tile (0,0) *)
+    scale : float; (* world units per pixel; 1.0 = pixels *)
+    layers : string list option; (* None = all TMJ tile layers *)
+    z_base : int; (* z for first layer; layers add +1, etc. *)
+    mutable phase : plan phase;
+  }
+
+  type map_tbl = (Assets.handle, map_inner) Hashtbl.t
+
+  module R : Luma.Resource.S with type t = map_tbl
+
+  val render : unit -> ('a, camera * unit) Ecs.System.t
+end
+
+module Make (Plan : Plan.S) (L : Luma.S) : S with type plan = Plan.t and type camera = L.Camera.t =
+struct
   open L
-  open Luma
-  open Luma.Math
+
+  type plan = Plan.t
+  type camera = L.Camera.t
 
   type map_inner = {
     mutable background_colour : string option;

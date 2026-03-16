@@ -2,9 +2,31 @@ open Luma__math
 open Luma__ecs
 (* TODO: Debugging this plugin is a nightmare *)
 
-module Make (L : Luma.S) = struct
+module type S = sig
+  type maps
+  type app
+
+  module R : Luma.Resource.S with type t = maps
+
+  val add :
+    Luma.Ecs.World.t ->
+    string ->
+    Luma.Math.Vec2.t ->
+    float ->
+    int ->
+    maps ->
+    (Luma.Assets.handle, Luma__core__Error.error) result
+
+  val tilemap_loaded : Luma.Ecs.World.t -> Luma.Assets.handle -> bool
+  val tilemaps_loaded : Luma.Ecs.World.t -> bool
+  val plugin : app -> app
+end
+
+module Make (L : Luma.S) : S with type app = L.App.t = struct
   include Types
   open Luma
+
+  type app = L.App.t
 
   let ( let* ) = Result.bind
   let log = Luma__core.Log.sub_log "tiled_plugin"
@@ -256,13 +278,14 @@ module Make (L : Luma.S) = struct
               tilemap_map);
         w)
 
-  let setup_register () =
-    System.make ~components:End "setup_tilemap_register" (fun world _ _ ->
-        if World.has_resource R.type_id world then world
-        else
-          let map = create () in
-          let packed = Resource.pack (module R) map in
-          World.add_resource R.type_id packed world)
+  let setup_register app =
+    let world = L.App.world app in
+    if World.has_resource R.type_id world then app
+    else
+      let map = create () in
+      let packed = Resource.pack (module R) map in
+      World.add_resource R.type_id packed world |> ignore;
+      app
 
   (** Selects a background colour based on z-index once all maps are finalised*)
   let set_background () =
@@ -293,7 +316,7 @@ module Make (L : Luma.S) = struct
   (*TODO: check if physics plugin has already been added? (not currently possible though) *)
   let plugin app =
     app
-    |> L.App.on Startup (setup_register ())
+    |> setup_register
     |> L.App.on Startup (register_map_loader ())
     |> L.App.on Update (resolve ())
     |> L.App.once Update (set_background ()) ~run_if:tilemaps_loaded
