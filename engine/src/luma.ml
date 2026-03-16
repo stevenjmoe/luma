@@ -27,14 +27,12 @@ module type S = sig
     module Texture_atlas_layout : module type of Luma__image.Texture_atlas_layout
   end
 
-  module Sprite : Luma__sprite.Sprite.S
   module Input : Luma__input.Input.S
   module Ui : Luma__ui.Ui.S
   module Audio : Luma__audio.Audio.S
   module Time : module type of Luma__time.Time
   module Time_plugin : Luma__time.Time.PLUGIN
   module Scene : Luma__scene.Scene.S
-  module State : module type of Luma__state.State
   module Serialize : module type of Luma__serialize.Serialize
 
   val screen_width : unit -> int
@@ -117,8 +115,6 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     let run app = run (module D) app
   end
 
-  module Sprite = Luma__sprite.Sprite
-  module State = Luma__state.State
   module Debug = Luma__debug.Debug.Make (D) (R)
 
   module Plugin =
@@ -154,6 +150,8 @@ end
 
 module Transform = Luma__transform.Transform
 module Math = Luma__math
+module Sprite = Luma__sprite.Sprite
+module State = Luma__state.State
 module Resource = Luma__resource.Resource
 module Id = Luma__id.Id
 module Asset = Luma__asset.Asset

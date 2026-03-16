@@ -28,14 +28,12 @@ module type S = sig
     module Texture_atlas_layout : module type of Luma__image.Texture_atlas_layout
   end
 
-  module Sprite : Luma__sprite.Sprite.S
   module Input : Luma__input.Input.S
   module Ui : Luma__ui.Ui.S
   module Audio : Luma__audio.Audio.S
   module Time : module type of Luma__time.Time
   module Time_plugin : Luma__time.Time.PLUGIN
   module Scene : Luma__scene.Scene.S
-  module State : module type of Luma__state.State
   module Serialize : module type of Luma__serialize.Serialize
 
   val screen_width : unit -> int
@@ -71,13 +69,15 @@ module Ecs : sig
   module Query : module type of Luma__ecs.Query
 end
 
-module Id : module type of Luma__id.Id
-module Resource : module type of Luma__resource.Resource
-module Transform : module type of Luma__transform.Transform
 module Asset : module type of Luma__asset.Asset
 module Assets : module type of Luma__asset.Assets
 module Asset_loader : module type of Luma__asset.Loader
 module Asset_server : module type of Luma__asset.Server
+module Id : module type of Luma__id.Id
+module Resource : module type of Luma__resource.Resource
+module Sprite : Luma__sprite.Sprite.S
+module State : module type of Luma__state.State
+module Transform : module type of Luma__transform.Transform
 
 module Log : sig
   val log : ('a, Format.formatter, unit, unit) format4 -> 'a
