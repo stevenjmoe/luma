@@ -71,7 +71,7 @@ let eq_state : state -> state -> bool =
 type transition_result =
   | NoChange
   | Transitioned of {
-      from : state;
+      from : state option;
       to_ : state;
     }
 
@@ -85,7 +85,7 @@ type state_resource = {
 module State_res = struct
   type t = state_resource
 
-  let create s = { current = Some s; next = None; previous = None; last_result = NoChange }
+  let create s = { current = None; next = Some s; previous = None; last_result = NoChange }
   let previous s = s.previous
   let current s = s.current
   let next s = s.next
@@ -100,14 +100,15 @@ end
 
 let just_entered (type s) (module S : STATE with type t = s) expected_state res =
   match res.last_result with
-  | Transitioned { to_; _ } ->
+  | Transitioned { to_; from = Some _ } ->
       let expected = State ((module S), expected_state) in
       eq_state to_ expected
+  | Transitioned { to_ = _; from = None } -> true
   | _ -> false
 
 let just_exited (type s) (module S : STATE with type t = s) expected_state res =
   match res.last_result with
-  | Transitioned { from; _ } ->
+  | Transitioned { from = Some from; _ } ->
       let expected = State ((module S), expected_state) in
       eq_state from expected
   | _ -> false
@@ -145,6 +146,17 @@ let transition_system () =
         World.get_resource w State_res.R.type_id >>= fun s ->
         Resource.unpack_opt (module State_res.R) s
       with
+      | Some { current = None; next = Some next_; _ } ->
+          let s =
+            {
+              next = Some next_;
+              previous = None;
+              current = None;
+              last_result = Transitioned { from = None; to_ = next_ };
+            }
+          in
+          let new_packed = Resource.pack (module State_res.R) s in
+          World.set_resource State_res.R.type_id new_packed w
       | Some { current = Some curr; next = Some next_; _ } ->
           if eq_state curr next_ then w
           else
@@ -153,7 +165,7 @@ let transition_system () =
                 next = None;
                 previous = Some curr;
                 current = Some next_;
-                last_result = Transitioned { from = curr; to_ = next_ };
+                last_result = Transitioned { from = Some curr; to_ = next_ };
               }
             in
             let new_packed = Resource.pack (module State_res.R) s in

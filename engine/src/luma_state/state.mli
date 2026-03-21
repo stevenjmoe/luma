@@ -43,7 +43,7 @@ end) : STATE with type t = B.inner
 type transition_result =
   | NoChange
   | Transitioned of {
-      from : state;
+      from : state option;
       to_ : state;
     }
 
