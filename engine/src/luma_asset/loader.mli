@@ -36,10 +36,24 @@ module type LOADER = sig
   (** [exts] list of supported file extensions (lowercased, with dot). *)
 
   val begin_load : string -> int
+  (** [begin_load path] *)
 
   val finalize : ctx -> string -> bytes -> (Asset.packed, Error.error) result
   (** [finalize ctx path d] converts [d] to a packed asset using [ctx]. *)
 end
+
+module type L = sig
+  type t
+  type ctx
+
+  module A : Asset.S with type t = t
+
+  val exts : string list
+  val begin_load : string -> int
+  val finalize : ctx -> string -> bytes -> (Asset.packed, Error.error) result
+end
+
+module Make : functor (_ : L) -> LOADER
 
 (** Existential wrapper pairing a loader with its context provider. *)
 type loader_packed =
