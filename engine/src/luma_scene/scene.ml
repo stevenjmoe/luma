@@ -76,6 +76,10 @@ module Make (D : Driver.S) : S = struct
           let entity = World.add_entity ~name:e.name ~uuid:(Some e.uuid) world in
           e.components |> List.iter (fun c -> World.add_component world c entity);
           ());
+
+    scene.resources
+    |> List.iter (fun r -> World.add_resource (Resource.type_id r) r world |> ignore);
+
     world
 
   let inject_into_world scene world =
