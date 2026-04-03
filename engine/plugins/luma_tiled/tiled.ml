@@ -59,21 +59,25 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
   (* public functions *)
 
   let add world path origin scale z tilemaps =
-    let server =
-      Option.bind (World.get_resource world Asset_server.R.type_id) (fun p ->
-          Resource.unpack_opt (module Asset_server.R) p)
+    let ( let* ) = Result.bind in
+    let* server_packed =
+      World.get_resource world Asset_server.R.type_id
+      |> Option.to_result
+           ~none:
+             (Error.resource_not_found
+                (Luma.Id.Resource.to_int Asset_server.R.type_id)
+                (Some Asset_server.R.name))
     in
-    match server with
-    | Some server -> (
-        match Asset_server.load (module Tilemap_source_asset) server path with
-        | Ok handle ->
-            let r =
-              { origin; scale; layers = None; z_base = z; phase = Init; background_colour = None }
-            in
-            Hashtbl.add tilemaps handle r;
-            Ok handle
-        | Error e -> Error e)
-    | None -> Error (Error.resource_not_found "Tiled_plugin.add asset server not found")
+    let* server = Resource.unpack (module Asset_server.R) server_packed in
+
+    match Asset_server.load (module Tilemap_source_asset) server path with
+    | Ok handle ->
+        let r =
+          { origin; scale; layers = None; z_base = z; phase = Init; background_colour = None }
+        in
+        Hashtbl.add tilemaps handle r;
+        Ok handle
+    | Error e -> Error e
 
   let ( let+ ) o f = match o with Some x -> f x | None -> false
 

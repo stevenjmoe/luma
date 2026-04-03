@@ -8,7 +8,10 @@ type component_not_found = {
   msg : string;
 }
 
-type resource_not_found = { msg : string }
+type resource_not_found = {
+  id : int;
+  name : string option;
+}
 
 type unpacked_type_mismatch = {
   expected_type_id : int;
@@ -111,7 +114,9 @@ let pp fmt (e : error) =
       Format.fprintf fmt "Entity could not be found. Id: %d. Msg: %s" id msg
   | `Component_not_found { component_id; msg } ->
       Format.fprintf fmt "Component could not be found. Id: %d. Msg: %s" component_id msg
-  | `Resource_not_found { msg } -> Format.fprintf fmt "Resource could not be found. Msg: %s" msg
+  | `Resource_not_found { id; name } ->
+      let name_msg = match name with Some n -> Printf.sprintf "Name: %s." n | None -> "" in
+      Format.fprintf fmt "Resource could not be found. Id: %d. %s" id name_msg
   | `Unpacked_type_mismatch { expected_type_id; actual_type_id; msg } ->
       Format.fprintf fmt
         "Provided module has a different type type id than the packed module. Expected type id: \
@@ -161,8 +166,11 @@ let component_not_found component_id msg = `Component_not_found { component_id; 
 let component_not_found_exn component_id msg = raise_error @@ component_not_found component_id msg
 
 (** [resource_not_found msg] returns `Resource_not_found` exception*)
-let resource_not_found msg : [> `Resource_not_found of resource_not_found ] =
-  `Resource_not_found { msg }
+let resource_not_found id name : [> `Resource_not_found of resource_not_found ] =
+  `Resource_not_found { id; name }
+
+(** [resource_not_found_exn msg] returns [Engine_error] exception. *)
+let resource_not_found_exn id name = raise_error @@ resource_not_found id name
 
 (** [unpacked_unexpected_base_type expected_type_id msg] Returns the
     ``Unpacked_unexpected_base_type` error *)

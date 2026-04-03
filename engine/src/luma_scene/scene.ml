@@ -54,19 +54,28 @@ module Make (D : Driver.S) : S = struct
     { id; uuid; name; entities; resources; version = 1 }
 
   let ctx_of_world world =
-    match
-      ( World.get_resource world Type_register.Component_registry.R.type_id,
-        World.get_resource world Type_register.Resource_registry.R.type_id )
-    with
-    | Some comp_packed, Some res_packed -> (
-        match
-          ( Resource.unpack_opt (module Type_register.Component_registry.R) comp_packed,
-            Resource.unpack_opt (module Type_register.Resource_registry.R) res_packed )
-        with
-        | Some comps, Some resources -> Ok { Serialize.comps; resources; version = 1 }
-        | None, _ -> Error (Error.resource_not_found "Component_registry")
-        | _, None -> Error (Error.resource_not_found "Resource_registry"))
-    | _ -> Error (Error.resource_not_found "registries")
+    let ( let* ) = Result.bind in
+
+    let* comp_packed =
+      World.get_resource world Type_register.Component_registry.R.type_id
+      |> Option.to_result
+           ~none:
+             (Error.resource_not_found
+                (Id.Resource.to_int Type_register.Component_registry.R.type_id)
+                (Some Type_register.Component_registry.R.name))
+    in
+    let* res_packed =
+      World.get_resource world Type_register.Component_registry.R.type_id
+      |> Option.to_result
+           ~none:
+             (Error.resource_not_found
+                (Id.Resource.to_int Type_register.Resource_registry.R.type_id)
+                (Some Type_register.Resource_registry.R.name))
+    in
+    let* comps = Resource.unpack (module Type_register.Component_registry.R) comp_packed in
+    let* resources = Resource.unpack (module Type_register.Resource_registry.R) res_packed in
+
+    Ok { Serialize.comps; resources; version = 1 }
 
   let inject_into_world_safe scene world =
     scene.entities

@@ -72,13 +72,12 @@ module Component = struct
       Ok
         (archetypes
         |> List.filter (fun a ->
-               let components = Archetype.components a in
-               let required_ids = required_ids query in
-               matches components && Id.ComponentSet.subset required_ids components)
+            let components = Archetype.components a in
+            let required_ids = required_ids query in
+            matches components && Id.ComponentSet.subset required_ids components)
         |> List.concat_map (fun a ->
-               Archetype.entities a
-               |> Id.EntitySet.to_list
-               |> List.map (fun e -> (e, fetch query a e))))
+            Archetype.entities a |> Id.EntitySet.to_list |> List.map (fun e -> (e, fetch query a e)))
+        )
     with Eval_exn e -> Error e
 end
 
@@ -106,8 +105,7 @@ module Resource = struct
               | Ok result -> (
                   match fetch rest store with Ok rest -> Ok (result, rest) | Error e -> Error e)
               | Error e -> Error e)
-          | None ->
-              Error (Error.resource_not_found (Printf.sprintf "Could not find resource %s" R.name)))
+          | None -> Error (Error.resource_not_found (Id.Resource.to_int R.type_id) (Some R.name)))
     in
     fetch query store
 end
