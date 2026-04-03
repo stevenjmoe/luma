@@ -157,6 +157,13 @@ let run_with_driver app driver =
 let run (module D : Luma__driver.Driver.S) (app : t) =
   log.info (fun log -> log "Running applictation.");
   try
+    let panic error = Luma__core.Error.raise_error error in
+    let required_resource (type a) world (module R : Resource.S with type t = a) =
+      match World.get_resource world R.type_id with
+      | Some packed -> Resource.unpack_exn (module R) packed
+      | None -> panic (Luma__core.Error.application_missing_required_resource R.name)
+    in
+
     let rec apply_plugins app =
       match app.plugins with
       | [] -> app
@@ -174,9 +181,7 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
     in
     let app = { app with world } in
 
-    let server =
-      World.get_resource_exn world Server.R.type_id |> Resource.unpack_exn (module Server.R)
-    in
+    let server = required_resource world (module Server.R) in
 
     let rec loop app =
       if D.Window.should_close () then (

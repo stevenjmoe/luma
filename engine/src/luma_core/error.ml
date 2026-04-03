@@ -1,3 +1,5 @@
+type application_error = Missing_required_resource of string
+
 type entity_not_found = {
   id : int;
   msg : string;
@@ -75,7 +77,8 @@ type io =
 type hexcode = string
 
 type error =
-  [ `Entity_not_found of entity_not_found
+  [ `Application_error of application_error
+  | `Entity_not_found of entity_not_found
   | `Component_not_found of component_not_found
   | `Resource_not_found of resource_not_found
   | `Unpacked_unexpected_base_type of unpacked_unexpected_base_type
@@ -110,6 +113,11 @@ let pp_value_kind fmt = function
 
 let pp fmt (e : error) =
   match e with
+  | `Application_error (Missing_required_resource name) ->
+      Format.fprintf fmt
+        "The application requires resource %s, but it was not found. Did you call \
+         [Luma.Plugin.add_default_plugins]?"
+        name
   | `Entity_not_found { id; msg } ->
       Format.fprintf fmt "Entity could not be found. Id: %d. Msg: %s" id msg
   | `Component_not_found { component_id; msg } ->
@@ -152,8 +160,7 @@ let pp fmt (e : error) =
 exception Engine_error of error
 
 let raise_error (e : error) = raise (Engine_error e)
-
-(** [entity_not_found id msg] returns the ``Entity_not_found` error*)
+let application_missing_required_resource name = `Application_error (Missing_required_resource name)
 let entity_not_found id msg = `Entity_not_found { id; msg }
 
 (** [entity_not_found_exn id msg] returns Engine_error exception *)
