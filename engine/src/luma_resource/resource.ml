@@ -60,7 +60,8 @@ let unpack_opt : type a. (module S with type t = a) -> packed -> a option =
  fun (module M) p -> match unpack (module M) p with Ok v -> Some v | Error _ -> None
 
 let unpack_exn : type a. (module S with type t = a) -> packed -> a =
- fun (module M) p -> unpack (module M) p |> Result.get_ok
+ fun (module M) p ->
+  match unpack (module M) p with Ok v -> v | Error e -> Luma__core.Error.raise_error e
 
 let type_id : packed -> Luma__id.Id.Resource.t = function Packed ((module R), _) -> R.type_id
 let name : packed -> string = function Packed ((module R), _) -> R.name
