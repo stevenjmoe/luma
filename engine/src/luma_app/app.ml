@@ -156,40 +156,41 @@ let run_with_driver app driver =
 
 let run (module D : Luma__driver.Driver.S) (app : t) =
   log.info (fun log -> log "Running applictation.");
+  try
+    let rec apply_plugins app =
+      match app.plugins with
+      | [] -> app
+      | plugins ->
+          let app = { app with plugins = [] } in
+          let app = List.fold_right (fun plugin app -> plugin app) plugins app in
+          apply_plugins app
+    in
+    let app = apply_plugins app in
 
-  let rec apply_plugins app =
-    match app.plugins with
-    | [] -> app
-    | plugins ->
-        let app = { app with plugins = [] } in
-        let app = List.fold_right (fun plugin app -> plugin app) plugins app in
-        apply_plugins app
-  in
-  let app = apply_plugins app in
+    let world =
+      Scheduler.run_stage Scheduler.PreStartup app.scheduler app.world
+      |> Scheduler.run_stage Scheduler.Startup app.scheduler
+      |> Scheduler.run_stage Scheduler.PostStartup app.scheduler
+    in
+    let app = { app with world } in
 
-  let world =
-    Scheduler.run_stage Scheduler.PreStartup app.scheduler app.world
-    |> Scheduler.run_stage Scheduler.Startup app.scheduler
-    |> Scheduler.run_stage Scheduler.PostStartup app.scheduler
-  in
-  let app = { app with world } in
+    let server =
+      World.get_resource_exn world Server.R.type_id |> Resource.unpack_exn (module Server.R)
+    in
 
-  let server =
-    World.get_resource_exn world Server.R.type_id |> Resource.unpack_exn (module Server.R)
-  in
+    let rec loop app =
+      if D.Window.should_close () then (
+        world |> Scheduler.run_stage Cleanup app.scheduler |> ignore;
+        D.Window.shutdown ())
+      else (
+        D.Window.begin_frame ();
+        let app = step app in
 
-  let rec loop app =
-    if D.Window.should_close () then (
-      world |> Scheduler.run_stage Cleanup app.scheduler |> ignore;
-      D.Window.shutdown ())
-    else (
-      D.Window.begin_frame ();
-      let app = step app in
+        let events = D.IO.pump () in
+        Server.apply_io_events server world events |> ignore;
 
-      let events = D.IO.pump () in
-      Server.apply_io_events server world events |> ignore;
-
-      D.Window.end_frame ();
-      D.Window.schedule_next_frame (fun () -> loop app) |> ignore)
-  in
-  loop app
+        D.Window.end_frame ();
+        D.Window.schedule_next_frame (fun () -> loop app) |> ignore)
+    in
+    loop app
+  with Luma__core.Error.Engine_error e -> log.error (fun l -> l "%a" Luma__core.Error.pp e)
