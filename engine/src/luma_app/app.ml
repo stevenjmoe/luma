@@ -158,6 +158,7 @@ let run (module D : Luma__driver.Driver.S) (app : t) =
   log.info (fun log -> log "Running applictation.");
   try
     let panic error = Luma__core.Error.raise_error error in
+
     let required_resource (type a) world (module R : Resource.S with type t = a) =
       match World.get_resource world R.type_id with
       | Some packed -> Resource.unpack_exn (module R) packed

@@ -151,7 +151,7 @@ let transition_system () =
             {
               next = Some next_;
               previous = None;
-              current = None;
+              current = Some next_;
               last_result = Transitioned { from = None; to_ = next_ };
             }
           in
