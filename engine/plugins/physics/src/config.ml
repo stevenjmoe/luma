@@ -6,6 +6,7 @@ module type S = sig
     bounds : Bounded2d.Aabb2d.t;
     max_step_dt : float;
     debug : bool;
+    grid_cell_size : float option;
   }
 
   module R : Luma__resource.Resource.S with type t = t
@@ -19,6 +20,7 @@ type t = {
   max_step_dt : float;
   debug : bool;
   max_bodies : int;
+  grid_cell_size : float option;
 }
 
 module R = Luma__resource.Resource.Make (struct
@@ -35,10 +37,10 @@ let default () =
   let bounds = Bounded2d.Aabb2d.of_min_max min max in
   let max_bodies = 2048 in
 
-  { gravity; max_step_dt; bounds; debug = true; max_bodies }
+  { gravity; max_step_dt; bounds; debug = true; max_bodies; grid_cell_size = None }
 
-let create ?(debug = false) ~gravity ?(max_step_dt = 0.016) ?(bounds = None) ?(max_bodies = 2048) ()
-    =
+let create ?(debug = false) ~gravity ?(max_step_dt = 0.016) ?(bounds = None) ?(max_bodies = 2048)
+    ?(grid_cell_size = None) () =
   let bounds =
     match bounds with
     | None ->
@@ -47,4 +49,4 @@ let create ?(debug = false) ~gravity ?(max_step_dt = 0.016) ?(bounds = None) ?(m
         Bounded2d.Aabb2d.of_min_max min max
     | Some b -> b
   in
-  { gravity; max_step_dt; bounds; debug; max_bodies }
+  { gravity; max_step_dt; bounds; debug; max_bodies; grid_cell_size }

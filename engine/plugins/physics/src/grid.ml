@@ -25,16 +25,14 @@ module Grid_cell = struct
 end
 
 type t = {
-  cells : Grid_cell.t array;  (** 1d array representing 2D grid. *)
+  cells : (int, Grid_cell.t) Hashtbl.t;  (** Sparse grid keyed by flattened cell index. *)
   cell_size : float;
   rows : int;
   cols : int;  (** Grid dimensions. *)
   world_min : Vec2.t;
   world_max : Vec2.t;
   occupied : int Dynarray.t;
-  touched : bool array;
-      (** A collection of bools indicating whether the corresponding cell in [cells] has been
-          touched this frame. *)
+  empty_cell : Grid_cell.t;
   mutable query_generation : int;
       (** The current query generation. Incremented once per grid query. If it would overflow,
           [seen] is cleared and generation restarts at 1. *)
@@ -50,15 +48,18 @@ let create world_bound cell_size =
   let world_max = Aabb2d.max world_bound in
   let world_size = Vec2.sub world_max world_min in
 
+  if cell_size <= 0. then failwith "[Luma.Physics.Grid] cell_size must be positive";
+  if world_size.x <= 0. || world_size.y <= 0. then
+    failwith "[Luma.Physics.Grid] world bounds must have positive extents";
   if cell_size > world_size.x || cell_size > world_size.y then
     failwith "[Luma.Physics.Grid] cell_size is greater than world size";
 
   let cols = int_of_float (ceil (world_size.x /. cell_size)) in
   let rows = int_of_float (ceil (world_size.y /. cell_size)) in
-  let length = cols * rows in
-  let cells = Array.init length (fun _ -> Grid_cell.create ()) in
+  let initial_cells = min (max 16 (rows + cols)) 1024 in
+  let cells = Hashtbl.create initial_cells in
   let occupied = Dynarray.create () in
-  let touched = Array.make length false in
+  let empty_cell = Grid_cell.create () in
   let seen = Array.make 64 0 in
 
   {
@@ -69,7 +70,7 @@ let create world_bound cell_size =
     world_min;
     world_max;
     occupied;
-    touched;
+    empty_cell;
     query_generation = 1;
     seen;
   }
@@ -87,8 +88,9 @@ let ensure_seen grid body =
 let clear grid =
   for i = 0 to Dynarray.length grid.occupied - 1 do
     let idx = Dynarray.get grid.occupied i in
-    Grid_cell.clear grid.cells.(idx);
-    grid.touched.(idx) <- false
+    match Hashtbl.find_opt grid.cells idx with
+    | None -> ()
+    | Some cell -> Grid_cell.clear cell
   done;
   Dynarray.clear grid.occupied
 
@@ -109,10 +111,16 @@ let insert grid body_index ~min_x ~min_y ~max_x ~max_y =
   for row = start_row to end_row do
     for col = start_col to end_col do
       let cell_idx = cell_index grid ~row ~col in
-      if not grid.touched.(cell_idx) then (
-        grid.touched.(cell_idx) <- true;
-        Dynarray.add_last grid.occupied cell_idx);
-      Grid_cell.push grid.cells.(cell_idx) body_index
+      let cell =
+        match Hashtbl.find_opt grid.cells cell_idx with
+        | Some cell -> cell
+        | None ->
+            let cell = Grid_cell.create () in
+            Hashtbl.add grid.cells cell_idx cell;
+            cell
+      in
+      if Grid_cell.len cell = 0 then Dynarray.add_last grid.occupied cell_idx;
+      Grid_cell.push cell body_index
     done
   done
 
@@ -123,8 +131,11 @@ let world_min grid = grid.world_min
 let world_max grid = grid.world_max
 
 let cell_at grid index =
-  if index > Array.length grid.cells - 1 then failwith "cell_at: Cell index is out of range.";
-  grid.cells.(index)
+  let max_index = (grid.rows * grid.cols) - 1 in
+  if index < 0 || index > max_index then failwith "cell_at: Cell index is out of range.";
+  match Hashtbl.find_opt grid.cells index with
+  | Some cell -> cell
+  | None -> grid.empty_cell
 
 (* TODO: query filter *)
 let iter_aabb grid ~min_x ~min_y ~max_x ~max_y ~f =
@@ -142,7 +153,7 @@ let iter_aabb grid ~min_x ~min_y ~max_x ~max_y ~f =
   for row = start_row to end_row do
     for col = start_col to end_col do
       let cell_idx = cell_index grid ~row ~col in
-      let cell = grid.cells.(cell_idx) in
+      let cell = cell_at grid cell_idx in
       for i = 0 to cell.len - 1 do
         let body = cell.data.(i) in
         ensure_seen grid body;

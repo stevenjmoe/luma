@@ -27,8 +27,22 @@ module Make (L : Luma.S) : S = struct
     let packed_index = Resource.pack (module Rb_store.Index.R) rb_index in
     Luma__ecs.World.add_resource Rb_store.Index.R.type_id packed_index world
 
-  let add_grid bounds world =
-    let grid = Grid.create bounds 2. in
+  let derive_grid_cell_size (config : Config.t) =
+    match config.grid_cell_size with
+    | Some cell_size -> cell_size
+    | None ->
+        let open Luma__math in
+        let world_min = Bounded2d.Aabb2d.min config.bounds in
+        let world_max = Bounded2d.Aabb2d.max config.bounds in
+        let world_size = Vec2.sub world_max world_min in
+        let world_area = max epsilon_float (world_size.x *. world_size.y) in
+        let target_cells = float_of_int (max 1 config.max_bodies) in
+        let derived = Float.sqrt (world_area /. target_cells) in
+
+        Float.min derived (Float.min world_size.x world_size.y)
+
+  let add_grid (config : Config.t) world =
+    let grid = Grid.create config.bounds (derive_grid_cell_size config) in
     let packed_grid = Resource.pack (module Grid.R) grid in
     Luma__ecs.World.add_resource Grid.R.type_id packed_grid world
 
@@ -52,7 +66,7 @@ module Make (L : Luma.S) : S = struct
     |> add_rb_store
     |> add_shape_store
     |> add_rb_index
-    |> add_grid config.bounds
+    |> add_grid config
     |> add_broad_phase config.max_bodies
     |> add_narrow_phase
     |> add_event_store
