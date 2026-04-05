@@ -1,5 +1,47 @@
+module Ecs = struct
+  module World = Luma__ecs.World
+  module Component = Luma__ecs.Component
+  module Query = Luma__ecs.Query
+  module System = Luma__ecs.System
+  module Scheduler = Luma__ecs.Scheduler
+  module Command = Luma__ecs.Command
+end
+
+module Transform = Luma__transform.Transform
+module Math = Luma__math
+module Sprite = Luma__sprite.Sprite
+module State = Luma__state.State
+module Resource = Luma__resource.Resource
+module Id = Luma__id.Id
+module Asset = Luma__asset.Asset
+module Assets = Luma__asset.Assets
+module Asset_loader = Luma__asset.Loader
+module Asset_server = Luma__asset.Server
+
+module Log = struct
+  let default_log = Luma__core.Log.sub_log (Logs.Src.name Logs.default)
+  let log = Luma__core.Log.app_log
+  let error = default_log.error
+  let warn = default_log.warn
+  let debug = default_log.debug
+  let info = default_log.info
+end
+
+module Error = Luma__core.Error
+
 module type S = sig
   module Driver : Luma__driver.Driver.S
+  module Ecs = Ecs
+  module Asset = Asset
+  module Assets = Assets
+  module Asset_loader = Asset_loader
+  module Asset_server = Asset_server
+  module Id = Id
+  module Resource = Resource
+  module Sprite = Sprite
+  module State = State
+  module Transform = Transform
+  module Log = Log
 
   type colour
   type texture
@@ -64,15 +106,17 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   end
 
   module Driver = D
-
-  module Ecs = struct
-    module World = Luma__ecs.World
-    module Component = Luma__ecs.Component
-    module Query = Luma__ecs.Query
-    module System = Luma__ecs.System
-    module Scheduler = Luma__ecs.Scheduler
-    module Command = Luma__ecs.Command
-  end
+  module Ecs = Ecs
+  module Asset = Asset
+  module Assets = Assets
+  module Asset_loader = Asset_loader
+  module Asset_server = Asset_server
+  module Id = Id
+  module Resource = Resource
+  module Sprite = Sprite
+  module State = State
+  module Transform = Transform
+  module Log = Log
 
   type texture = Image.Texture.t
   type colour = D.colour
@@ -138,34 +182,3 @@ module Make (D : Luma__driver.Driver.S) : S = struct
     Fmt_tty.setup_std_outputs ();
     Luma__core.Log.init ()
 end
-
-module Ecs = struct
-  module World = Luma__ecs.World
-  module Component = Luma__ecs.Component
-  module Query = Luma__ecs.Query
-  module System = Luma__ecs.System
-  module Scheduler = Luma__ecs.Scheduler
-  module Command = Luma__ecs.Command
-end
-
-module Transform = Luma__transform.Transform
-module Math = Luma__math
-module Sprite = Luma__sprite.Sprite
-module State = Luma__state.State
-module Resource = Luma__resource.Resource
-module Id = Luma__id.Id
-module Asset = Luma__asset.Asset
-module Assets = Luma__asset.Assets
-module Asset_loader = Luma__asset.Loader
-module Asset_server = Luma__asset.Server
-
-module Log = struct
-  let default_log = Luma__core.Log.sub_log (Logs.Src.name Logs.default)
-  let log = Luma__core.Log.app_log
-  let error = default_log.error
-  let warn = default_log.warn
-  let debug = default_log.debug
-  let info = default_log.info
-end
-
-module Error = Luma__core.Error

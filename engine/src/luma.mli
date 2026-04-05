@@ -1,5 +1,46 @@
+module Ecs : sig
+  module System : module type of Luma__ecs.System
+  module Scheduler : module type of Luma__ecs.Scheduler
+  module Command : module type of Luma__ecs.Command
+  module World : module type of Luma__ecs.World
+  module Component : module type of Luma__ecs.Component
+  module Query : module type of Luma__ecs.Query
+end
+
+module Asset : module type of Luma__asset.Asset
+module Assets : module type of Luma__asset.Assets
+module Asset_loader : module type of Luma__asset.Loader
+module Asset_server : module type of Luma__asset.Server
+module Id : module type of Luma__id.Id
+module Resource : module type of Luma__resource.Resource
+module Sprite : Luma__sprite.Sprite.S
+module State : module type of Luma__state.State
+module Transform : module type of Luma__transform.Transform
+
+module Log : sig
+  val log : ('a, Format.formatter, unit, unit) format4 -> 'a
+  val error : ('a, unit) Luma__core__Log.conditional_log
+  val warn : ('a, unit) Luma__core__Log.conditional_log
+  val debug : ('a, unit) Luma__core__Log.conditional_log
+  val info : ('a, unit) Luma__core__Log.conditional_log
+end
+
+module Math : module type of Luma__math
+module Error : module type of Luma__core.Error
+
 module type S = sig
   module Driver : Luma__driver.Driver.S
+  module Ecs = Ecs
+  module Asset = Asset
+  module Assets = Assets
+  module Asset_loader = Asset_loader
+  module Asset_server = Asset_server
+  module Id = Id
+  module Resource = Resource
+  module Sprite = Sprite
+  module State = State
+  module Transform = Transform
+  module Log = Log
 
   type colour
   type texture
@@ -59,33 +100,3 @@ module type S = sig
 end
 
 module Make : functor (_ : Luma__driver.Driver.S) -> S
-
-module Ecs : sig
-  module System : module type of Luma__ecs.System
-  module Scheduler : module type of Luma__ecs.Scheduler
-  module Command : module type of Luma__ecs.Command
-  module World : module type of Luma__ecs.World
-  module Component : module type of Luma__ecs.Component
-  module Query : module type of Luma__ecs.Query
-end
-
-module Asset : module type of Luma__asset.Asset
-module Assets : module type of Luma__asset.Assets
-module Asset_loader : module type of Luma__asset.Loader
-module Asset_server : module type of Luma__asset.Server
-module Id : module type of Luma__id.Id
-module Resource : module type of Luma__resource.Resource
-module Sprite : Luma__sprite.Sprite.S
-module State : module type of Luma__state.State
-module Transform : module type of Luma__transform.Transform
-
-module Log : sig
-  val log : ('a, Format.formatter, unit, unit) format4 -> 'a
-  val error : ('a, unit) Luma__core__Log.conditional_log
-  val warn : ('a, unit) Luma__core__Log.conditional_log
-  val debug : ('a, unit) Luma__core__Log.conditional_log
-  val info : ('a, unit) Luma__core__Log.conditional_log
-end
-
-module Math : module type of Luma__math
-module Error : module type of Luma__core.Error
