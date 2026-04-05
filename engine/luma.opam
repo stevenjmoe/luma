@@ -22,7 +22,6 @@ depends: [
   "raylib" {= "1.4.0"}
   "raygui" {= "1.4.0"}
   "ptime"
-  "fmt"
   "uuidm"
   "yojson"
   "js_of_ocaml"
