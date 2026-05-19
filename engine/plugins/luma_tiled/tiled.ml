@@ -34,7 +34,7 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
 
   module Map = Map
   module Plan = Plan
-  module Tiled_render = Render.Make (Plan) (L)
+  module Tiled_render = Render.Make (L)
   open Tiled_render
 
   (* Internal assets. Public facing API should only see the final Tilemap type and the resource. *)

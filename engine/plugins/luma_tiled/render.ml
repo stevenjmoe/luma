@@ -36,8 +36,7 @@ module type S = sig
   val render : unit -> ('a, camera * unit) Ecs.System.t
 end
 
-module Make (Plan : Plan.S) (L : Luma.S) : S with type plan = Plan.t and type camera = L.Camera.t =
-struct
+module Make (L : Luma.S) : S with type plan = Plan.t and type camera = L.Camera.t = struct
   open L
 
   type 'plan phase =
