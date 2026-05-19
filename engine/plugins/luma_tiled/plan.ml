@@ -2,42 +2,6 @@ open Luma__asset
 open Luma__math
 open Types
 
-module type S = sig
-  type map
-
-  type flip = {
-    h : bool;
-    v : bool;
-    d : bool;
-  }
-
-  type draw_cmd = {
-    texture : Assets.handle;
-    source : Rect.t;
-    dest : Rect.t;
-    origin : Vec2.t;
-    rotation : float;
-    z : int;
-    flip : flip;
-  }
-
-  type layer_plan = draw_cmd array
-
-  type plan_meta = {
-    parallax : Vec2.t;
-    offset : Vec2.t;
-    opacity : float;
-  }
-
-  type t = {
-    layers : layer_plan array;
-    meta : plan_meta array;
-    map_parallax_origin : Vec2.t;
-  }
-
-  val make_plan : ?z_base:int -> map -> (int, tileset_loaded) Hashtbl.t -> t
-end
-
 type map = Map.t
 
 type flip = {
