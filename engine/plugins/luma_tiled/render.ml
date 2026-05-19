@@ -2,41 +2,7 @@ open Types
 open Luma
 open Luma.Math
 
-module type S = sig
-  type plan
-  type camera
-
-  type 'plan phase =
-    | Init
-    | Loading_tilesets of { tileset_handles_by_gid : (int * Assets.handle) list }
-    | Loading_textures of {
-        tileset_handles_by_gid : (int * Assets.handle) list;
-        textures_by_tileset : (int, tileset_texture) Hashtbl.t;
-      }
-    | Ready of {
-        map : Map.t;
-        tilesets : (int, tileset_loaded) Hashtbl.t;
-        plan : 'plan;
-      }
-    | Failed of Error.error
-
-  type map_inner = {
-    mutable background_colour : string option;
-    origin : Vec2.t; (* world-space top-left of tile (0,0) *)
-    scale : float; (* world units per pixel; 1.0 = pixels *)
-    layers : string list option; (* None = all TMJ tile layers *)
-    z_base : int; (* z for first layer; layers add +1, etc. *)
-    mutable phase : plan phase;
-  }
-
-  type map_tbl = (Assets.handle, map_inner) Hashtbl.t
-
-  module R : Luma.Resource.S with type t = map_tbl
-
-  val render : unit -> ('a, camera * unit) Ecs.System.t
-end
-
-module Make (L : Luma.S) : S with type plan = Plan.t and type camera = L.Camera.t = struct
+module Make (L : Luma.S) = struct
   open L
 
   type 'plan phase =
