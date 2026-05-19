@@ -111,7 +111,6 @@ let update_component_to_arch world archetype =
         (operation (Archetype.id archetype |> Id.Archetype.to_int) arch_set))
   @@ Archetype.components archetype
 
-(* TODO: find_archetype_exn and a version that returns an option *)
 let find_archetype world entity =
   match Hashtbl.find_opt world.entity_to_archetype entity with
   | Some id -> Hashtbl.find world.archetypes id

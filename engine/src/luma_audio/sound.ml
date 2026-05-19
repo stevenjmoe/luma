@@ -16,18 +16,6 @@ module Make (D : Luma__driver.Driver.S) : S with type t = D.Audio.Sound.t = stru
 
   let play_sound = D.Audio.Sound.play_sound
 
-  (*let () =
-    Luma__asset.Server.register_loader_hook (fun server ->
-        Luma__asset.Server.register_loader server
-          {
-            Luma__asset.Loader.exts = [ ".wav"; ".ogg"; ".mp3"; ".qoa"; ".xm"; ".mod"; ".flac" ];
-            load =
-              (fun path ->
-                let sound = D.Audio.Sound.load_sound path in
-                Ok ());
-            type_id = A.type_id;
-          })*)
-
   (* TODO: unload the asset without a handle? *)
   let cleanup () =
     Luma__ecs.System.make_with_resources ~components:End

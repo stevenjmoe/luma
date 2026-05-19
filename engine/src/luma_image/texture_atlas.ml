@@ -1,4 +1,3 @@
-(*TODO: *)
 (* A hidden record type so we can pass it into Asset.Make,
    which produces a nominal type A.t. We then alias t = A.t
    without leaking raw’s internal fields in the public API. *)

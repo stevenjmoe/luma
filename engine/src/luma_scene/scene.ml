@@ -103,7 +103,6 @@ module Make (D : Driver.S) : S = struct
     let world = World.create () in
     inject_into_world scene world
 
-  (* TODO: *)
   let write scene world =
     match ctx_of_world world with
     | Ok ctx ->

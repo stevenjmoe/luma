@@ -116,7 +116,8 @@ let on_exit
 let init_state (type a) state_mod (state : a) app =
   let open Luma__resource.Resource in
   let open Luma__state in
-  let app = app |> add_plugin (fun a -> a |> on StateTransition (State.transition_system ())) in
+  let app = add_plugin (fun a -> a |> on StateTransition (State.transition_system ())) app in
+
   let packed =
     Luma__state.State.State (state_mod, state)
     |> State.State_res.create
