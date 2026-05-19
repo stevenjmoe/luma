@@ -6,6 +6,20 @@ module type S = sig
   type plan
   type camera
 
+  type 'plan phase =
+    | Init
+    | Loading_tilesets of { tileset_handles_by_gid : (int * Assets.handle) list }
+    | Loading_textures of {
+        tileset_handles_by_gid : (int * Assets.handle) list;
+        textures_by_tileset : (int, tileset_texture) Hashtbl.t;
+      }
+    | Ready of {
+        map : Map.t;
+        tilesets : (int, tileset_loaded) Hashtbl.t;
+        plan : 'plan;
+      }
+    | Failed of Error.error
+
   type map_inner = {
     mutable background_colour : string option;
     origin : Vec2.t; (* world-space top-left of tile (0,0) *)
@@ -25,6 +39,20 @@ end
 module Make (Plan : Plan.S) (L : Luma.S) : S with type plan = Plan.t and type camera = L.Camera.t =
 struct
   open L
+
+  type 'plan phase =
+    | Init
+    | Loading_tilesets of { tileset_handles_by_gid : (int * Assets.handle) list }
+    | Loading_textures of {
+        tileset_handles_by_gid : (int * Assets.handle) list;
+        textures_by_tileset : (int, tileset_texture) Hashtbl.t;
+      }
+    | Ready of {
+        map : Map.t;
+        tilesets : (int, tileset_loaded) Hashtbl.t;
+        plan : 'plan;
+      }
+    | Failed of Error.error
 
   type plan = Plan.t
   type camera = L.Camera.t

@@ -4,7 +4,6 @@ let ( let* ) = Result.bind
 
 module Make
     (L : Luma.S)
-    (Map : Map.S)
     (Tilemap_asset : Asset.S with type t = Map.source)
     (Tileset_asset : Asset.S with type t = Tileset.t) =
 struct

@@ -1,5 +1,5 @@
 (* TODO: Currently only supports rect. Handle other shapes *)
-module Collision (L : Luma.S) (Map : Map.S) = struct
+module Collision (L : Luma.S) = struct
   open Luma
 
   let deg_to_rad d = d *. Float.pi /. 180.

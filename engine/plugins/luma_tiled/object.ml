@@ -94,6 +94,7 @@ module Object_data = struct
     rotation : float;
     visible : bool;
     shape : object_shape;
+    type_ : string option;
     properties : string list (* TODO *);
   }
 
@@ -150,6 +151,8 @@ module Object_data = struct
     let* height = parse_float_opt "height" json in
     let* visible = parse_bool_opt "visible" json in
     let* rotation = parse_float_opt "rotation" json in
+    let* type_ = parse_string_opt "type" json in
+
     let* x = parse_float_opt "x" json in
     let* y = parse_float_opt "y" json in
     let x = Option.value ~default:0. x in
@@ -191,5 +194,5 @@ module Object_data = struct
     in
     let shape = Option.value ~default:(Rect { width; height }) shape in
 
-    Ok { id; tile; name; user_type = ""; x; y; rotation; visible; shape; properties = [] }
+    Ok { id; tile; name; user_type = ""; x; y; rotation; visible; shape; type_; properties = [] }
 end
