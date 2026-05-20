@@ -8,6 +8,16 @@ module type S = sig
 
   module R : Luma.Resource.S with type t = maps
 
+  type metadata = {
+    source : string;
+    width : int;
+    height : int;
+    tile_width : int;
+    tile_height : int;
+    orientation : Map.orientation;
+    background_colour : string option;
+  }
+
   val add :
     Luma.Ecs.World.t ->
     string ->
@@ -19,6 +29,24 @@ module type S = sig
 
   val tilemap_loaded : Luma.Ecs.World.t -> Luma.Assets.handle -> bool
   val tilemaps_loaded : Luma.Ecs.World.t -> bool
+  val tilemap_renderable : Luma.Ecs.World.t -> Luma.Assets.handle -> bool
+  val tilemaps_renderable : Luma.Ecs.World.t -> bool
+  val metadata : Luma.Ecs.World.t -> Luma.Assets.handle -> metadata option
+
+  val object_layers :
+    Luma.Ecs.World.t -> Luma.Assets.handle -> (string * Object.Object_data.t list) list option
+
+  val object_layer :
+    Luma.Ecs.World.t -> Luma.Assets.handle -> string -> Object.Object_data.t list option
+
+  val find_objects :
+    ?layer:string ->
+    ?name:string ->
+    ?type_:string ->
+    Luma.Ecs.World.t ->
+    Luma.Assets.handle ->
+    Object.Object_data.t list option
+
   val plugin : app -> app
 end
 
@@ -35,7 +63,7 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
   module Map = Map
   module Plan = Plan
   module Tiled_render = Render.Make (L)
-  open Tiled_render
+  module R = Registry.R
 
   (* Internal assets. Public facing API should only see the final Tilemap type and the resource. *)
   module Tilemap_source_asset = Luma__asset.Asset.Make (struct
@@ -51,9 +79,17 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
   module Loader = Loader.Make (L) (Tilemap_source_asset) (Tileset_asset)
   module Collision = Collision.Collision (L)
 
-  type maps = Tiled_render.map_tbl
+  type maps = Registry.t
 
-  module R = Tiled_render.R
+  type metadata = {
+    source : string;
+    width : int;
+    height : int;
+    tile_width : int;
+    tile_height : int;
+    orientation : Map.orientation;
+    background_colour : string option;
+  }
 
   let create () = Hashtbl.create 16
 
@@ -72,28 +108,96 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
 
     match Asset_server.load (module Tilemap_source_asset) server path with
     | Ok handle ->
-        let r =
-          { origin; scale; layers = None; z_base = z; phase = Init; background_colour = None }
-        in
+        let r = Registry.create_entry ~origin ~scale ~z_base:z in
         Hashtbl.add tilemaps handle r;
         Ok handle
     | Error e -> Error e
 
   let ( let+ ) o f = match o with Some x -> f x | None -> false
 
+  let get_entry world handle =
+    let ( let* ) = Option.bind in
+    let* packed = World.get_resource world R.type_id in
+    let* tbl = Resource.unpack_opt (module R) packed in
+    Hashtbl.find_opt tbl handle
+
+  let get_map world handle =
+    let ( let* ) = Option.bind in
+    let* entry = get_entry world handle in
+    Registry.map entry
+
   let tilemap_loaded world handle =
-    let+ packed = World.get_resource world R.type_id in
-    let+ tbl = Resource.unpack_opt (module R) packed in
-    match Hashtbl.find_opt tbl handle with
-    | Some tilemap -> ( match tilemap.phase with Ready _ -> true | _ -> false)
-    | None -> false
+    let+ entry = get_entry world handle in
+    Registry.loaded entry
 
   let tilemaps_loaded world =
     let+ packed = World.get_resource world R.type_id in
     let+ tbl = Resource.unpack_opt (module R) packed in
-    Hashtbl.fold
-      (fun _ (tm : map_inner) acc -> acc && match tm.phase with Ready _ -> true | _ -> false)
-      tbl true
+    Hashtbl.fold (fun _ entry acc -> acc && Registry.loaded entry) tbl true
+
+  let tilemap_renderable world handle =
+    let+ entry = get_entry world handle in
+    Registry.renderable entry
+
+  let tilemaps_renderable world =
+    let+ packed = World.get_resource world R.type_id in
+    let+ tbl = Resource.unpack_opt (module R) packed in
+    Hashtbl.fold (fun _ entry acc -> acc && Registry.renderable entry) tbl true
+
+  let metadata world handle =
+    Option.map
+      (fun (map : Map.t) ->
+        {
+          source = map.source;
+          width = map.width;
+          height = map.height;
+          tile_width = map.tile_width;
+          tile_height = map.tile_height;
+          orientation = map.orientation;
+          background_colour = map.background_colour;
+        })
+      (get_map world handle)
+
+  let object_layers_from_map (map : Map.t) =
+    map.layers
+    |> List.filter_map (fun (layer : Layers.Layer_data.t) ->
+        match layer.layer_type with
+        | Layers.Layer_data.Objects object_data -> Some (layer.name, object_data.objects)
+        | Layers.Layer_data.Tiles _ -> None)
+
+  let object_layers world handle = Option.map object_layers_from_map (get_map world handle)
+
+  let object_layer world handle name =
+    let ( let* ) = Option.bind in
+    let* layers = object_layers world handle in
+    List.assoc_opt name layers
+
+  let find_objects ?layer ?name ?type_ world handle =
+    let layer_matches layer_name =
+      match layer with None -> true | Some expected -> String.equal expected layer_name
+    in
+
+    let object_matches (object_data : Object.Object_data.t) =
+      let name_matches =
+        match name with None -> true | Some expected -> String.equal expected object_data.name
+      in
+
+      let type_matches =
+        match type_ with
+        | None -> true
+        | Some expected -> (
+            match object_data.type_ with
+            | Some actual -> String.equal expected actual
+            | None -> false)
+      in
+      name_matches && type_matches
+    in
+
+    object_layers world handle
+    |> Option.map (fun layers ->
+        layers
+        |> List.filter (fun (layer_name, _) -> layer_matches layer_name)
+        |> List.concat_map (fun (_, objects) -> List.filter object_matches objects))
 
   (* private functions *)
 
@@ -206,6 +310,60 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
       map.tilesets;
     finalized_tilesets
 
+  let log_error prefix e =
+    let msg = Format.asprintf "%s: %a" prefix Error.pp e in
+    log.error (fun l -> l "%s" msg)
+
+  let fail_load entry e =
+    log_error "Failed to load tilemap" e;
+    entry.Registry.load_state <- Load_failed e
+
+  let ensure_loaded_side_effects cmd (entry : Registry.entry) (map : Map.t) =
+    if not entry.collision_extracted then (
+      Collision.extract_colliders map cmd;
+      entry.collision_extracted <- true)
+
+  let update_load_state assets server cmd tilemap_handle (entry : Registry.entry) =
+    match entry.load_state with
+    | Waiting_source -> (
+        match Tilemap_source_assets.get assets tilemap_handle with
+        | Some source -> (
+            match start_loading_tilesets server source with
+            | Ok tileset_handles_by_gid ->
+                entry.load_state <- Loading_tilesets { tileset_handles_by_gid }
+            | Error e -> fail_load entry e)
+        | None -> ())
+    | Loading_tilesets { tileset_handles_by_gid } ->
+        if all_tilesets_loaded assets tileset_handles_by_gid then
+          match Tilemap_source_assets.get assets tilemap_handle with
+          | Some source -> (
+              match resolve_map_tilesets assets tileset_handles_by_gid with
+              | Ok map_tilesets -> (
+                  match Map.from_source source map_tilesets with
+                  | Ok map ->
+                      entry.load_state <- Loaded map;
+                      ensure_loaded_side_effects cmd entry map;
+                      entry.render_state <-
+                        Loading_textures { textures_by_tileset = start_loading_textures server map }
+                  | Error e -> fail_load entry e)
+              | Error e -> fail_load entry e)
+          | None -> ()
+        else ()
+    | Loaded map -> ensure_loaded_side_effects cmd entry map
+    | Load_failed _ -> ()
+
+  let update_render_state assets server (entry : Registry.entry) =
+    match (entry.load_state, entry.render_state) with
+    | Loaded map, Render_not_started ->
+        entry.render_state <-
+          Loading_textures { textures_by_tileset = start_loading_textures server map }
+    | Loaded map, Loading_textures { textures_by_tileset } ->
+        if all_textures_loaded assets textures_by_tileset then
+          let tilesets = finalize_maps map textures_by_tileset in
+          let plan = Plan.make_plan ~z_base:entry.z_base map tilesets in
+          entry.render_state <- Renderable { tilesets; plan }
+    | _, Render_failed _ | _, Renderable _ | _, Loading_textures _ | _, Render_not_started -> ()
+
   let resolve () =
     System.make_with_resources ~components:End
       ~resources:
@@ -215,70 +373,9 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
       (fun w cmd _ r ->
         Query.Tuple.with3 r (fun assets server tilemap_map ->
             tilemap_map
-            |> Hashtbl.iter (fun tilemap_handle (render_map : map_inner) ->
-                match render_map.phase with
-                | Init -> (
-                    match Tilemap_source_assets.get assets tilemap_handle with
-                    | Some source -> (
-                        match start_loading_tilesets server source with
-                        | Ok tileset_handles_by_gid ->
-                            render_map.phase <- Loading_tilesets { tileset_handles_by_gid }
-                        | Error e -> render_map.phase <- Failed e)
-                    | None -> ())
-                | Loading_tilesets { tileset_handles_by_gid } ->
-                    if all_tilesets_loaded assets tileset_handles_by_gid then
-                      match Tilemap_source_assets.get assets tilemap_handle with
-                      | Some source -> (
-                          match resolve_map_tilesets assets tileset_handles_by_gid with
-                          | Ok map_tilesets -> (
-                              match Map.from_source source map_tilesets with
-                              | Ok map ->
-                                  let textures = start_loading_textures server map in
-                                  render_map.phase <-
-                                    Loading_textures
-                                      { tileset_handles_by_gid; textures_by_tileset = textures }
-                              | Error e ->
-                                  let msg =
-                                    Format.asprintf "Failed to load tileset: %a" Error.pp e
-                                  in
-                                  log.error (fun l -> l " %s" msg);
-                                  render_map.phase <- Failed e)
-                          | Error e -> render_map.phase <- Failed e)
-                      | None -> ()
-                    else ()
-                | Loading_textures { tileset_handles_by_gid; textures_by_tileset } ->
-                    if all_textures_loaded assets textures_by_tileset then
-                      match Tilemap_source_assets.get assets tilemap_handle with
-                      | Some source -> (
-                          match resolve_map_tilesets assets tileset_handles_by_gid with
-                          | Ok map_tilesets -> (
-                              match Map.from_source source map_tilesets with
-                              | Ok map ->
-                                  let tilesets = finalize_maps map textures_by_tileset in
-                                  let z_base = render_map.z_base in
-                                  let plan = Plan.make_plan ~z_base map tilesets in
-
-                                  render_map.background_colour <- map.background_colour;
-                                  Collision.extract_colliders map cmd;
-
-                                  render_map.phase <- Ready { tilesets; plan; map }
-                              | Error e ->
-                                  let msg =
-                                    Format.asprintf "Failed to load tilemap: %a" Luma__core.Error.pp
-                                      e
-                                  in
-                                  log.error (fun l -> l "%s" msg);
-                                  render_map.phase <- Failed e)
-                          | Error e ->
-                              let msg =
-                                Format.asprintf "Failed to load tilemap: %a" Luma__core.Error.pp e
-                              in
-                              log.error (fun l -> l "%s" msg);
-                              render_map.phase <- Failed e)
-                      | None -> ()
-                    else ()
-                | Ready _e -> ()
-                | Failed _ -> failwith "TODO: Tiled.resolve (failed branch)"));
+            |> Hashtbl.iter (fun tilemap_handle (entry : Registry.entry) ->
+                update_load_state assets server cmd tilemap_handle entry;
+                update_render_state assets server entry));
         w)
 
   let setup_register app =
@@ -298,14 +395,18 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
       (fun world _ _ (wc, (maps, _)) ->
         let min_kv =
           Hashtbl.fold
-            (fun k p acc ->
-              match acc with
-              | None -> Some (k, p)
-              | Some (_kmin, pmin) -> if p.z_base < pmin.z_base then Some (k, p) else acc)
+            (fun k entry acc ->
+              match Registry.map entry with
+              | None -> acc
+              | Some map -> (
+                  match acc with
+                  | None -> Some (k, entry, map)
+                  | Some (_kmin, min_entry, _min_map) ->
+                      if entry.z_base < min_entry.z_base then Some (k, entry, map) else acc))
             maps None
         in
         match min_kv with
-        | Some (_, map) -> (
+        | Some (_, _, map) -> (
             match map.background_colour with
             | Some bc -> (
                 match L.Colour.from_string bc with
@@ -323,5 +424,5 @@ module Make (L : Luma.S) : S with type app = L.App.t = struct
     |> L.App.on Startup (register_map_loader ())
     |> L.App.on Update (resolve ())
     |> L.App.once Update (set_background ()) ~run_if:tilemaps_loaded
-    |> L.App.on PreRender (render ())
+    |> L.App.on PreRender (Tiled_render.render ())
 end
