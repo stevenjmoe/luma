@@ -1,3 +1,3 @@
 let () =
   Alcotest.run "Ocaml_engine"
-    [ Test_image.tests; Test_math.tests; Test_render.tests; Test_assets.tests ]
+    [ Test_image.tests; Test_math.tests; Test_render.tests; Test_assets.tests; Test_scene.tests ]

@@ -1,6 +1,18 @@
 (executable
  (name unit)
- (libraries alcotest containers luma.ecs luma.math luma.image luma.render))
+ (libraries
+  alcotest
+  containers
+  luma.codecs
+  luma.driver.raylib
+  luma.ecs
+  luma.image
+  luma.math
+  luma.render
+  luma.scene
+  luma.transform
+  luma.type_register
+  uuidm))
 
 (rule
   (alias runtest)
