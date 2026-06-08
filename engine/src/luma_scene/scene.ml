@@ -65,7 +65,7 @@ module Make (D : Driver.S) : S = struct
                 (Some Type_register.Component_registry.R.name))
     in
     let* res_packed =
-      World.get_resource world Type_register.Component_registry.R.type_id
+      World.get_resource world Type_register.Resource_registry.R.type_id
       |> Option.to_result
            ~none:
              (Error.resource_not_found
