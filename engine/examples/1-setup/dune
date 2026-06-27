@@ -1,0 +1,3 @@
+(executable
+ (name setup)
+ (libraries luma luma_driver_raylib))
