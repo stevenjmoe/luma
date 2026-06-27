@@ -31,7 +31,6 @@ _opam/
 *.wav
 *.jpg
 *.zip
-*.png
 *.ini
 editor/
 **/dune.lock/**
