@@ -10,7 +10,7 @@ let point_cloud_2d_center (points : Vec2.t array) =
       res_x := !res_x +. points.(i).x;
       res_y := !res_y +. points.(i).y
     done;
-    Vec2.scale (Vec2.create !res_x !res_y) denom
+    Vec2.scale denom (Vec2.create !res_x !res_y)
 
 module type Bounding_volume = sig
   type translation

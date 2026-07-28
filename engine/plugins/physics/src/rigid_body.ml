@@ -84,7 +84,7 @@ let create_box ?(mass = 1.) ?(is_sensor = false) body_type pos size =
   {
     body_type;
     is_sensor;
-    shape = Aabb (Vec2.scale size 0.5);
+    shape = Aabb (Vec2.scale 0.5 size);
     pos;
     vel = Vec2.zero;
     acc = Vec2.zero;
