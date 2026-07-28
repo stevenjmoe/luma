@@ -1,0 +1,3 @@
+(executable
+ (name sprite_movement)
+ (libraries luma luma_driver_raylib))

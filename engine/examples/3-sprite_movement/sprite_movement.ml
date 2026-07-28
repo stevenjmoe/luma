@@ -1,9 +1,3 @@
-(* 
-   Luma will render entities which have both a Sprite and Transform component.
-
-   dune exec examples/2-sprite/sprite.exe --profile release
-*)
-
 module L = Luma.Make (Luma_driver_raylib.Driver)
 open L
 
@@ -36,9 +30,44 @@ let setup () =
 
       w)
 
+let key_axis negative positive =
+  let negative_value = if Input.Keyboard.is_key_down negative then 1. else 0. in
+  let positive_value = if Input.Keyboard.is_key_down positive then 1. else 0. in
+
+  positive_value -. negative_value
+
+let movement_direction () =
+  let open Luma.Math in
+  let direction =
+    Vec3.create (key_axis Input.Key.A Input.Key.D) (key_axis Input.Key.W Input.Key.S) 0.
+  in
+
+  if Vec3.length_squared direction > 1. then Vec3.normalise direction else direction
+
+let move_player () =
+  Ecs.System.make_with_resources
+    ~components:Ecs.Query.Component.(Required (module Transform.C) & End)
+    ~resources:Ecs.Query.Resource.(Resource (module Time.R) & End)
+    "move_player"
+    (fun world _cmd entities (time, _) ->
+      let open Transform in
+      let speed = 200. in
+      let direction = movement_direction () in
+      let distance = speed *. time.dt in
+      let dx = direction.x *. distance in
+      let dy = direction.y *. distance in
+
+      Ecs.Query.Tuple.iter1
+        (fun transform ->
+          transform.position.x <- transform.position.x +. dx;
+          transform.position.y <- transform.position.y +. dy)
+        entities;
+      world)
+
 let () =
   App.create ()
   |> Plugin.add_default_plugins
   |> App.add_plugin Plugin.debug_plugin
   |> App.on Startup (setup ())
+  |> App.on Update (move_player ())
   |> App.run
