@@ -76,7 +76,6 @@ type transition_result =
     }
 
 type state_resource = {
-  previous : state option;
   current : state option;
   next : state option;
   last_result : transition_result;
@@ -85,8 +84,7 @@ type state_resource = {
 module State_res = struct
   type t = state_resource
 
-  let create s = { current = None; next = Some s; previous = None; last_result = NoChange }
-  let previous s = s.previous
+  let create s = { current = None; next = Some s; last_result = NoChange }
   let current s = s.current
   let next s = s.next
   let last_result s = s.last_result
@@ -129,7 +127,7 @@ let queue_state (type s) (module S : STATE with type t = s) (v : s) (world : Lum
           world)
   | None ->
       let packed =
-        { next = Some pending; current = None; previous = None; last_result = NoChange }
+        { next = Some pending; current = None; last_result = NoChange }
         |> Luma__resource.Resource.pack (module State_res.R)
       in
       World.set_resource State_res.R.type_id packed world
@@ -140,39 +138,43 @@ let is (type a) (module S : STATE with type t = a) (v : a) (st : state) : bool =
 let transition_system () =
   let open Luma__ecs in
   let open Luma__resource in
+  let set_state_resource w state =
+    let packed = Resource.pack (module State_res.R) state in
+    World.set_resource State_res.R.type_id packed w
+  in
   Luma__ecs.System.make ~components:End "transition_system" (fun w _ _e ->
       let ( >>= ) = Option.bind in
       match
         World.get_resource w State_res.R.type_id >>= fun s ->
         Resource.unpack_opt (module State_res.R) s
       with
-      | Some { current = None; next = Some next_; _ } ->
-          let s =
+      (* Initial state *)
+      | Some { current = None; next = Some initial; _ } ->
+          let new_state =
             {
-              next = Some next_;
-              previous = None;
-              current = Some next_;
-              last_result = Transitioned { from = None; to_ = next_ };
+              next = None;
+              current = Some initial;
+              last_result = Transitioned { from = None; to_ = initial };
             }
           in
-          let new_packed = Resource.pack (module State_res.R) s in
-          World.set_resource State_res.R.type_id new_packed w
-      | Some { current = Some curr; next = Some next_; _ } ->
-          if eq_state curr next_ then w
-          else
-            let s =
-              {
-                next = None;
-                previous = Some curr;
-                current = Some next_;
-                last_result = Transitioned { from = Some curr; to_ = next_ };
-              }
-            in
-            let new_packed = Resource.pack (module State_res.R) s in
-            World.set_resource State_res.R.type_id new_packed w
-      | Some ({ next = None; last_result = Transitioned _; _ } as r) ->
-          (* Clear last_result one frame after a transition, if no new transition is queued. *)
-          let cleared = { r with last_result = NoChange } in
-          let packed = Resource.pack (module State_res.R) cleared in
-          World.set_resource State_res.R.type_id packed w
+          set_state_resource w new_state
+      (* Transition from current to next. *)
+      | Some { current = Some current; next = Some next_; _ } when not (eq_state current next_) ->
+          let new_state =
+            {
+              next = None;
+              current = Some next_;
+              last_result = Transitioned { from = Some current; to_ = next_ };
+            }
+          in
+          set_state_resource w new_state
+      (* Clear the previous frame's transition result. *)
+      | Some ({ last_result = Transitioned _; _ } as state) ->
+          (* Clear the previous transition result and consume any no-op request. *)
+          let cleared = { state with last_result = NoChange; next = None } in
+          set_state_resource w cleared
+      (* Current and next are the same. Do nothing but consume the request *)
+      | Some ({ current = Some current; next = Some next; _ } as state) when eq_state current next
+        ->
+          set_state_resource w { state with next = None }
       | _ -> w)

@@ -48,7 +48,6 @@ type transition_result =
     }
 
 type state_resource = {
-  previous : state option;
   current : state option;
   next : state option;
   last_result : transition_result;
@@ -60,11 +59,9 @@ module State_res : sig
   val create : state -> t
   (** Create initial state resource.
       - current: [s]
-      - previous: [None]
       - next: [None]
       - last_result: [NoChange] *)
 
-  val previous : t -> state option
   val current : t -> state option
   val next : t -> state option
   val last_result : t -> transition_result
