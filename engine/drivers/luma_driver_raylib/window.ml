@@ -2,7 +2,8 @@ open Raylib
 
 let init ~width ~height ~title ~resizable =
   set_trace_log_level TraceLogLevel.Warning;
-  if resizable then set_config_flags [ ConfigFlags.Window_resizable ];
+
+  if resizable then set_config_flags ConfigFlags.window_resizable;
   init_window width height title;
   set_target_fps 60
 

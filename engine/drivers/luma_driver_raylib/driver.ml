@@ -199,7 +199,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       type t = sound
 
       let load_sound = Raylib.load_sound
-      let play_sound sound = if Raylib.is_sound_ready sound then Raylib.play_sound sound
+      let play_sound sound = if Raylib.is_sound_valid sound then Raylib.play_sound sound
       let stop_sound = Raylib.stop_sound
       let pause_sound = Raylib.pause_sound
       let resume_sound = Raylib.resume_sound
@@ -213,7 +213,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       type t = music
 
       let load_music_stream = Raylib.load_music_stream
-      let is_music_ready = Raylib.is_music_ready
+      let is_music_ready = Raylib.is_music_valid
       let unload_music_stream = Raylib.unload_music_stream
       let play_music_stream = Raylib.play_music_stream
       let is_music_stream_playing = Raylib.is_music_stream_playing
