@@ -44,18 +44,3 @@ let insert_resource (type a) buf (module R : Resource.S with type t = a) res =
   buf.commands <- Insert_resource packed :: buf.commands
 
 let remove_resource buf res = buf.commands <- Remove_resource res :: buf.commands
-
-let flush world buf =
-  List.iter
-    (fun cmd ->
-      match cmd with
-      | Spawn { entity; name; components } ->
-          let e_id = World.register_entity world entity name in
-          World.add_components world e_id components;
-          ()
-      | Despawn e -> World.remove_entity world e
-      | Insert (e, c) -> World.add_component world c e
-      | Remove (e, c) -> World.remove_component world c e
-      | Insert_resource r -> ignore (World.add_resource (Resource.type_id r) r world)
-      | Remove_resource r -> World.remove_resource r world)
-    buf.commands
