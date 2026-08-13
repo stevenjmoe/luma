@@ -5,6 +5,7 @@ module Ecs = struct
   module System = Luma__ecs.System
   module Scheduler = Luma__ecs.Scheduler
   module Command = Luma__ecs.Command
+  module Hierarchy = Luma__ecs.Hierarchy
 end
 
 module Transform = Luma__transform.Transform

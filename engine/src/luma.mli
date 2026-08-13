@@ -5,6 +5,7 @@ module Ecs : sig
   module World : module type of Luma__ecs.World
   module Component : module type of Luma__ecs.Component
   module Query : module type of Luma__ecs.Query
+  module Hierarchy : module type of Luma__ecs.Hierarchy
 end
 
 module Asset : module type of Luma__asset.Asset
