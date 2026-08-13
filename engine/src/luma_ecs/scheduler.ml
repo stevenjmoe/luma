@@ -223,5 +223,5 @@ let run_stage stage sched world =
   let world, last_pending = drain world buckets.last cmd in
   buckets.last <- last_pending;
   Hashtbl.replace sched.once stage buckets;
-  Command.flush world cmd;
+  World.flush_commands world cmd;
   world

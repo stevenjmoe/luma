@@ -52,12 +52,12 @@ val with_component :
 
     Example:
     {[
-      let velocity = Velocity.zero () in
-      let transform = Transform.create ~position:(Math.Vec3.create 100. 100. 100.) () in
-      player
-      |> World.with_component world (module Velocity.C) velocity
-      |> World.with_component world (module Transform.C) transform
-      |> ignore
+    let velocity = Velocity.zero () in
+    let transform = Transform.create ~position:(Math.Vec3.create 100. 100. 100.) () in
+    player
+    |> World.with_component world (module Velocity.C) velocity
+    |> World.with_component world (module Transform.C) transform
+    |> ignore
     ]}
 
     @raise Luma__core.Error.Entity_not_found if the entity hasn't been added to the game world.
@@ -111,6 +111,9 @@ val get_component : t -> (module Component.S with type t = 'a) -> Id.Entity.t ->
 
 val has_component : t -> (module Component.S with type t = 'a) -> Id.Entity.t -> bool
 (** Returns true if the entity has the given component. *)
+
+val flush_commands : t -> Command.t -> unit
+(** [flush_commands world buf] applies all deferred commands in [buf] to [world]. *)
 
 module Introspect : sig
   val revision : t -> int
