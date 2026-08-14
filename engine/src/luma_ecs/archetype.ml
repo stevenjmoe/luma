@@ -38,8 +38,8 @@ let add arch entity components =
   let entity_id = Id.Entity.to_int entity in
   components
   |> List.iter (fun component ->
-         find_component_set_with_action arch component (fun set ->
-             Sparse_set.set set entity_id component));
+      find_component_set_with_action arch component (fun set ->
+          Sparse_set.set set entity_id component));
   add ()
 
 let replace arch entity component =
@@ -64,3 +64,6 @@ let query_table arch entity component_id =
   match Sparse_set.get arch.table component_id with
   | Some t -> ( match Sparse_set.get t entity_id with Some c -> Some c | None -> None)
   | None -> None
+
+let has_component arch component_id =
+  Id.ComponentSet.exists (Id.Component.eq component_id) arch.components
