@@ -25,3 +25,4 @@ val remove : t -> Id.Entity.t -> Id.Component.t -> unit
 val insert_resource : t -> (module Resource.S with type t = 'a) -> 'a -> unit
 val remove_resource : t -> Id.Resource.t -> unit
 val commands : t -> command List.t
+val take : t -> command list

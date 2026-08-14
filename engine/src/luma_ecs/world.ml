@@ -269,8 +269,8 @@ let add_components world entity components =
     move_entity_to_archetype world entity ~old_arch ~new_arch overrides
 
 let flush_commands world (buf : Command.t) =
-  List.iter
-    (fun cmd ->
+  Command.take buf
+  |> List.iter (fun cmd ->
       match cmd with
       | Command.Spawn { entity; name; components } ->
           let e_id = register_entity world entity name in
@@ -281,7 +281,6 @@ let flush_commands world (buf : Command.t) =
       | Remove (e, c) -> remove_component world c e
       | Insert_resource r -> ignore (add_resource (Resource.type_id r) r world)
       | Remove_resource r -> remove_resource r world)
-    (Command.commands buf)
 
 module Introspect = struct
   let revision w = w.revision
