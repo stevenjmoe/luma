@@ -20,6 +20,11 @@ type t = { mutable commands : command list }
 let create () = { commands = [] }
 let commands c = c.commands
 
+let take buf =
+  let commands = buf.commands in
+  buf.commands <- [];
+  commands
+
 let spawn_packed ?(name = "") ?uuid buf comps =
   let entity = Entity.make name ~uuid in
   buf.commands <- Spawn { entity; name; components = comps } :: buf.commands;
