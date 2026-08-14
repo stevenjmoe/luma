@@ -268,19 +268,24 @@ let add_components world entity components =
     List.iter (fun p -> Hashtbl.replace overrides (Component.id p) p) components;
     move_entity_to_archetype world entity ~old_arch ~new_arch overrides
 
-let flush_commands world (buf : Command.t) =
-  Command.take buf
-  |> List.iter (fun cmd ->
-      match cmd with
-      | Command.Spawn { entity; name; components } ->
-          let e_id = register_entity world entity name in
-          add_components world e_id components;
-          ()
-      | Despawn e -> remove_entity world e
-      | Insert (e, c) -> add_component world c e
-      | Remove (e, c) -> remove_component world c e
-      | Insert_resource r -> ignore (add_resource (Resource.type_id r) r world)
-      | Remove_resource r -> remove_resource r world)
+let apply_command world cmd =
+  match cmd with
+  | Command.Spawn { entity; name; components } ->
+      let e_id = register_entity world entity name in
+      add_components world e_id components;
+      ()
+  | Despawn e -> remove_entity world e
+  | Insert (e, c) -> add_component world c e
+  | Remove (e, c) -> remove_component world c e
+  | Insert_resource r -> ignore (add_resource (Resource.type_id r) r world)
+  | Remove_resource r -> remove_resource r world
+
+let rec flush_commands world (buf : Command.t) =
+  match Command.take buf with
+  | [] -> ()
+  | commands ->
+      commands |> List.iter (apply_command world);
+      flush_commands world buf
 
 module Introspect = struct
   let revision w = w.revision
