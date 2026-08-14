@@ -20,32 +20,32 @@ val component : (module S with type t = 'a) -> 'a -> component
 (** Creates a component module for a given type [B.inner]. The resulting module implements the [S]
     signature, allowing [B.inner] to be added as a component to the game world. Example:
     {[
-      module Velocity = struct
-        type t = Math.Vec2.t
+    module Velocity = struct
+      type t = Math.Vec2.t
 
-        module C = Component.Make (struct
-          type inner = t
-        end)
-      end
+      module C = Component.Make (struct
+        type inner = t
+      end)
+    end
     ]}
     There is a preprocessor available to reduce boilerplate somewhat. The same module can be defined
     like this:
     {[
-      module Velocity = [%component: Math.Vec2.t]
+    module Velocity = [%component: Math.Vec2.t]
     ]}
     Or, if some helper functions are required:
     {[
-      [%%component
-      module Velocity = struct
-        type t = Math.Vec2.t
+    [%%component
+    module Velocity = struct
+      type t = Math.Vec2.t
 
-        let create x y = Math.Vec2.create x y
-        let zero () = Math.Vec2.zero
-        let x t = Math.Vec2.x t
-        let y t = Math.Vec2.y t
-        let set_x t x = Math.Vec2.set_x t x
-        let set_y t y = Math.Vec2.set_y t y
-      end]
+      let create x y = Math.Vec2.create x y
+      let zero () = Math.Vec2.zero
+      let x t = Math.Vec2.x t
+      let y t = Math.Vec2.y t
+      let set_x t x = Math.Vec2.set_x t x
+      let set_y t y = Math.Vec2.set_y t y
+    end]
     ]}
     These will both generate the functor, and the second example will include the helper functions.
     Note that the preprocessor requires a type with the name t. *)
@@ -63,11 +63,11 @@ val pack : 'a. (module S with type t = 'a) -> 'a -> packed
 (** Packs a component value with its module into a [packed] value. This allows you to store and
     access the component's ID and data together. Example:
     {[
-      module MyComponent = Component.Make (struct
-        type inner = int
-      end)
+    module MyComponent = Component.Make (struct
+      type inner = int
+    end)
 
-      let packed = Component.pack (module MyComponent) 42
+    let packed = Component.pack (module MyComponent) 42
     ]} *)
 
 val unpack : 'a. (module S with type t = 'a) -> packed -> ('a, Luma__core.Error.error) result
