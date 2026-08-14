@@ -64,7 +64,7 @@ struct
   type window = Config.window
   type app = Luma__app.App.t
 
-  let asset_plugin = Runtime.asset_plugin
+  let asset_plugin = Runtime.Assets.plugin
   let window_plugin = Window.plugin
   let time_plugin = Time.plugin
   let input_plugin = Input.Keyboard.plugin
