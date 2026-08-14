@@ -37,6 +37,7 @@ type t = {
   component_to_archetype : (Id.Component.t, ArchetypeHashSet.t) Hashtbl.t;
   resources : (Id.Resource.t, Resource.packed) Hashtbl.t;
   archetype_by_sig : Archetype.t CompSetTbl.t;
+  command_queue : Command.t;
   mutable revision : int;
 }
 
@@ -58,6 +59,7 @@ let create () =
     component_to_archetype = Hashtbl.create 16;
     resources = Hashtbl.create 16;
     archetype_by_sig;
+    command_queue = Command.create ();
     revision = 0;
   }
 
@@ -65,6 +67,7 @@ let entities w = w.entity_to_archetype |> Hashtbl.to_seq_keys |> List.of_seq
 let resources w = w.resources
 let has_resource key w = Hashtbl.mem w.resources key
 let get_resource w key = Hashtbl.find_opt w.resources key
+let commands w = w.command_queue
 
 let get_resource_exn w key =
   match get_resource w key with
@@ -302,12 +305,12 @@ let apply_command world cmd =
   | Remove_resource r -> remove_resource r world
   | Modify_entry { entity; component; f } -> modify_entry component entity f world
 
-let rec flush_commands world (buf : Command.t) =
-  match Command.take buf with
+let rec flush_commands world =
+  match Command.take world.command_queue with
   | [] -> ()
   | commands ->
       commands |> List.iter (apply_command world);
-      flush_commands world buf
+      flush_commands world
 
 module Introspect = struct
   let revision w = w.revision

@@ -138,13 +138,14 @@ let add_in_placement sched stage trigger placement system =
       Hashtbl.replace buckets.after u entries';
       Hashtbl.replace sched.once stage buckets
 
-let run_system (world : World.t) cmd (System { sys = system; run_if; _ }) : World.t =
+let run_system (world : World.t) (System { sys = system; run_if; _ }) : World.t =
   if run_if world then
+    let commands = World.commands world in
     let archetypes = World.archetypes world |> Hashtbl.to_seq_values |> List.of_seq in
     match system with
     | System.WithoutResources s -> (
         match Query.Component.evaluate ~filter:s.filter s.components_query archetypes with
-        | Ok matching_entities -> s.run world cmd matching_entities
+        | Ok matching_entities -> s.run world commands matching_entities
         | Error e ->
             let msg = Format.asprintf "Failed to run system: %s. %a" s.name Luma__core.Error.pp e in
             log.error (fun l -> l "%s" msg);
@@ -153,7 +154,7 @@ let run_system (world : World.t) cmd (System { sys = system; run_if; _ }) : Worl
         match Query.Component.evaluate ~filter:s.filter s.components_query archetypes with
         | Ok matching_entities -> (
             match Query.Resource.evaluate s.resources_query (World.resources world) with
-            | Ok resource_value -> s.run world cmd matching_entities resource_value
+            | Ok resource_value -> s.run world commands matching_entities resource_value
             | Error e ->
                 let msg =
                   Format.asprintf "Failed to evaluate Resource query for system: %s. %a" s.name
@@ -170,20 +171,19 @@ let run_system (world : World.t) cmd (System { sys = system; run_if; _ }) : Worl
             Luma__core.Error.system_run_exn s.name msg)
   else world
 
-let run_list systems world cmd = List.fold_left (fun w sys -> run_system w cmd sys) world systems
+let run_list systems world = List.fold_left (fun w sys -> run_system w sys) world systems
 
 (* run 'ready' systems and return pending. *)
-let drain world entries cmd =
+let drain world entries =
   let ready, pending =
     List.partition
       (fun { trigger; system = System { run_if; _ } } -> trigger world && run_if world)
       entries
   in
-  let world = run_list (List.map (fun e -> e.system) ready) world cmd in
+  let world = run_list (List.map (fun e -> e.system) ready) world in
   (world, pending)
 
 let run_stage stage sched world =
-  let cmd = Command.create () in
   (* Demote unanchored `At` entries.
      If no "next system" appeared in this stage, move them to the last bucket so they execute at the end
      of this stage, then clear the buffer. *)
@@ -199,7 +199,7 @@ let run_stage stage sched world =
   let buckets = buckets_or_default sched stage in
 
   (* Run any 'first' systems that are ready and clear them from the first bucket. *)
-  let world, first_pending = drain world buckets.first cmd in
+  let world, first_pending = drain world buckets.first in
   buckets.first <- first_pending;
 
   (* Iterate over all systems. Run all 'before' systems before the current system and flush them. 
@@ -208,20 +208,20 @@ let run_stage stage sched world =
     List.fold_left
       (fun w (System { uuid; _ } as sys) ->
         let before = Hashtbl.find_opt buckets.before uuid |> Option.value ~default:[] in
-        let w, before_pending = drain w before cmd in
+        let w, before_pending = drain w before in
         Hashtbl.replace buckets.before uuid before_pending;
 
-        let w = run_list [ sys ] w cmd in
+        let w = run_list [ sys ] w in
 
         let after = Hashtbl.find_opt buckets.after uuid |> Option.value ~default:[] in
-        let w, after_pending = drain w after cmd in
+        let w, after_pending = drain w after in
         Hashtbl.replace buckets.after uuid after_pending;
         w)
       world systems
   in
   (* Run any 'last' systems that are ready and clear them from the 'last' bucket. *)
-  let world, last_pending = drain world buckets.last cmd in
+  let world, last_pending = drain world buckets.last in
   buckets.last <- last_pending;
   Hashtbl.replace sched.once stage buckets;
-  World.flush_commands world cmd;
+  World.flush_commands world;
   world

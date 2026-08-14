@@ -107,6 +107,8 @@ val get_resource : t -> Id.Resource.t -> Resource.packed option
 val get_resource_exn : t -> Id.Resource.t -> Resource.packed
 (** Returns packed resource if found, otherwise throws an exception. *)
 
+val commands : t -> Command.t
+
 val query :
   'a. t -> ?filter:Query.Component.Filter.t -> 'a Query.Component.t -> (Id.Entity.t * 'a) list
 (** [query world filter query] evaluates the optional filter and required query on the world's
@@ -119,8 +121,8 @@ val get_component : t -> (module Component.S with type t = 'a) -> Id.Entity.t ->
 val has_component : t -> (module Component.S with type t = 'a) -> Id.Entity.t -> bool
 (** Returns true if the entity has the given component. *)
 
-val flush_commands : t -> Command.t -> unit
-(** [flush_commands world buf] applies all deferred commands in [buf] to [world]. *)
+val flush_commands : t -> unit
+(** [flush_commands world ] applies all deferred commands to [world]. *)
 
 module Introspect : sig
   val revision : t -> int
