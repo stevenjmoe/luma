@@ -67,6 +67,13 @@ val add_components : t -> Id.Entity.t -> Component.packed list -> unit
 (** [add_components world entity_id packed_components] adds a list of components to the world and
     associates them with the given entity. *)
 
+val modify_entry :
+  (module Component.S with type t = 'a) -> Id.Entity.t -> ('a option -> 'a option) -> t -> unit
+(** [modify_entry component entity f world] applies [f] to the current component entry for [entity].
+
+    [None] represents an absent component and [Some value] a present component. The result of [f]
+    determines whether the component is left absent, inserted, removed, or replaced. *)
+
 val add_entity_with_components :
   t -> ?name:string -> ?uuid:Uuidm.t option -> Component.packed list -> Id.Entity.t
 (** [add_entity_with_components world ?name ?uuid components] adds an entity with the provided

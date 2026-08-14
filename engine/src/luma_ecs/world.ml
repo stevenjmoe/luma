@@ -120,6 +120,17 @@ let query world ?(filter = Query.Component.Filter.Any) query =
   let archetypes = world.archetypes |> Hashtbl.to_seq_values |> List.of_seq in
   Query.Component.evaluate ~filter query archetypes |> Result.value ~default:[]
 
+let set_component (type a) world (module C : Component.S with type t = a) entity value =
+  match Hashtbl.find_opt world.entity_to_archetype entity with
+  | None -> false
+  | Some archetype_id ->
+      let archetype = Hashtbl.find world.archetypes archetype_id in
+
+      if not (Archetype.has_component archetype C.id) then false
+      else (
+        Archetype.replace archetype entity value;
+        true)
+
 let get_component (type a) world (module C : Component.S with type t = a) entity =
   let arch = find_archetype world entity in
   match Archetype.query_table arch entity C.id with
@@ -268,6 +279,16 @@ let add_components world entity components =
     List.iter (fun p -> Hashtbl.replace overrides (Component.id p) p) components;
     move_entity_to_archetype world entity ~old_arch ~new_arch overrides
 
+let modify_entry (type a) (module C : Component.S with type t = a) entity f world =
+  let current = get_component world (module C) entity in
+
+  match (current, f current) with
+  | None, None -> ()
+  | None, Some value -> add_component world (Component.pack (module C) value) entity
+  | Some _, None -> remove_component world C.id entity
+  | Some _, Some value ->
+      set_component world (module C) entity (Component.pack (module C) value) |> ignore
+
 let apply_command world cmd =
   match cmd with
   | Command.Spawn { entity; name; components } ->
@@ -279,6 +300,7 @@ let apply_command world cmd =
   | Remove (e, c) -> remove_component world c e
   | Insert_resource r -> ignore (add_resource (Resource.type_id r) r world)
   | Remove_resource r -> remove_resource r world
+  | Modify_entry { entity; component; f } -> modify_entry component entity f world
 
 let rec flush_commands world (buf : Command.t) =
   match Command.take buf with
