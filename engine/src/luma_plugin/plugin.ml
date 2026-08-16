@@ -65,6 +65,7 @@ struct
   type app = Luma__app.App.t
 
   let asset_plugin = Runtime.Assets.plugin
+  let hierarchy_plugin = Runtime.Hierarchy.plugin
   let window_plugin = Window.plugin
   let time_plugin = Time.plugin
   let input_plugin = Input.Keyboard.plugin
@@ -81,6 +82,7 @@ struct
     let plugins = Luma__app.App.plugins app in
     let plugins =
       [
+        hierarchy_plugin;
         input_plugin;
         audio_plugin;
         window_plugin ~config:(Config.window config);
