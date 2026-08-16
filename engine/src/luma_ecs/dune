@@ -12,6 +12,7 @@
   (modules 
     Archetype
     Component 
+    Component_info
     Command
     Entity
     Hierarchy
