@@ -37,6 +37,7 @@ type t = {
   component_to_archetype : (Id.Component.t, ArchetypeHashSet.t) Hashtbl.t;
   resources : (Id.Resource.t, Resource.packed) Hashtbl.t;
   archetype_by_sig : Archetype.t CompSetTbl.t;
+  component_info : (Id.Component.t, Component_info.t) Hashtbl.t;
   command_queue : Command.t;
   mutable revision : int;
 }
@@ -59,6 +60,7 @@ let create () =
     component_to_archetype = Hashtbl.create 16;
     resources = Hashtbl.create 16;
     archetype_by_sig;
+    component_info = Hashtbl.create 16;
     command_queue = Command.create ();
     revision = 0;
   }
@@ -123,17 +125,6 @@ let query world ?(filter = Query.Component.Filter.Any) query =
   let archetypes = world.archetypes |> Hashtbl.to_seq_values |> List.of_seq in
   Query.Component.evaluate ~filter query archetypes |> Result.value ~default:[]
 
-let set_component (type a) world (module C : Component.S with type t = a) entity value =
-  match Hashtbl.find_opt world.entity_to_archetype entity with
-  | None -> false
-  | Some archetype_id ->
-      let archetype = Hashtbl.find world.archetypes archetype_id in
-
-      if not (Archetype.has_component archetype C.id) then false
-      else (
-        Archetype.replace archetype entity value;
-        true)
-
 let get_component (type a) world (module C : Component.S with type t = a) entity =
   let arch = find_archetype world entity in
   match Archetype.query_table arch entity C.id with
@@ -194,17 +185,46 @@ let add_entity ?(name = "") ?(uuid = None) world =
   let entity = Entity.make ~uuid name in
   register_entity world entity name
 
+let run_hook_on_insert world entity component =
+  let cid = Component.id component in
+
+  match Hashtbl.find_opt world.component_info cid with
+  | Some { hooks = { on_insert = Some hook; _ }; _ } ->
+      hook ~entity ~command:world.command_queue ~component
+  | _ -> ()
+
+let run_hook_on_discard world entity component =
+  let cid = Component.id component in
+
+  match Hashtbl.find_opt world.component_info cid with
+  | Some { hooks = { on_discard = Some hook; _ }; _ } ->
+      hook ~entity ~command:world.command_queue ~component
+  | _ -> ()
+
 let remove_entity world entity =
   match Hashtbl.find_opt world.entity_to_archetype entity with
   | None -> ()
-  | Some a ->
+  | Some archetype_id ->
+      let arch = Hashtbl.find world.archetypes archetype_id in
+
+      let components =
+        Archetype.components arch
+        |> Id.ComponentSet.to_list
+        |> List.map (fun cid -> Archetype.get_component_exn arch entity cid)
+      in
+
+      List.iter (run_hook_on_discard world entity) components;
+
       (match Hashtbl.find_opt world.entity_id_to_metadata entity with
       | Some m -> Hashtbl.remove world.entity_guid_to_entity_id m.uuid
       | None -> ());
-      let a = Hashtbl.find world.archetypes a in
-      Archetype.remove_entity a entity;
+
+      let arch = Hashtbl.find world.archetypes archetype_id in
+      Archetype.remove_entity arch entity;
       Hashtbl.remove world.entity_to_archetype entity;
       Hashtbl.remove world.entity_id_to_metadata entity;
+
+      update_component_to_arch world arch;
       incr_revision world
 
 (*TODO: check dupes*)
@@ -214,27 +234,38 @@ let add_component world component entity =
   let cid = Component.id component in
 
   if Id.ComponentSet.mem cid old_sig then (
+    let old_component = Archetype.get_component_exn old_arch entity cid in
+    run_hook_on_discard world entity old_component;
+
     Archetype.replace old_arch entity component;
+    run_hook_on_insert world entity component;
+
     incr_revision world)
   else
     let new_sig = Id.ComponentSet.add cid old_sig in
     let new_arch = get_or_create_archetype_by_sig world new_sig in
     let overrides = Hashtbl.create 1 in
     Hashtbl.replace overrides cid component;
-    move_entity_to_archetype world entity ~old_arch ~new_arch overrides
+    move_entity_to_archetype world entity ~old_arch ~new_arch overrides;
+    run_hook_on_insert world entity component
 
 let remove_component world component entity =
   let old_arch = find_archetype world entity in
   let old_sig = Archetype.components old_arch in
 
-  if Id.ComponentSet.mem component old_sig then
+  if Id.ComponentSet.mem component old_sig then (
     let target_sig = Id.ComponentSet.remove component old_sig in
+
+    (* run hook *)
+    let old_component = Archetype.get_component_exn old_arch entity component in
+    run_hook_on_discard world entity old_component;
+
     let new_arch =
       if Id.ComponentSet.is_empty target_sig then world.empty_archetype
       else get_or_create_archetype_by_sig world target_sig
     in
     let overrides = Hashtbl.create 0 in
-    move_entity_to_archetype world entity ~old_arch ~new_arch overrides
+    move_entity_to_archetype world entity ~old_arch ~new_arch overrides)
 
 let with_component (type a) w (module C : Component.S with type t = a) component entity =
   let packed = Component.pack (module C) component in
@@ -266,21 +297,48 @@ let add_entity_with_components world ?(name = "") ?(uuid = None) components =
     Hashtbl.replace world.entity_guid_to_entity_id (Entity.uuid entity) e_id;
     update_component_to_arch world arch;
     incr_revision world;
+
+    (* Run component hooks after entity is in place *)
+    List.iter (run_hook_on_insert world e_id) components;
+
     e_id
 
 let add_components world entity components =
   if components = [] then ()
   else
     let old_arch = find_archetype world entity in
+    let old_sig = Archetype.components old_arch in
+
+    (* Run discard hook for values being replaced before the move *)
+    components
+    |> List.iter (fun component ->
+        let cid = Component.id component in
+        if Id.ComponentSet.mem cid old_sig then
+          let old_component = Archetype.get_component_exn old_arch entity cid in
+          run_hook_on_discard world entity old_component);
+
     let overrides = Hashtbl.create (List.length components) in
     let target_sig =
       List.fold_left
         (fun s packed -> Id.ComponentSet.add (Component.id packed) s)
         (Archetype.components old_arch) components
     in
+
     let new_arch = get_or_create_archetype_by_sig world target_sig in
     List.iter (fun p -> Hashtbl.replace overrides (Component.id p) p) components;
-    move_entity_to_archetype world entity ~old_arch ~new_arch overrides
+
+    move_entity_to_archetype world entity ~old_arch ~new_arch overrides;
+
+    (* All new component values are in place *)
+    List.iter (run_hook_on_insert world entity) components
+
+let register_component
+    ?(hooks = Component_info.Component_hooks.empty)
+    (type a)
+    (module C : Component.S with type t = a)
+    world =
+  let info = { Component_info.component = C.id; hooks } in
+  Hashtbl.replace world.component_info C.id info
 
 let modify_entry (type a) (module C : Component.S with type t = a) entity f world =
   let current = get_component world (module C) entity in
@@ -289,8 +347,7 @@ let modify_entry (type a) (module C : Component.S with type t = a) entity f worl
   | None, None -> ()
   | None, Some value -> add_component world (Component.pack (module C) value) entity
   | Some _, None -> remove_component world C.id entity
-  | Some _, Some value ->
-      set_component world (module C) entity (Component.pack (module C) value) |> ignore
+  | Some _, Some value -> add_component world (Component.pack (module C) value) entity
 
 let apply_command world cmd =
   match cmd with
