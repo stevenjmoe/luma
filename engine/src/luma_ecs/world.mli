@@ -74,6 +74,12 @@ val modify_entry :
     [None] represents an absent component and [Some value] a present component. The result of [f]
     determines whether the component is left absent, inserted, removed, or replaced. *)
 
+val register_component :
+  ?hooks:Component_info.Component_hooks.t -> (module Component.S with type t = 'a) -> t -> unit
+(** [register_component ?hooks component world] registers [component] with [world].
+
+    If [hooks] is provided, the component's lifecycle hooks are associated with its registration. *)
+
 val add_entity_with_components :
   t -> ?name:string -> ?uuid:Uuidm.t option -> Component.packed list -> Id.Entity.t
 (** [add_entity_with_components world ?name ?uuid components] adds an entity with the provided
