@@ -19,3 +19,13 @@ module Assets = struct
     |> ignore;
     app
 end
+
+module Hierarchy = struct
+  let plugin app =
+    let world = App.world app in
+
+    World.register_component ~hooks:Luma__ecs.Hierarchy.child_of_hooks
+      (module Luma__ecs.Hierarchy.ChildOf.C)
+      world;
+    app
+end
