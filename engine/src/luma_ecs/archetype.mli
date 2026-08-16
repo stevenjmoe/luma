@@ -15,6 +15,12 @@ val replace : t -> Id.Entity.t -> Component.packed -> unit
 (** @raise Luma__core.Error.Component_not_found if the component sparse set could not be found *)
 
 val query_table : t -> Id.Entity.t -> Id.Component.t -> Component.packed option
+
+val get_component_exn : t -> Id.Entity.t -> Id.Component.t -> Component.packed
+(** The same as [query_table] but will raise if the component is not found.
+
+    @raise `Invalid_argument` *)
+
 val has_component : t -> Id.Component.t -> bool
 val remove_entity : t -> Id.Entity.t -> unit
 val pp : Format.formatter -> t -> unit
