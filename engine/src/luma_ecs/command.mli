@@ -32,8 +32,18 @@ val remove : t -> Id.Entity.t -> Id.Component.t -> unit
 
 val modify_entry :
   (module Component.S with type t = 'a) -> Id.Entity.t -> ('a option -> 'a option) -> t -> unit
+(** [modify_entry component entity f buf] enqueues a command to modify the component entry for the
+    given entity.
+
+    [World.modify_entry] applies [f] to the current component entry for [entity].
+
+    In [f], [None] represents an absent component and [Some value] a present component. The result
+    of [f] determines whether the component is left absent, inserted, removed, or replaced. *)
 
 val insert_resource : t -> (module Resource.S with type t = 'a) -> 'a -> unit
 val remove_resource : t -> Id.Resource.t -> unit
 val commands : t -> command List.t
+
 val take : t -> command list
+(** [take buf] returns the commands in the buffer at the time the function is called, after clearing
+    it. *)
