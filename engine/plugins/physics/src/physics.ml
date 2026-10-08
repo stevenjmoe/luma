@@ -11,7 +11,9 @@ module type S = sig
   val move_and_collide :
     World.t -> Id.Entity.t -> velocity:Vec2.t -> dt:float -> Kinematic_collision2d.t option
 
-  val move_and_slide : ?max_iterations:int -> World.t -> Id.Entity.t -> Vec2.t -> float -> bool
+  val move_and_slide :
+    ?max_iterations:int -> World.t -> Id.Entity.t -> velocity:Vec2.t -> delta_time:float -> bool
+
   val plugin : ?world_config:Config.t -> Luma__app.App.t -> Luma__app.App.t
 
   module Kinematic_state : sig
@@ -180,7 +182,7 @@ module Make (L : Luma.S) : S = struct
 
               Some (Kinematic_collision2d.create ~collider ~normal ~position ~remainder ~travel))
 
-  let move_and_slide ?(max_iterations = 4) world entity velocity dt =
+  let move_and_slide ?(max_iterations = 4) world entity ~velocity ~delta_time:dt =
     let open Luma__math.Vec2 in
     let remaining_x = ref (velocity.x *. dt) in
     let remaining_y = ref (velocity.y *. dt) in
