@@ -247,4 +247,22 @@ module Make (L : Luma.S) = struct
               Resolver.resolve_collisions store shape_store np;
               Collision_event.fill_collision_events np event_store));
         w)
+
+  let sync_transform () =
+    Ecs.System.make
+      ~components:
+        Ecs.Query.Component.(Required (module Rigid_body.C) & Required (module Transform.C) & End)
+      "sync_transform"
+      (fun w _cmd entities ->
+        entities
+        |> Ecs.Query.Tuple.iter2 (fun rb t ->
+            let open Rigid_body in
+            match rb.body_type with
+            | Dynamic | Kinematic ->
+                let open Transform in
+                t.position.x <- rb.pos.x;
+                t.position.y <- rb.pos.y;
+                ()
+            | Static -> ());
+        w)
 end
