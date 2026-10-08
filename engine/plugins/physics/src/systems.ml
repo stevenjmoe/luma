@@ -262,6 +262,7 @@ module Make (L : Luma.S) = struct
                 let open Transform in
                 t.position.x <- rb.pos.x;
                 t.position.y <- rb.pos.y;
+                t.rotation <- rb.angle;
                 ()
             | Static -> ());
         w)
