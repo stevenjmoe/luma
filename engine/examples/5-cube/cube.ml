@@ -70,10 +70,14 @@ let draw_scene () =
       (fun world _ entities ->
         Ecs.Query.Tuple.iter1
           (fun (o : Orbit.t) ->
-          D.Draw3d.with_camera (Orbit.camera o) (fun () ->
-              D.Draw3d.grid ~slices:10 ~spacing:1.; (* 1. draw the grid *)
-              D.Draw3d.cube ~center:(Vec3.create 0. 1. 0.) ~size:(Vec3.splat 2.0)
-                (D.Colour.rgb ~r:255 ~g:161 ~b:0)))
+                let pos = Vec3.create 0. 1. 0. in
+                D.Draw3d.with_camera (Orbit.camera o) (fun () ->
+                    D.Draw3d.grid ~slices:10 ~spacing:1.; (* 1. draw the grid *)
+                    D.Draw3d.cube ~center:pos ~size:(Vec3.splat 2.0)
+                        (D.Colour.rgb ~r:255 ~g:161 ~b:0);
+                    D.Draw3d.cube_wires ~center:pos ~size:(Vec3.splat 2.005)
+                                        (D.Colour.rgb ~r:0 ~g:0 ~b:0)))
+
           entities;
         world)
 
