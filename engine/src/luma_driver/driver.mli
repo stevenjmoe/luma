@@ -216,6 +216,7 @@ module type S3d = sig
             This is required because Raylib must be swapped into 3d mode with `begin_mode` and `end_mode`. *)
 
         val cube: center:Vec3.t -> size:Vec3.t -> colour -> unit
+        val cube_wires : center:Vec3.t -> size:Vec3.t -> colour -> unit
         val grid : slices:int -> spacing:float -> unit
     end
 end
