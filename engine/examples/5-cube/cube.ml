@@ -42,8 +42,8 @@ let orbit_system () =
 let setup () =
     (* Spawn the camera entity *)
     Ecs.System.make ~components:End "setup" (fun world cmd _ ->
-        let orbit = { Orbit.angle = 0.; radius = 10.; height = 6.; speed = 0.5;
-                  target = Vec3.create 0. 0.5 0. } in
+        let orbit = { Orbit.angle = 0.; radius = 11.; height = 6.; speed = 0.5;
+                  target = Vec3.create 0. 0. 0. } in
         Ecs.Command.spawn ~name:"orbit_camera" cmd
             [Ecs.Component.component (module Orbit.C) orbit]
         |> ignore;
