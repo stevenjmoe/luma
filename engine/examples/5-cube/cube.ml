@@ -24,6 +24,8 @@ module Orbit = struct
           (o.target.x +. (o.radius *. cos o.angle))
           o.height
           (o.target.z +. (o.radius *. sin o.angle))
+
+    let camera o = D.Camera3d.perspective ~position:(position o) ~target:o.target ~up:(Vec3.create 0. 1. 0.) ~fov_y_degrees:45.0 ()
 end
 
 let orbit_system () =
@@ -61,10 +63,23 @@ let debug_orbit () =
           entities;
         world)
 
+let draw_scene () =
+    Ecs.System.make
+      ~components:Ecs.Query.Component.(Required (module Orbit.C) & End)
+      "draw_scene"
+      (fun world _ entities ->
+        Ecs.Query.Tuple.iter1
+          (fun (o : Orbit.t) ->
+          D.Draw3d.with_camera (Orbit.camera o) (fun () ->
+              D.Draw3d.grid ~slices:10 ~spacing:1. ))
+          entities;
+        world)
+
 let () =
     App.create ()
     |> Plugin.add_default_plugins
     |> App.on Startup (setup ())
     |> App.on Update (orbit_system ())
     |> App.on PostUpdate (debug_orbit ())
+    |> App.on PostRender (draw_scene ()) (* after 2d drawing, switch to 3d and draw *)
     |> App.run

@@ -73,15 +73,19 @@ module Raylib_driver : Luma__driver.Driver.S3d = struct
   end
 
   module Camera3d = struct
-      let perspective ~position:_ ~target:_ ~up:_ ~fov_y_degrees:_ () = failwith "todo"
+      let perspective ~position ~target ~up ~fov_y_degrees () =
+          Raylib.Camera3D.create (to_raylib_vec3 position) (to_raylib_vec3 target)
+             (to_raylib_vec3 up) fov_y_degrees Raylib.CameraProjection.Perspective
   end
 
   module Draw3d = struct
-    let with_camera _camera _draw = failwith "todo"
+    let with_camera camera draw =
+        Raylib.begin_mode_3d camera;
+        Fun.protect ~finally:Raylib.end_mode_3d draw
 
     let cube ~center ~(size : Vec3.t) colour = Raylib.draw_cube (to_raylib_vec3 center) size.x size.y size.z colour
 
-    let grid ~slices:_ ~spacing:_ = failwith "todo"
+    let grid ~slices ~spacing = Raylib.draw_grid slices spacing
   end
 
   module IO = struct
