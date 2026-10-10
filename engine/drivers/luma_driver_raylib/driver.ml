@@ -84,7 +84,7 @@ module Raylib_driver : Luma__driver.Driver.S3d = struct
         Fun.protect ~finally:Raylib.end_mode_3d draw
 
     let cube ~center ~(size : Vec3.t) colour = Raylib.draw_cube (to_raylib_vec3 center) size.x size.y size.z colour
-
+    let cube_wires ~center ~(size : Vec3.t) colour = Raylib.draw_cube_wires (to_raylib_vec3 center) size.x size.y size.z colour
     let grid ~slices ~spacing = Raylib.draw_grid slices spacing
   end
 
