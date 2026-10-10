@@ -197,4 +197,24 @@ module type S = sig
   end
 end
 
+module type S3d = sig
+    (** Types, modules, and functions for supporting three dimensions.
+        Extends the `Driver` module type so existing engine functor can continue working
+        with drivers that don't support 3D (JS). *)
+
+    include S
+
+    type camera3d
+
+    module Camera3d : sig
+        val perspective: position:Vec3.t -> target:Vec3.t -> up:Vec3.t -> fov_y_degrees:float -> unit -> camera3d
+    end
+
+    module Draw3d : sig
+        val with_camera : camera3d -> (unit -> unit) -> unit
+        val cube: center:Vec3.t -> size:Vec3.t -> colour -> unit
+        val grid : slices:int -> spacing:float -> unit
+    end
+end
+
 include S
