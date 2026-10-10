@@ -212,6 +212,9 @@ module type S3d = sig
 
     module Draw3d : sig
         val with_camera : camera3d -> (unit -> unit) -> unit
+        (** Run draw commands with a given camera through the function parameter.
+            This is required because Raylib must be swapped into 3d mode with `begin_mode` and `end_mode`. *)
+
         val cube: center:Vec3.t -> size:Vec3.t -> colour -> unit
         val grid : slices:int -> spacing:float -> unit
     end

@@ -1,14 +1,18 @@
-module Raylib_driver : Luma__driver.Driver.S = struct
+module Raylib_driver : Luma__driver.Driver.S3d = struct
   open Luma__math
   open Luma__core
 
   type camera = Raylib.Camera2D.t
+  type camera3d = Raylib.Camera3D.t
   type colour = Raylib.Color.t
   type texture = Raylib.Texture2D.t
   type sound = Raylib.Sound.t
   type music = Raylib.Music.t
 
   let get_frame_time = Raylib.get_frame_time
+
+  let to_raylib_vec3 (v : Vec3.t) = Raylib.Vector3.create v.x v.y v.z
+  (** Convert an internal engine Vec3 to a Raylib Vector3 type. *)
 
   module Draw = struct
     let draw_text text x y size colour = Raylib.draw_text text x y size colour
@@ -66,6 +70,18 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       let bot = Raylib.Vector2.create cx (cy -. half_length) in
       Raylib.draw_circle_lines_v top radius colour;
       Raylib.draw_circle_lines_v bot radius colour
+  end
+
+  module Camera3d = struct
+      let perspective ~position:_ ~target:_ ~up:_ ~fov_y_degrees:_ () = failwith "todo"
+  end
+
+  module Draw3d = struct
+    let with_camera _camera _draw = failwith "todo"
+
+    let cube ~center ~(size : Vec3.t) colour = Raylib.draw_cube (to_raylib_vec3 center) size.x size.y size.z colour
+
+    let grid ~slices:_ ~spacing:_ = failwith "todo"
   end
 
   module IO = struct
