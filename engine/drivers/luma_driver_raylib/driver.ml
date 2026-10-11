@@ -8,6 +8,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   type texture = Raylib.Texture2D.t
   type sound = Raylib.Sound.t
   type music = Raylib.Music.t
+  type mesh = { _handle: Raylib.Mesh.t; mutable _unloaded: bool }
 
   let get_frame_time = Raylib.get_frame_time
 
@@ -78,6 +79,11 @@ module Raylib_driver : Luma__driver.Driver.S = struct
              (to_raylib_vec3 up) fov_y_degrees Raylib.CameraProjection.Perspective
   end
 
+  module Mesh3d = struct
+      let create _mesh_data = failwith "todo"
+      let unload _m = failwith "todo"
+  end
+
   module Draw3d = struct
     let with_camera camera draw =
         Raylib.begin_mode_3d camera;
@@ -86,6 +92,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
     let cube ~center ~(size : Vec3.t) colour = Raylib.draw_cube (to_raylib_vec3 center) size.x size.y size.z colour
     let cube_wires ~center ~(size : Vec3.t) colour = Raylib.draw_cube_wires (to_raylib_vec3 center) size.x size.y size.z colour
     let grid ~slices ~spacing = Raylib.draw_grid slices spacing
+    let mesh _m ~position:_ ~scale:_ = failwith "todo"
   end
 
   module IO = struct

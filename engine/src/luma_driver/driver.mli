@@ -1,4 +1,5 @@
 open Luma__math
+open Gpu_data
 
 module type S = sig
   type camera2d
@@ -7,6 +8,7 @@ module type S = sig
   type texture
   type sound
   type music
+  type mesh
 
   val get_frame_time : unit -> float
 
@@ -28,6 +30,18 @@ module type S = sig
       val perspective: position:Vec3.t -> target:Vec3.t -> up:Vec3.t -> fov_y_degrees:float -> unit -> camera3d
   end
 
+  module Mesh3d : sig
+      (** Recall that [Mesh_data.t] and the [mesh] types are distinct.
+         [mesh] is the abstract type which is implemention (Driver.S) specific and will typically
+         carry a handle that refers to the GPU resident data associated with the Mesh. *)
+
+      val create: Mesh_data.t -> mesh
+      (** Upload vertex data to the GPU. *)
+
+      val unload: mesh -> unit
+      (** Free vertex data from GPU. The mesh will no longer be able to be drawn. *)
+  end
+
   module Draw3d : sig
       val with_camera : camera3d -> (unit -> unit) -> unit
       (** Run draw commands with a given camera through the function parameter.
@@ -36,6 +50,7 @@ module type S = sig
       val cube: center:Vec3.t -> size:Vec3.t -> colour -> unit
       val cube_wires : center:Vec3.t -> size:Vec3.t -> colour -> unit
       val grid : slices:int -> spacing:float -> unit
+      val mesh: mesh -> position:Vec3.t -> scale:Vec3.t -> unit (* TODO: add material (shader) and rotation parameters *)
   end
 
   module IO : sig
