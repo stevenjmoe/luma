@@ -1,0 +1,87 @@
+
+module D = Luma_driver_raylib.Driver
+module L = Luma.Make(D)
+open L
+open Luma.Math
+
+(** Run [f] for each entity matching [query] *)
+let each name query f =
+    Ecs.System.make ~components:query name (fun world _ entities ->
+        List.iter (fun (_, components) -> f components) entities;
+        world)
+
+
+(* Create an Orbit component that controls camera position *)
+module Orbit = struct
+    type t = {
+        mutable angle : float;
+        radius : float;
+        height : float;
+        speed : float;
+        target : Vec3.t;
+    }
+
+    module C = Ecs.Component.Make (struct
+        type inner = t
+        let name = "Orbit"
+    end)
+
+    let position (o : t) =
+        Vec3.create
+          (o.target.x +. (o.radius *. cos o.angle))
+          o.height
+          (o.target.z +. (o.radius *. sin o.angle))
+
+    let camera o = D.Camera3d.perspective ~position:(position o) ~target:o.target ~up:(Vec3.create 0. 1. 0.) ~fov_y_degrees:45.0 ()
+end
+
+(* System: orbit the camera around the cube placed at center of world space *)
+let orbit_system () =
+    Ecs.System.make_with_resources
+        ~components:Ecs.Query.Component.(Required (module Orbit.C) & End)
+        ~resources:Ecs.Query.Resource.(Resource (module Time.R) & End)
+        "orbit"
+        (fun world _ entities (time, _) ->
+              Ecs.Query.Tuple.iter1
+                (fun (o : Orbit.t) -> o.angle <- o.angle +. (o.speed *. time.dt))
+                entities;
+              world)
+
+let setup () =
+    (* Spawn the camera entity *)
+    Ecs.System.make ~components:End "setup" (fun world cmd _ ->
+        let orbit = { Orbit.angle = 0.; radius = 11.; height = 6.; speed = 0.5;
+                  target = Vec3.create 0. 0. 0. } in
+        Ecs.Command.spawn ~name:"orbit_camera" cmd
+            [Ecs.Component.component (module Orbit.C) orbit]
+        |> ignore;
+        world
+    )
+
+(* System: print the camera's angle and position every frame *)
+let debug_orbit () = each "debug_orbit"
+    Ecs.Query.Component.(Required (module Orbit.C) & End)
+    (fun (o, _) ->
+        let p = Orbit.position o in
+        Printf.printf "angle=%.3f pos=(%.2f, %.2f, %.2f)\n%!" o.angle p.x p.y p.z)
+
+(* System: draw grid and cube *)
+let draw_scene () = each "draw_scene"
+    Ecs.Query.Component.(Required (module Orbit.C) & End)
+    (fun (o, _) ->
+        let pos = Vec3.create 0. 1. 0. in
+        D.Draw3d.with_camera (Orbit.camera o) (fun () ->
+            D.Draw3d.grid ~slices:10 ~spacing:1.;
+            D.Draw3d.cube ~center:pos ~size:(Vec3.splat 2.0)
+                (D.Colour.rgb ~r:255 ~g:161 ~b:0);
+            D.Draw3d.cube_wires ~center:pos ~size:(Vec3.splat 2.005)
+                                (D.Colour.rgb ~r:0 ~g:0 ~b:0)))
+
+let () =
+    App.create ()
+    |> Plugin.add_default_plugins
+    |> App.on Startup (setup ())
+    |> App.on Update (orbit_system ())
+    |> App.on PostUpdate (debug_orbit ())
+    |> App.on PostRender (draw_scene ()) (* after 2d drawing, switch to 3d and draw *)
+    |> App.run

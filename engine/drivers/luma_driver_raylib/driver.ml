@@ -2,13 +2,18 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   open Luma__math
   open Luma__core
 
-  type camera = Raylib.Camera2D.t
+  type camera2d = Raylib.Camera2D.t
+  type camera3d = Raylib.Camera3D.t
   type colour = Raylib.Color.t
   type texture = Raylib.Texture2D.t
   type sound = Raylib.Sound.t
   type music = Raylib.Music.t
+  type mesh = { _handle: Raylib.Mesh.t; mutable _unloaded: bool }
 
   let get_frame_time = Raylib.get_frame_time
+
+  let to_raylib_vec3 (v : Vec3.t) = Raylib.Vector3.create v.x v.y v.z
+  (** Convert an internal engine Vec3 to a Raylib Vector3 type. *)
 
   module Draw = struct
     let draw_text text x y size colour = Raylib.draw_text text x y size colour
@@ -66,6 +71,28 @@ module Raylib_driver : Luma__driver.Driver.S = struct
       let bot = Raylib.Vector2.create cx (cy -. half_length) in
       Raylib.draw_circle_lines_v top radius colour;
       Raylib.draw_circle_lines_v bot radius colour
+  end
+
+  module Camera3d = struct
+      let perspective ~position ~target ~up ~fov_y_degrees () =
+          Raylib.Camera3D.create (to_raylib_vec3 position) (to_raylib_vec3 target)
+             (to_raylib_vec3 up) fov_y_degrees Raylib.CameraProjection.Perspective
+  end
+
+  module Mesh3d = struct
+      let create _mesh_data = failwith "todo"
+      let unload _m = failwith "todo"
+  end
+
+  module Draw3d = struct
+    let with_camera camera draw =
+        Raylib.begin_mode_3d camera;
+        Fun.protect ~finally:Raylib.end_mode_3d draw
+
+    let cube ~center ~(size : Vec3.t) colour = Raylib.draw_cube (to_raylib_vec3 center) size.x size.y size.z colour
+    let cube_wires ~center ~(size : Vec3.t) colour = Raylib.draw_cube_wires (to_raylib_vec3 center) size.x size.y size.z colour
+    let grid ~slices ~spacing = Raylib.draw_grid slices spacing
+    let mesh _m ~position:_ ~scale:_ = failwith "todo"
   end
 
   module IO = struct
@@ -152,7 +179,7 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   end
 
   module Window = Window
-  module Camera = Camera
+  module Camera2d = Camera
   module Input = Input
 
   module Colour = struct
