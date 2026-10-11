@@ -1,7 +1,8 @@
 open Luma__math
 
 module type S = sig
-  type camera
+  type camera2d
+  type camera3d
   type colour
   type texture
   type sound
@@ -21,6 +22,20 @@ module type S = sig
 
     val draw_capsule2d : Vec2.t -> half_length:float -> radius:float -> colour -> unit
     val draw_capsule2d_wires : Vec2.t -> half_length:float -> radius:float -> colour -> unit
+  end
+
+  module Camera3d : sig
+      val perspective: position:Vec3.t -> target:Vec3.t -> up:Vec3.t -> fov_y_degrees:float -> unit -> camera3d
+  end
+
+  module Draw3d : sig
+      val with_camera : camera3d -> (unit -> unit) -> unit
+      (** Run draw commands with a given camera through the function parameter.
+          This is required because Raylib must be swapped into 3d mode with `begin_mode` and `end_mode`. *)
+
+      val cube: center:Vec3.t -> size:Vec3.t -> colour -> unit
+      val cube_wires : center:Vec3.t -> size:Vec3.t -> colour -> unit
+      val grid : slices:int -> spacing:float -> unit
   end
 
   module IO : sig
@@ -57,9 +72,9 @@ module type S = sig
     val get_frame_time : unit -> float
     val begin_frame : unit -> unit
     val end_frame : unit -> unit
-    val begin_2d : camera -> unit
+    val begin_2d : camera2d -> unit
     val end_2d : unit -> unit
-    val with_2d : camera -> (unit -> unit) -> unit
+    val with_2d : camera2d -> (unit -> unit) -> unit
     val set_viewport_scissor : int -> int -> int -> int -> unit
     val reset_scissor : unit -> unit
     val clear : colour -> unit
@@ -68,26 +83,26 @@ module type S = sig
     val schedule_next_frame : (unit -> unit) -> unit
   end
 
-  module Camera : sig
+  module Camera2d : sig
     val make :
       offset:Luma__math.Vec2.t ->
       target:Luma__math.Vec2.t ->
       rotation:float ->
       zoom:float ->
       unit ->
-      camera
+      camera2d
 
-    val default : unit -> camera
-    val target : camera -> Vec2.t
-    val offset : camera -> Vec2.t
-    val zoom : camera -> float
-    val rotation : camera -> float
-    val set_target : camera -> Vec2.t -> unit
-    val set_offset : camera -> Vec2.t -> unit
-    val set_zoom : camera -> float -> unit
-    val set_rotation : camera -> float -> unit
-    val get_world_to_screen_2d : Vec2.t -> camera -> Vec2.t
-    val get_screen_to_world_2d : Vec2.t -> camera -> Vec2.t
+    val default : unit -> camera2d
+    val target : camera2d -> Vec2.t
+    val offset : camera2d -> Vec2.t
+    val zoom : camera2d -> float
+    val rotation : camera2d -> float
+    val set_target : camera2d -> Vec2.t -> unit
+    val set_offset : camera2d -> Vec2.t -> unit
+    val set_zoom : camera2d -> float -> unit
+    val set_rotation : camera2d -> float -> unit
+    val get_world_to_screen_2d : Vec2.t -> camera2d -> Vec2.t
+    val get_screen_to_world_2d : Vec2.t -> camera2d -> Vec2.t
   end
 
   module Colour : sig
@@ -195,30 +210,6 @@ module type S = sig
 
     val line : space -> p0:Luma__math.Vec2.t -> p1:Luma__math.Vec2.t -> colour:colour -> unit
   end
-end
-
-module type S3d = sig
-    (** Types, modules, and functions for supporting three dimensions.
-        Extends the `Driver` module type so existing engine functor can continue working
-        with drivers that don't support 3D (JS). *)
-
-    include S
-
-    type camera3d
-
-    module Camera3d : sig
-        val perspective: position:Vec3.t -> target:Vec3.t -> up:Vec3.t -> fov_y_degrees:float -> unit -> camera3d
-    end
-
-    module Draw3d : sig
-        val with_camera : camera3d -> (unit -> unit) -> unit
-        (** Run draw commands with a given camera through the function parameter.
-            This is required because Raylib must be swapped into 3d mode with `begin_mode` and `end_mode`. *)
-
-        val cube: center:Vec3.t -> size:Vec3.t -> colour -> unit
-        val cube_wires : center:Vec3.t -> size:Vec3.t -> colour -> unit
-        val grid : slices:int -> spacing:float -> unit
-    end
 end
 
 include S

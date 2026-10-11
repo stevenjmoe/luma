@@ -3,8 +3,9 @@ module Js_driver : Luma__driver.Driver.S = struct
   open Js_of_ocaml_lwt
   open Luma__math
   open Luma__core
+  include Luma__driver.No_3d
 
-  type camera = {
+  type camera2d = {
     mutable offset : Vec2.t;
     mutable target : Vec2.t;
     mutable rotation : float;
@@ -32,7 +33,7 @@ module Js_driver : Luma__driver.Driver.S = struct
 
   let canvas_ref : Dom_html.canvasElement Js.t option ref = ref None
   let ctx_ref : Dom_html.canvasRenderingContext2D Js.t option ref = ref None
-  let cur_cam : camera option ref = ref None
+  let cur_cam : camera2d option ref = ref None
   let cam_depth = ref 0
   let scissor_depth = ref 0
   let window_handlers_installed = ref false
@@ -103,14 +104,14 @@ module Js_driver : Luma__driver.Driver.S = struct
     let ca = cos angle and sa = sin angle in
     ((x *. ca) -. (y *. sa), (x *. sa) +. (y *. ca))
 
-  let world_to_screen (p : Vec2.t) (c : camera) =
+  let world_to_screen (p : Vec2.t) (c : camera2d) =
     let x = Vec2.x p -. Vec2.x c.target in
     let y = Vec2.y p -. Vec2.y c.target in
     let x = x *. c.zoom and y = y *. c.zoom in
     let x, y = rotate x y c.rotation in
     Vec2.create (x +. Vec2.x c.offset) (y +. Vec2.y c.offset)
 
-  let screen_to_world (p : Vec2.t) (c : camera) =
+  let screen_to_world (p : Vec2.t) (c : camera2d) =
     let x = Vec2.x p -. Vec2.x c.offset in
     let y = Vec2.y p -. Vec2.y c.offset in
     let x, y = rotate x y (-.c.rotation) in
@@ -269,7 +270,7 @@ module Js_driver : Luma__driver.Driver.S = struct
         (Js.number_of_float (float_of_int y))
   end
 
-  module Camera = struct
+  module Camera2d = struct
     let make ~offset ~target ~rotation ~zoom () = { offset; target; rotation; zoom }
 
     let default () =
@@ -420,13 +421,13 @@ module Js_driver : Luma__driver.Driver.S = struct
       let ctx = ensure_ctx () in
       ctx##save;
       ctx##translate
-        (Js.number_of_float (Vec2.x (Camera.offset cam)))
-        (Js.number_of_float (Vec2.y (Camera.offset cam)));
-      ctx##rotate (Js.number_of_float (Camera.rotation cam));
-      ctx##scale (Js.number_of_float (Camera.zoom cam)) (Js.number_of_float (Camera.zoom cam));
+        (Js.number_of_float (Vec2.x (Camera2d.offset cam)))
+        (Js.number_of_float (Vec2.y (Camera2d.offset cam)));
+      ctx##rotate (Js.number_of_float (Camera2d.rotation cam));
+      ctx##scale (Js.number_of_float (Camera2d.zoom cam)) (Js.number_of_float (Camera2d.zoom cam));
       ctx##translate
-        (Js.number_of_float (-.Vec2.x (Camera.target cam)))
-        (Js.number_of_float (-.Vec2.y (Camera.target cam)));
+        (Js.number_of_float (-.Vec2.x (Camera2d.target cam)))
+        (Js.number_of_float (-.Vec2.y (Camera2d.target cam)));
       cur_cam := Some cam;
       incr cam_depth
 

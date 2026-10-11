@@ -1,8 +1,8 @@
-module Raylib_driver : Luma__driver.Driver.S3d = struct
+module Raylib_driver : Luma__driver.Driver.S = struct
   open Luma__math
   open Luma__core
 
-  type camera = Raylib.Camera2D.t
+  type camera2d = Raylib.Camera2D.t
   type camera3d = Raylib.Camera3D.t
   type colour = Raylib.Color.t
   type texture = Raylib.Texture2D.t
@@ -172,7 +172,7 @@ module Raylib_driver : Luma__driver.Driver.S3d = struct
   end
 
   module Window = Window
-  module Camera = Camera
+  module Camera2d = Camera
   module Input = Input
 
   module Colour = struct
