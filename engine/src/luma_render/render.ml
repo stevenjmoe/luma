@@ -358,12 +358,12 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
     let rect_screen ~rect ~colour q = push_rect_screen ~z:0 ~rect colour q
   end
 
-  let to_driver vp c : D.camera =
+  let to_driver vp c : D.camera2d =
     let open Camera in
     let vp_pos = Viewport.position vp in
     let vp_size = Viewport.size vp in
     let offset = Vec2.create (vp_pos.x +. (vp_size.x *. 0.5)) (vp_pos.y +. (vp_size.y *. 0.5)) in
-    D.Camera.make ~offset ~target:(target c) ~rotation:(rotation c) ~zoom:(zoom c) ()
+    D.Camera2d.make ~offset ~target:(target c) ~rotation:(rotation c) ~zoom:(zoom c) ()
 
   let render () =
     System.make_with_resources
@@ -409,10 +409,10 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
 
   module Projection = struct
     let viewport_to_world_2d (view : View.t) position =
-      D.Camera.get_screen_to_world_2d position (to_driver (View.viewport view) (View.camera view))
+      D.Camera2d.get_screen_to_world_2d position (to_driver (View.viewport view) (View.camera view))
 
     let world_to_viewport_2d (view : View.t) position =
-      D.Camera.get_world_to_screen_2d position (to_driver (View.viewport view) (View.camera view))
+      D.Camera2d.get_world_to_screen_2d position (to_driver (View.viewport view) (View.camera view))
 
     let window_to_world_2d (view : View.t) pos_window =
       let pos_viewport =
