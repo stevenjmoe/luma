@@ -366,8 +366,7 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
     D.Camera2d.make ~offset ~target:(target c) ~rotation:(rotation c) ~zoom:(zoom c) ()
 
   let render () =
-    System.make_with_resources
-      ~components:Query.Component.(Required (module Camera.C) & End)
+    System.make_with_resources ~components:End
       ~resources:Query.Resource.(Resource (module Queue.R) & Resource (module View.R) & End)
       "render_cameras"
       (fun world _ _entities (queue, (views, _)) ->
