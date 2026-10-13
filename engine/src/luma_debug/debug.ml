@@ -205,8 +205,8 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
             Printf.sprintf "Entities (%d)  page %d/%d" total (page + 1)
               (if pages <= 0 then 1 else pages)
           in
-          D.Draw.draw_rect rect (D.Colour.rgb ~r:32 ~g:32 ~b:32);
-          D.Draw.draw_text title
+          D.Draw2d.draw_rect rect (D.Colour.rgb ~r:32 ~g:32 ~b:32);
+          D.Draw2d.draw_text title
             (int_of_float x + 8)
             (int_of_float y + 6)
             18
@@ -214,11 +214,11 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
 
           (* Headings *)
           let y_head = int_of_float y + 34 in
-          D.Draw.draw_text "entity"
+          D.Draw2d.draw_text "entity"
             (int_of_float x + 8)
             y_head 16
             (D.Colour.rgb ~r:160 ~g:160 ~b:160);
-          D.Draw.draw_text "components"
+          D.Draw2d.draw_text "components"
             (int_of_float x + 150)
             y_head 16
             (D.Colour.rgb ~r:160 ~g:160 ~b:160);
@@ -228,7 +228,7 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
               ~pos:(Luma__math.Vec2.create (x +. 8.) (float_of_int (y_head + 18)))
               ~size:(Luma__math.Vec2.create (w -. 16.) 1.)
           in
-          D.Draw.draw_rect div_rect (D.Colour.rgb ~r:96 ~g:96 ~b:96);
+          D.Draw2d.draw_rect div_rect (D.Colour.rgb ~r:96 ~g:96 ~b:96);
 
           let chars_per_line =
             let avail = w -. 170. in
@@ -246,7 +246,7 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
                 if String.length entity_metadata.name = 0 then Id.Entity.to_int e |> string_of_int
                 else entity_metadata.name
               in
-              D.Draw.draw_text entity_label
+              D.Draw2d.draw_text entity_label
                 (int_of_float x + 8)
                 y_row 16
                 (D.Colour.rgb ~r:220 ~g:220 ~b:220);
@@ -263,7 +263,7 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
                 let rec draw_lines y0 = function
                   | [] -> y0
                   | s :: tl ->
-                      D.Draw.draw_text s
+                      D.Draw2d.draw_text s
                         (int_of_float x + 150)
                         y0 16
                         (D.Colour.rgb ~r:220 ~g:220 ~b:220);
@@ -276,7 +276,7 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
               else
                 let preview = preview_components chars_per_line world e in
 
-                D.Draw.draw_text preview
+                D.Draw2d.draw_text preview
                   (int_of_float x + 150)
                   y_row 16
                   (D.Colour.rgb ~r:220 ~g:220 ~b:220);
@@ -292,7 +292,7 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
                  ~pos:(Luma__math.Vec2.create (x +. w -. hs) (y +. h -. hs))
                  ~size:(Luma__math.Vec2.create hs hs)
              in
-             D.Draw.draw_rect handle_rect (D.Colour.rgb ~r:80 ~g:80 ~b:80));
+             D.Draw2d.draw_rect handle_rect (D.Colour.rgb ~r:80 ~g:80 ~b:80));
 
           (* Page controls *)
           if D.Input.Keyboard.is_key_pressed Luma__types.Input_types.Key.Page_up then
@@ -347,7 +347,7 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
         (match state.State.mouse_debug_mode with
         | Off -> ()
         | Screen ->
-            D.Draw.draw_text
+            D.Draw2d.draw_text
               (Printf.sprintf "s: %d,%d" screen_x screen_y)
               render_at_x render_at_y 20 colour
         | World -> (
@@ -356,19 +356,19 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
             | Some world ->
                 let world_x = int_of_float world.x in
                 let world_y = int_of_float world.y in
-                D.Draw.draw_text
+                D.Draw2d.draw_text
                   (Printf.sprintf "w: %d,%d" world_x world_y)
                   render_at_x render_at_y 20 colour)
         | Both -> (
             match mouse_world_opt with
             | None ->
-                D.Draw.draw_text
+                D.Draw2d.draw_text
                   (Printf.sprintf "s: %d,%d" screen_x screen_y)
                   render_at_x render_at_y 20 colour
             | Some world ->
                 let world_x = int_of_float world.x in
                 let world_y = int_of_float world.y in
-                D.Draw.draw_text
+                D.Draw2d.draw_text
                   (Printf.sprintf "w: %d,%d | s: %d,%d" world_x world_y screen_x screen_y)
                   render_at_x render_at_y 20 colour));
         w)

@@ -123,7 +123,7 @@ module Make (D : Luma__driver.Driver.S) : S = struct
   type colour = D.colour
 
   module Draw = struct
-    let draw_text = D.Draw.draw_text
+    let draw_text = D.Draw2d.draw_text
   end
 
   module Window = Luma__window.Window.Make (D)

@@ -179,27 +179,27 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
   type texture = D.Texture.t
   type colour = D.colour
 
-  let draw_rect rect colour = D.Draw.draw_rect rect colour
-  let draw_rect_lines rect line colour = D.Draw.draw_rect_lines rect line colour
+  let draw_rect rect colour = D.Draw2d.draw_rect rect colour
+  let draw_rect_lines rect line colour = D.Draw2d.draw_rect_lines rect line colour
 
   let draw_circle ~center_x ~center_y ~radius colour =
-    D.Draw.draw_circle (int_of_float center_x) (int_of_float center_y) radius colour
+    D.Draw2d.draw_circle (int_of_float center_x) (int_of_float center_y) radius colour
 
   let draw_circle_lines ~center_x ~center_y ~radius colour =
-    D.Draw.draw_circle_lines (int_of_float center_x) (int_of_float center_y) radius colour
+    D.Draw2d.draw_circle_lines (int_of_float center_x) (int_of_float center_y) radius colour
 
   let draw_line ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y colour =
     let start_pos_x = int_of_float start_pos_x in
     let start_pos_y = int_of_float start_pos_y in
     let end_pos_x = int_of_float end_pos_x in
     let end_pos_y = int_of_float end_pos_y in
-    D.Draw.draw_line ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y colour
+    D.Draw2d.draw_line ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y colour
 
   let draw_capsule center ~half_length ~radius colour =
-    D.Draw.draw_capsule2d center ~half_length ~radius colour
+    D.Draw2d.draw_capsule2d center ~half_length ~radius colour
 
   let draw_capsule_wires center ~half_length ~radius colour =
-    D.Draw.draw_capsule2d_wires center ~half_length ~radius colour
+    D.Draw2d.draw_capsule2d_wires center ~half_length ~radius colour
 
   let draw_texture
       ~size
@@ -399,7 +399,7 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
             let camera = to_driver (View.viewport view) (View.camera view) in
 
             (* world space rendering *)
-            D.Window.with_2d camera (fun () -> render_world queue);
+            D.Draw2d.with_camera camera (fun () -> render_world queue);
 
             (* screen space rendering *)
             render_screen queue;

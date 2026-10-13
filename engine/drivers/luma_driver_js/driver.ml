@@ -153,7 +153,48 @@ module Js_driver : Luma__driver.Driver.S = struct
           | _ -> Error (Error.hexcode raw)
         with _ -> Error (Error.hexcode raw))
 
-  module Draw = struct
+  module Camera2d = struct
+    let make ~offset ~target ~rotation ~zoom () = { offset; target; rotation; zoom }
+
+    let default () =
+      make ~offset:(Vec2.create 0. 0.) ~target:(Vec2.create 0. 0.) ~rotation:0. ~zoom:1. ()
+
+    let target c = c.target
+    let offset c = c.offset
+    let zoom c = c.zoom
+    let rotation c = c.rotation
+    let set_target c v = c.target <- v
+    let set_offset c v = c.offset <- v
+    let set_zoom c z = c.zoom <- max 0.0001 z
+    let set_rotation c r = c.rotation <- r
+    let get_world_to_screen_2d p c = world_to_screen p c
+    let get_screen_to_world_2d p c = screen_to_world p c
+  end
+
+  module Draw2d = struct
+    let begin_2d cam =
+      let ctx = ensure_ctx () in
+      ctx##save;
+      ctx##translate
+        (Js.number_of_float (Vec2.x (Camera2d.offset cam)))
+        (Js.number_of_float (Vec2.y (Camera2d.offset cam)));
+      ctx##rotate (Js.number_of_float (Camera2d.rotation cam));
+      ctx##scale (Js.number_of_float (Camera2d.zoom cam)) (Js.number_of_float (Camera2d.zoom cam));
+      ctx##translate
+        (Js.number_of_float (-.Vec2.x (Camera2d.target cam)))
+        (Js.number_of_float (-.Vec2.y (Camera2d.target cam)));
+      cur_cam := Some cam;
+      incr cam_depth
+
+    let end_2d () =
+      with_ctx (fun ctx -> if !cam_depth > 0 then ctx##restore);
+      if !cam_depth > 0 then decr cam_depth;
+      if !cam_depth = 0 then cur_cam := None
+
+    let with_camera cam f =
+      begin_2d cam;
+      Fun.protect ~finally:end_2d f
+
     let draw_rect (rect : Rect.t) (colour : colour) =
       with_ctx @@ fun ctx ->
       let x, y, w, h = rect_xywh rect in
@@ -268,24 +309,6 @@ module Js_driver : Luma__driver.Driver.S = struct
       ctx##fillText (Js.string text)
         (Js.number_of_float (float_of_int x))
         (Js.number_of_float (float_of_int y))
-  end
-
-  module Camera2d = struct
-    let make ~offset ~target ~rotation ~zoom () = { offset; target; rotation; zoom }
-
-    let default () =
-      make ~offset:(Vec2.create 0. 0.) ~target:(Vec2.create 0. 0.) ~rotation:0. ~zoom:1. ()
-
-    let target c = c.target
-    let offset c = c.offset
-    let zoom c = c.zoom
-    let rotation c = c.rotation
-    let set_target c v = c.target <- v
-    let set_offset c v = c.offset <- v
-    let set_zoom c z = c.zoom <- max 0.0001 z
-    let set_rotation c r = c.rotation <- r
-    let get_world_to_screen_2d p c = world_to_screen p c
-    let get_screen_to_world_2d p c = screen_to_world p c
   end
 
   module IO = struct
@@ -416,29 +439,6 @@ module Js_driver : Luma__driver.Driver.S = struct
       wheel_accum := 0.
 
     let end_frame () = ()
-
-    let begin_2d cam =
-      let ctx = ensure_ctx () in
-      ctx##save;
-      ctx##translate
-        (Js.number_of_float (Vec2.x (Camera2d.offset cam)))
-        (Js.number_of_float (Vec2.y (Camera2d.offset cam)));
-      ctx##rotate (Js.number_of_float (Camera2d.rotation cam));
-      ctx##scale (Js.number_of_float (Camera2d.zoom cam)) (Js.number_of_float (Camera2d.zoom cam));
-      ctx##translate
-        (Js.number_of_float (-.Vec2.x (Camera2d.target cam)))
-        (Js.number_of_float (-.Vec2.y (Camera2d.target cam)));
-      cur_cam := Some cam;
-      incr cam_depth
-
-    let end_2d () =
-      with_ctx (fun ctx -> if !cam_depth > 0 then ctx##restore);
-      if !cam_depth > 0 then decr cam_depth;
-      if !cam_depth = 0 then cur_cam := None
-
-    let with_2d cam f =
-      begin_2d cam;
-      Fun.protect ~finally:end_2d f
 
     let set_viewport_scissor x y w h =
       with_ctx @@ fun ctx ->

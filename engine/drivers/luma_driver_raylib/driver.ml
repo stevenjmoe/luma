@@ -11,10 +11,14 @@ module Raylib_driver : Luma__driver.Driver.S = struct
 
   let get_frame_time = Raylib.get_frame_time
 
-  let to_raylib_vec3 (v : Vec3.t) = Raylib.Vector3.create v.x v.y v.z
   (** Convert an internal engine Vec3 to a Raylib Vector3 type. *)
+  let to_raylib_vec3 (v : Vec3.t) = Raylib.Vector3.create v.x v.y v.z
 
-  module Draw = struct
+  module Draw2d = struct
+    let with_camera cam f =
+      Raylib.begin_mode_2d cam;
+      Fun.protect ~finally:Raylib.end_mode_2d f
+
     let draw_text text x y size colour = Raylib.draw_text text x y size colour
 
     let draw_rect rect colour =
@@ -73,18 +77,22 @@ module Raylib_driver : Luma__driver.Driver.S = struct
   end
 
   module Camera3d = struct
-      let perspective ~position ~target ~up ~fov_y_degrees () =
-          Raylib.Camera3D.create (to_raylib_vec3 position) (to_raylib_vec3 target)
-             (to_raylib_vec3 up) fov_y_degrees Raylib.CameraProjection.Perspective
+    let perspective ~position ~target ~up ~fov_y_degrees () =
+      Raylib.Camera3D.create (to_raylib_vec3 position) (to_raylib_vec3 target) (to_raylib_vec3 up)
+        fov_y_degrees Raylib.CameraProjection.Perspective
   end
 
   module Draw3d = struct
     let with_camera camera draw =
-        Raylib.begin_mode_3d camera;
-        Fun.protect ~finally:Raylib.end_mode_3d draw
+      Raylib.begin_mode_3d camera;
+      Fun.protect ~finally:Raylib.end_mode_3d draw
 
-    let cube ~center ~(size : Vec3.t) colour = Raylib.draw_cube (to_raylib_vec3 center) size.x size.y size.z colour
-    let cube_wires ~center ~(size : Vec3.t) colour = Raylib.draw_cube_wires (to_raylib_vec3 center) size.x size.y size.z colour
+    let cube ~center ~(size : Vec3.t) colour =
+      Raylib.draw_cube (to_raylib_vec3 center) size.x size.y size.z colour
+
+    let cube_wires ~center ~(size : Vec3.t) colour =
+      Raylib.draw_cube_wires (to_raylib_vec3 center) size.x size.y size.z colour
+
     let grid ~slices ~spacing = Raylib.draw_grid slices spacing
   end
 

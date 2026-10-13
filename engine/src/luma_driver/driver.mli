@@ -10,7 +10,11 @@ module type S = sig
 
   val get_frame_time : unit -> float
 
-  module Draw : sig
+  module Draw2d : sig
+    val with_camera : camera2d -> (unit -> unit) -> unit
+    (** Run draw commands with a given camera through the function parameter. This is required
+        because Raylib must be swapped into 2d mode with `begin_mode` and `end_mode`. *)
+
     val draw_rect : Rect.t -> colour -> unit
     val draw_rect_lines : Rect.t -> float -> colour -> unit
     val draw_circle : int -> int -> float -> colour -> unit
@@ -25,17 +29,18 @@ module type S = sig
   end
 
   module Camera3d : sig
-      val perspective: position:Vec3.t -> target:Vec3.t -> up:Vec3.t -> fov_y_degrees:float -> unit -> camera3d
+    val perspective :
+      position:Vec3.t -> target:Vec3.t -> up:Vec3.t -> fov_y_degrees:float -> unit -> camera3d
   end
 
   module Draw3d : sig
-      val with_camera : camera3d -> (unit -> unit) -> unit
-      (** Run draw commands with a given camera through the function parameter.
-          This is required because Raylib must be swapped into 3d mode with `begin_mode` and `end_mode`. *)
+    val with_camera : camera3d -> (unit -> unit) -> unit
+    (** Run draw commands with a given camera through the function parameter. This is required
+        because Raylib must be swapped into 3d mode with `begin_mode` and `end_mode`. *)
 
-      val cube: center:Vec3.t -> size:Vec3.t -> colour -> unit
-      val cube_wires : center:Vec3.t -> size:Vec3.t -> colour -> unit
-      val grid : slices:int -> spacing:float -> unit
+    val cube : center:Vec3.t -> size:Vec3.t -> colour -> unit
+    val cube_wires : center:Vec3.t -> size:Vec3.t -> colour -> unit
+    val grid : slices:int -> spacing:float -> unit
   end
 
   module IO : sig
@@ -72,9 +77,6 @@ module type S = sig
     val get_frame_time : unit -> float
     val begin_frame : unit -> unit
     val end_frame : unit -> unit
-    val begin_2d : camera2d -> unit
-    val end_2d : unit -> unit
-    val with_2d : camera2d -> (unit -> unit) -> unit
     val set_viewport_scissor : int -> int -> int -> int -> unit
     val reset_scissor : unit -> unit
     val clear : colour -> unit
