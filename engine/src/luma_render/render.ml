@@ -507,20 +507,6 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
           entities;
         world)
 
-  let ensure_default_camera () =
-    System.make
-      ~components:Query.Component.(Required (module Camera.C) & End)
-      "add_camera"
-      (fun world _ entities ->
-        if entities <> [] then world
-        else
-          let camera = Camera.default () in
-          world
-          |> World.add_entity ~name:"Camera"
-          |> World.with_component world (module Camera.C) camera
-          |> ignore;
-          world)
-
   let resolve_views () =
     System.make
       ~components:Query.Component.(Required (module Camera.C) & End)
@@ -556,7 +542,6 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
 
     let app =
       app
-      |> App.on PostStartup (ensure_default_camera ())
       |> App.on PreRender (resolve_views ())
       |> App.on PreRender (begin_frame ())
       |> App.on PreRender (extract_sprite ())
