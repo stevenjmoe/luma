@@ -365,6 +365,27 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
     let offset = Vec2.create (vp_pos.x +. (vp_size.x *. 0.5)) (vp_pos.y +. (vp_size.y *. 0.5)) in
     D.Camera2d.make ~offset ~target:(target c) ~rotation:(rotation c) ~zoom:(zoom c) ()
 
+  let render_screen queue =
+    Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
+        match cmd with Queue.ScreenRect (r, c) -> draw_rect r c | _ -> ())
+
+  let render_world queue =
+    Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
+        match cmd with
+        | Queue.Sprite s ->
+            draw_texture ~position:s.pos ~size:s.size ~flip_x:s.flip_x ~flip_y:s.flip_y ~src:s.src
+              ~opacity:s.opacity ~rotation:s.rotation ~origin:s.origin s.tex
+        | Queue.Rect (r, colour) -> draw_rect r colour
+        | Queue.Rect_lines (r, line, colour) -> draw_rect_lines r line colour
+        | Queue.Circle { center; radius; colour } ->
+            draw_circle ~center_x:center.x ~center_y:center.y ~radius colour
+        | Queue.Circle_lines { center; radius; colour } ->
+            draw_circle_lines ~center_x:center.x ~center_y:center.y ~radius colour
+        | Queue.ScreenRect _ -> ()
+        | Queue.Line { start_pos_x; start_pos_y; end_pos_x; end_pos_y; colour } ->
+            draw_line ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y colour
+        | _ -> ())
+
   let render () =
     System.make_with_resources ~components:End
       ~resources:Query.Resource.(Resource (module Queue.R) & Resource (module View.R) & End)
@@ -375,33 +396,14 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
             let x, y, w, h = Viewport.to_rect (View.viewport view) in
             D.Window.set_viewport_scissor x y w h;
 
-            Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
-                match cmd with Queue.ScreenRect (r, c) -> draw_rect r c | _ -> ());
-
             let camera = to_driver (View.viewport view) (View.camera view) in
 
-            D.Window.with_2d camera (fun () ->
-                Queue.iter_sorted queue ~camera_layers:1L ~f:(fun { cmd; _ } ->
-                    match cmd with
-                    | Queue.Sprite s ->
-                        draw_texture ~position:s.pos ~size:s.size ~flip_x:s.flip_x ~flip_y:s.flip_y
-                          ~src:s.src ~opacity:s.opacity ~rotation:s.rotation ~origin:s.origin s.tex
-                    | Queue.Rect (r, colour) -> draw_rect r colour
-                    | Queue.Rect_lines (r, line, colour) -> draw_rect_lines r line colour
-                    | Queue.Circle { center; radius; colour } ->
-                        draw_circle ~center_x:center.x ~center_y:center.y ~radius colour
-                    | Queue.Circle_lines { center; radius; colour } ->
-                        draw_circle_lines ~center_x:center.x ~center_y:center.y ~radius colour
-                    (*| Queue.Capsule (c, colour) ->
-                        draw_capsule c.center ~half_length:c.half_length ~radius:c.radius colour
-                    | Queue.Capsule_wires (c, colour) ->
-                        draw_capsule_wires c.center ~half_length:c.half_length ~radius:c.radius
-                          colour*)
-                    | Queue.ScreenRect _ -> ()
-                    | Queue.Line { start_pos_x; start_pos_y; end_pos_x; end_pos_y; colour } ->
-                        draw_line ~start_pos_x ~start_pos_y ~end_pos_x ~end_pos_y colour
-                    | _ -> ());
-                ());
+            (* world space rendering *)
+            D.Window.with_2d camera (fun () -> render_world queue);
+
+            (* screen space rendering *)
+            render_screen queue;
+
             D.Window.reset_scissor ();
             ());
         world)
