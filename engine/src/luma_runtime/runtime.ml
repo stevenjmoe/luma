@@ -13,10 +13,9 @@ module Assets = struct
 
     Server.run_loader_hooks asset_server;
 
-    world
-    |> World.add_resource Assets.R.type_id packed_assets
-    |> World.add_resource Server.R.type_id packed_asset_server
-    |> ignore;
+    world |> World.add_resource Assets.R.type_id packed_assets;
+    world |> World.add_resource Server.R.type_id packed_asset_server;
+
     app
 end
 

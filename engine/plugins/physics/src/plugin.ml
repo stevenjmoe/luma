@@ -10,22 +10,26 @@ module Make (L : Luma.S) : S = struct
 
   let add_config config world =
     let packed = Resource.pack (module Config.R) config in
-    Luma__ecs.World.add_resource Config.R.type_id packed world
+    Luma__ecs.World.add_resource Config.R.type_id packed world;
+    world
 
   let add_rb_store world =
     let body_store = Rb_store.create ~initial:50 () in
     let packed_store = Resource.pack (module Rb_store.R) body_store in
-    Luma__ecs.World.add_resource Rb_store.R.type_id packed_store world
+    Luma__ecs.World.add_resource Rb_store.R.type_id packed_store world;
+    world
 
   let add_shape_store world =
     let store = Shape_store.create ~initial:50 () in
     let packed = Resource.pack (module Shape_store.R) store in
-    Luma__ecs.World.add_resource Shape_store.R.type_id packed world
+    Luma__ecs.World.add_resource Shape_store.R.type_id packed world;
+    world
 
   let add_rb_index world =
     let rb_index = Rb_store.Index.create ~initial:50 in
     let packed_index = Resource.pack (module Rb_store.Index.R) rb_index in
-    Luma__ecs.World.add_resource Rb_store.Index.R.type_id packed_index world
+    Luma__ecs.World.add_resource Rb_store.Index.R.type_id packed_index world;
+    world
 
   let derive_grid_cell_size (config : Config.t) =
     match config.grid_cell_size with
@@ -44,22 +48,26 @@ module Make (L : Luma.S) : S = struct
   let add_grid (config : Config.t) world =
     let grid = Grid.create config.bounds (derive_grid_cell_size config) in
     let packed_grid = Resource.pack (module Grid.R) grid in
-    Luma__ecs.World.add_resource Grid.R.type_id packed_grid world
+    Luma__ecs.World.add_resource Grid.R.type_id packed_grid world;
+    world
 
   let add_broad_phase max_bodies world =
     let broad_phase = Broad_phase.create ~max_bodies () in
     let packed_bp = Resource.pack (module Broad_phase.R) broad_phase in
-    Luma__ecs.World.add_resource Broad_phase.R.type_id packed_bp world
+    Luma__ecs.World.add_resource Broad_phase.R.type_id packed_bp world;
+    world
 
   let add_narrow_phase world =
     let narrow_phase = Narrow_phase.create () in
     let packed_np = Resource.pack (module Narrow_phase.R) narrow_phase in
-    Luma__ecs.World.add_resource Narrow_phase.R.type_id packed_np world
+    Luma__ecs.World.add_resource Narrow_phase.R.type_id packed_np world;
+    world
 
   let add_event_store world =
     let ces = Collision_event.Collision_events_store.create () in
     let packed_ces = Resource.pack (module Collision_event.Collision_events_store.R) ces in
-    Luma__ecs.World.add_resource Collision_event.Collision_events_store.R.type_id packed_ces world
+    Luma__ecs.World.add_resource Collision_event.Collision_events_store.R.type_id packed_ces world;
+    world
 
   let add_resources (config : Config.t) world =
     add_config config world

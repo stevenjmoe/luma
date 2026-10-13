@@ -127,7 +127,8 @@ module Make (D : Luma__driver.Driver.S) (Renderer : Luma__render.Render.Renderer
         if state.w < 460. then state.w <- 460.;
         if state.h < 320. then state.h <- 320.;
         let packed = Luma__resource.Resource.pack (module State.R) state in
-        World.add_resource State.R.type_id packed w)
+        World.add_resource State.R.type_id packed w;
+        w)
 
   let draw_overlay () =
     System.make_with_resources ~components:Query.Component.End

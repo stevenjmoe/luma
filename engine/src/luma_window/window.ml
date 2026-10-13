@@ -71,7 +71,8 @@ module Make (D : Driver.S) : S with type colour = D.colour = struct
   let init (config : Window_config.t) =
     System.make ~components:End "init" (fun world _ _ ->
         let packed = Resource.pack (module Window_config.R) config in
-        let world = World.add_resource Window_config.R.type_id packed world in
+        World.add_resource Window_config.R.type_id packed world;
+
         D.Window.init ~width:config.width ~height:config.height
           ~title:(Option.value config.title ~default:"")
           ~resizable:config.resizable;

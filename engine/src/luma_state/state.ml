@@ -121,7 +121,8 @@ let queue_state (type s) (module S : STATE with type t = s) (v : s) (world : Lum
           (* TODO: perform some checks of the existing resource. eg. Don't overwrite next if it's some *)
           let next = { sr with next = Some pending } in
           let packed = Luma__resource.Resource.pack (module State_res.R) next in
-          World.set_resource State_res.R.type_id packed world
+          World.set_resource State_res.R.type_id packed world;
+          world
       | None ->
           log.warn (fun l -> l "queue_state: Failed to unpack state resource.");
           world)
@@ -130,7 +131,8 @@ let queue_state (type s) (module S : STATE with type t = s) (v : s) (world : Lum
         { next = Some pending; current = None; last_result = NoChange }
         |> Luma__resource.Resource.pack (module State_res.R)
       in
-      World.set_resource State_res.R.type_id packed world
+      World.set_resource State_res.R.type_id packed world;
+      world
 
 let is (type a) (module S : STATE with type t = a) (v : a) (st : state) : bool =
   eq_state st (State ((module S), v))
@@ -157,7 +159,8 @@ let transition_system () =
               last_result = Transitioned { from = None; to_ = initial };
             }
           in
-          set_state_resource w new_state
+          set_state_resource w new_state;
+          w
       (* Transition from current to next. *)
       | Some { current = Some current; next = Some next_; _ } when not (eq_state current next_) ->
           let new_state =
@@ -167,14 +170,17 @@ let transition_system () =
               last_result = Transitioned { from = Some current; to_ = next_ };
             }
           in
-          set_state_resource w new_state
+          set_state_resource w new_state;
+          w
       (* Clear the previous frame's transition result. *)
       | Some ({ last_result = Transitioned _; _ } as state) ->
           (* Clear the previous transition result and consume any no-op request. *)
           let cleared = { state with last_result = NoChange; next = None } in
-          set_state_resource w cleared
+          set_state_resource w cleared;
+          w
       (* Current and next are the same. Do nothing but consume the request *)
       | Some ({ current = Some current; next = Some next; _ } as state) when eq_state current next
         ->
-          set_state_resource w { state with next = None }
+          set_state_resource w { state with next = None };
+          w
       | _ -> w)

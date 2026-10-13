@@ -9,7 +9,7 @@ let ensure_resource (type a) (module R : Resource.S with type t = a) ~(create : 
       let registry = create () in
       let packed = Luma__resource.Resource.pack (module R) registry in
       World.add_resource R.type_id packed world
-  | Some _ -> world
+  | Some _ -> ()
 
 let ensure_comp_resource world =
   ensure_resource
@@ -23,5 +23,6 @@ let ensure_res_resource world =
 
 let apply app =
   let w = App.world app in
-  w |> ensure_comp_resource |> ensure_res_resource |> ignore;
+  ensure_comp_resource w;
+  ensure_res_resource w;
   app

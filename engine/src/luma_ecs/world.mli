@@ -91,7 +91,7 @@ val archetypes : t -> (Id.Archetype.t, Archetype.t) Hashtbl.t
 val resources : t -> (Id.Resource.t, Resource.packed) Hashtbl.t
 (** Returns the world's resources. *)
 
-val add_resource : Luma__id.Id.Resource.t -> Resource.packed -> t -> t
+val add_resource : Luma__id.Id.Resource.t -> Resource.packed -> t -> unit
 (** [add_resource id packed world] adds a packed resource to the table of resources using the id as
     key.
 
@@ -100,7 +100,7 @@ val add_resource : Luma__id.Id.Resource.t -> Resource.packed -> t -> t
 val remove_resource : Id.Resource.t -> t -> unit
 (** [remove_resource id world] *)
 
-val set_resource : Id.Resource.t -> Resource.packed -> t -> t
+val set_resource : Id.Resource.t -> Resource.packed -> t -> unit
 (** [set_resource id packed world] adds or replaces a resource by id. *)
 
 val has_resource : Id.Resource.t -> t -> bool

@@ -35,7 +35,7 @@ end)
 let setup_asset_register () =
   Ecs.System.make ~components:End "setup_asset_register" (fun w _cmd _entities ->
       let res = Hashtbl.create 16 |> Resource.pack (module Asset_register.R) in
-      let w = Ecs.World.add_resource Asset_register.R.type_id res w in
+      Ecs.World.add_resource Asset_register.R.type_id res w;
       w)
 
 let setup_player () =

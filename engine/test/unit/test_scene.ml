@@ -11,7 +11,8 @@ let add_registries world =
   let resources = Luma__type_register.Type_register.Resource_registry.create () in
   World.add_resource Luma__type_register.Type_register.Component_registry.R.type_id
     (Resource.pack (module Luma__type_register.Type_register.Component_registry.R) components)
-    world
+    world;
+  world
   |> World.add_resource Luma__type_register.Type_register.Resource_registry.R.type_id
        (Resource.pack (module Luma__type_register.Type_register.Resource_registry.R) resources)
   |> ignore;

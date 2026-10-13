@@ -528,10 +528,10 @@ module Make (D : Luma__driver.Driver.S) (Texture : Texture.S with type t = D.tex
         in
 
         let packed = Resource.pack (module View.R) cams in
-        let w =
-          if World.has_resource View.R.type_id w then World.set_resource View.R.type_id packed w
-          else World.add_resource View.R.type_id packed w
-        in
+
+        if World.has_resource View.R.type_id w then World.set_resource View.R.type_id packed w
+        else World.add_resource View.R.type_id packed w;
+
         w)
 
   let plugin app =

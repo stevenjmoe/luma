@@ -81,8 +81,7 @@ let add_resource id res w =
     let res_pp = Resource.show res in
     log.error (fun l -> l "Attempted to add resource %s more than once." res_pp);
     failwith @@ Printf.sprintf "Attempted to add resource %s more than once." res_pp)
-  else Hashtbl.add w.resources id res;
-  w
+  else Hashtbl.add w.resources id res
 
 let remove_resource id w = Hashtbl.remove w.resources id
 let archetypes w = w.archetypes
@@ -157,9 +156,7 @@ let move_entity_to_archetype world entity ~old_arch ~new_arch overrides =
     update_component_to_arch world new_arch;
     incr_revision world
 
-let set_resource id res w =
-  Hashtbl.replace w.resources id res;
-  w
+let set_resource id res w = Hashtbl.replace w.resources id res
 
 let register_entity world entity name =
   let uuid = Entity.uuid entity in
